@@ -1,6 +1,7 @@
 # Assignment guidelines
 
 Last modified: 19.01.2026
+>Read [**the violation rules again and remember the rules**](violations.md).
 
 >Note: this guideline can be stayed in your submission. This guideline should not be modified by you.
 
@@ -45,5 +46,5 @@ To increase the clarity of the source code, the code needs to be well structured
 
 * Make sure your clean your directory before creating a zip file for submission.
 * The zip file should **assignment-nr-studentid.zip** which, when unzipped, will be **assignment-nr-studentid** directory.
-* The zip file will be submitted into [Mycourses](http://mycourses.aalto.fi)
+* The zip file must be submitted into [Mycourses](http://mycourses.aalto.fi)
 * All deadlines are hard so make sure you test the submission in advance.
