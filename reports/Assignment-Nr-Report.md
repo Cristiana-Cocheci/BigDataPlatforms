@@ -1,5 +1,9 @@
 # This your assignment report
 
+**AI Usage Disclosure**:
+>I declare that I have not used AI for writing the assignment report
+>I declare that I have not used/I have used XYZ for code generation (include scripts, configuration, ...)
+
 It is a free form. you can add:
 
 * your designs
