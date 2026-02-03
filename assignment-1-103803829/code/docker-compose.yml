@@ -1,0 +1,128 @@
+x-cassandra-env: &cassandra-env
+  CASSANDRA_CLUSTER_NAME: mysimbdp
+  CASSANDRA_SEEDS: cassandra1
+  CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+  MAX_HEAP_SIZE: 512M
+  HEAP_NEWSIZE: 100M
+
+services:
+  cassandra1:
+    image: cassandra:latest
+    hostname: cassandra1
+    container_name: cassandra1
+    environment:
+      <<: *cassandra-env
+      CASSANDRA_DC: DC1
+    ports:
+      - "9042:9042"
+    networks:
+      - cassandra_net
+    volumes:
+      - cassandra1_data:/var/lib/cassandra
+      - ./init.cql:/init.cql:ro
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "SELECT now() FROM system.local;"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  cassandra2:
+    image: cassandra:latest
+    hostname: cassandra2
+    container_name: cassandra2
+    environment:
+      <<: *cassandra-env
+      CASSANDRA_DC: DC1
+    depends_on:
+      - cassandra1
+    networks:
+      - cassandra_net
+    volumes:
+      - cassandra2_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "SELECT now() FROM system.local;"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  cassandra3:
+    image: cassandra:latest
+    hostname: cassandra3
+    container_name: cassandra3
+    environment:
+      <<: *cassandra-env
+      CASSANDRA_DC: DC2
+    depends_on:
+      - cassandra1
+    networks:
+      - cassandra_net
+    volumes:
+      - cassandra3_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "SELECT now() FROM system.local;"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - cassandra_net
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - cassandra_net
+
+  producer:
+    build:
+      context: .
+      dockerfile: dockerfile
+    depends_on:
+      - kafka
+      - cassandra1
+    networks:
+      - cassandra_net
+    volumes:
+      - ../data:/data
+    command: ./producer
+
+  consumer:
+    build:
+      context: .
+      dockerfile: dockerfile
+    depends_on:
+      - kafka
+      - cassandra1
+    networks:
+      - cassandra_net
+    command: ./consumer
+
+networks:
+  cassandra_net:
+    driver: bridge
+
+volumes:
+  cassandra1_data:
+  cassandra2_data:
+  cassandra3_data:

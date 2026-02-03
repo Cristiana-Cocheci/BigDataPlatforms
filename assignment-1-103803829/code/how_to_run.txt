@@ -1,0 +1,40 @@
+go mod init dataingest
+go get github.com/gocql/gocql
+go get github.com/segmentio/kafka-go
+
+docker compose down -v
+docker compose up --build 
+docker exec -it cassandra1 cqlsh
+> SOURCE '/init.cql';
+> SELECT data_center, host_id FROM system.peers;
+
+docker compose up -d --build --scale producer=5 --scale consumer=5
+
+
+SELECT * FROM mysimbdp_weather.sensor_measurements_by_sensor_day LIMIT 5;
+
+
+
+CREATE KEYSPACE IF NOT EXISTS mysimbdp_weather
+WITH replication = {
+  'class': 'NetworkTopologyStrategy',
+  'DC1': 2,
+  'DC2': 1
+};
+
+
+CREATE TABLE IF NOT EXISTS mysimbdp_weather.sensor_measurements_by_sensor_day (
+    sensor_id text,
+    sensor_type int,
+    location float,
+    lat float,
+    lon float,
+    day date,
+    timestamp string,
+    pressure float,
+    altitude float,
+    pressure_sealevel float,
+    temperature float,
+    humidity float,
+    PRIMARY KEY ((sensor_id, day, timestamp))
+);
