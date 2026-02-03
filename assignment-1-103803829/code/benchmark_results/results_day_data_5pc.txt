@@ -1,0 +1,20 @@
+# 500 with 100
+
+producer0-1  | 2026/02/03 18:53:46 Produced 467 messages (total: 582967, processed lines: 582968)
+producer0-1  | 2026/02/03 18:53:46 Production complete! Total messages produced: 582967, Total lines processed: 582968
+producer0-1  | 2026/02/03 18:53:46 Performance: Duration=357.09s, Throughput=1632.54 msg/s
+
+producer1-1  | 2026/02/03 18:54:16 Production complete! Total messages produced: 582967, Total lines processed: 582968
+producer1-1  | 2026/02/03 18:54:16 Performance: Duration=387.95s, Throughput=1502.70 msg/s
+producer1-1 exited with code 0
+
+roducer4-1  | 2026/02/03 18:53:56 Produced 466 messages (total: 582966, processed lines: 582967)
+producer4-1  | 2026/02/03 18:53:56 Production complete! Total messages produced: 582966, Total lines processed: 582967
+producer4-1  | 2026/02/03 18:53:56 Performance: Duration=367.19s, Throughput=1587.66 msg/s
+
+
+consumer3-1  | 2026/02/03 18:54:09 Throughput: 207.07 records/s over 10.1s (total inserted: 581100)
+consumer4-1  | 2026/02/03 18:54:09 Throughput: 226.66 records/s over 10.1s (total inserted: 581200)
+consumer1-1  | 2026/02/03 18:54:09 Throughput: 216.89 records/s over 10.1s (total inserted: 581200)
+consumer0-1  | 2026/02/03 18:54:09 Throughput: 216.89 records/s over 10.1s (total inserted: 581200)
+consumer2-1  | 2026/02/03 18:54:09 Throughput: 216.75 records/s over 10.1s (total inserted: 581200)

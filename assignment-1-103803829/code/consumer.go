@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/gocql/gocql"
@@ -40,6 +42,14 @@ func insertBatch(session *gocql.Session, measurements []*Measurement) error {
 }
 
 func consumeMessages(session *gocql.Session) error {
+	startTime := time.Now()
+	logInterval := 10 * time.Second
+	if v := os.Getenv("THROUGHPUT_LOG_SECONDS"); v != "" {
+		if secs, err := strconv.Atoi(v); err == nil && secs > 0 {
+			logInterval = time.Duration(secs) * time.Second
+		}
+	}
+
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:        []string{kafkaBrokers},
 		Topic:          kafkaTopic,
@@ -54,6 +64,8 @@ func consumeMessages(session *gocql.Session) error {
 	batch := make([]*Measurement, 0, batchSize)
 	messageCount := 0
 	insertCount := 0
+	lastLogTime := time.Now()
+	lastLogInsert := 0
 
 	for {
 		msg, err := r.ReadMessage(context.Background())
@@ -89,6 +101,15 @@ func consumeMessages(session *gocql.Session) error {
 			log.Printf("Inserted %d records (total: %d, consumed messages: %d)", len(batch), insertCount, messageCount)
 			batch = make([]*Measurement, 0, batchSize)
 		}
+
+		if time.Since(lastLogTime) >= logInterval {
+			elapsed := time.Since(lastLogTime).Seconds()
+			delta := insertCount - lastLogInsert
+			rate := float64(delta) / elapsed
+			log.Printf("Throughput: %.2f records/s over %.1fs (total inserted: %d)", rate, elapsed, insertCount)
+			lastLogTime = time.Now()
+			lastLogInsert = insertCount
+		}
 	}
 
 	// Insert remaining records
@@ -100,7 +121,10 @@ func consumeMessages(session *gocql.Session) error {
 		log.Printf("Inserted %d records (total: %d, consumed messages: %d)", len(batch), insertCount, messageCount)
 	}
 
+	duration := time.Since(startTime)
+	throughput := float64(insertCount) / duration.Seconds()
 	log.Printf("Consumption complete! Total records inserted: %d, Total messages consumed: %d", insertCount, messageCount)
+	log.Printf("Performance: Duration=%.2fs, Throughput=%.2f records/s", duration.Seconds(), throughput)
 	return nil
 }
 

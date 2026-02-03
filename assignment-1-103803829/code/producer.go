@@ -14,26 +14,54 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+func getChunkFilePath() string {
+	replicaStr := os.Getenv("CHUNK_NUM")
+	if replicaStr == "" {
+		log.Println("CHUNK_NUM not set, using main CSV")
+		return csvFilePath
+	}
+
+	replica, err := strconv.Atoi(replicaStr)
+	if err != nil {
+		log.Printf("Invalid CHUNK_NUM=%s, using main CSV", replicaStr)
+		return csvFilePath
+	}
+
+	chunkPath := fmt.Sprintf("/data/chunks/chunk_%d.csv", replica)
+
+	if _, err := os.Stat(chunkPath); os.IsNotExist(err) {
+		log.Printf("Chunk not found: %s, using main CSV", chunkPath)
+		return csvFilePath
+	}
+
+	log.Printf("Producer replica %d using chunk %s", replica, chunkPath)
+	return chunkPath
+}
+
 func produceMessages() error {
+	startTime := time.Now()
+
 	// Create Kafka writer
 	w := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:      []string{kafkaBrokers},
 		Topic:        kafkaTopic,
 		Balancer:     &kafka.LeastBytes{},
 		RequiredAcks: -1,
+		MaxAttempts:  3,
 	})
 	defer w.Close()
 
 	log.Println("Kafka producer connected to", kafkaBrokers)
 
-	// Open CSV file
-	file, err := os.Open(csvFilePath)
+	// Open CSV chunk file
+	filePath := getChunkFilePath()
+	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open CSV: %w", err)
 	}
 	defer file.Close()
 
-	log.Println("Started reading CSV file:", csvFilePath)
+	log.Println("Started reading CSV file:", filePath)
 
 	scanner := bufio.NewScanner(file)
 	lineCount := 0
@@ -44,7 +72,7 @@ func produceMessages() error {
 		lineCount++
 	}
 
-	messages := make([]kafka.Message, 0, 100)
+	messages := make([]kafka.Message, 0, kafkaBatchSize)
 
 	// Process each line
 	for scanner.Scan() {
@@ -74,13 +102,13 @@ func produceMessages() error {
 		})
 
 		// Send batch to Kafka
-		if len(messages) >= 100 {
+		if len(messages) >= kafkaBatchSize {
 			if err := w.WriteMessages(context.Background(), messages...); err != nil {
 				return fmt.Errorf("failed to write messages: %w", err)
 			}
 			messageCount += len(messages)
 			log.Printf("Produced %d messages (total: %d, processed lines: %d)", len(messages), messageCount, lineCount)
-			messages = make([]kafka.Message, 0, 100)
+			messages = make([]kafka.Message, 0, kafkaBatchSize)
 		}
 	}
 
@@ -97,7 +125,10 @@ func produceMessages() error {
 		return fmt.Errorf("scanner error: %w", err)
 	}
 
+	duration := time.Since(startTime)
+	throughput := float64(messageCount) / duration.Seconds()
 	log.Printf("Production complete! Total messages produced: %d, Total lines processed: %d", messageCount, lineCount)
+	log.Printf("Performance: Duration=%.2fs, Throughput=%.2f msg/s", duration.Seconds(), throughput)
 	return nil
 }
 

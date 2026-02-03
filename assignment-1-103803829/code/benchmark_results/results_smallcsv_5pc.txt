@@ -1,0 +1,58 @@
+ docker compose logs -f producer0 producer1 producer2 producer3 producer4
+producer3-1  | 2026/02/03 18:00:56 Waiting for Kafka to be ready...
+producer0-1  | 2026/02/03 18:00:56 Waiting for Kafka to be ready...
+producer1-1  | 2026/02/03 18:00:56 Waiting for Kafka to be ready...
+producer2-1  | 2026/02/03 18:00:56 Waiting for Kafka to be ready...
+producer4-1  | 2026/02/03 18:00:56 Waiting for Kafka to be ready...
+producer0-1  | 2026/02/03 18:01:01 Kafka producer connected to kafka:29092
+producer0-1  | 2026/02/03 18:01:01 Producer replica 0 using chunk /data/chunks/chunk_0.csv
+producer0-1  | 2026/02/03 18:01:01 Started reading CSV file: /data/chunks/chunk_0.csv
+producer4-1  | 2026/02/03 18:01:01 Kafka producer connected to kafka:29092
+producer4-1  | 2026/02/03 18:01:01 Producer replica 4 using chunk /data/chunks/chunk_4.csv
+producer4-1  | 2026/02/03 18:01:01 Started reading CSV file: /data/chunks/chunk_4.csv
+producer1-1  | 2026/02/03 18:01:01 Kafka producer connected to kafka:29092
+producer1-1  | 2026/02/03 18:01:01 Producer replica 1 using chunk /data/chunks/chunk_1.csv
+producer1-1  | 2026/02/03 18:01:01 Started reading CSV file: /data/chunks/chunk_1.csv
+producer2-1  | 2026/02/03 18:01:01 Kafka producer connected to kafka:29092
+producer2-1  | 2026/02/03 18:01:01 Producer replica 2 using chunk /data/chunks/chunk_2.csv
+producer2-1  | 2026/02/03 18:01:01 Started reading CSV file: /data/chunks/chunk_2.csv
+producer3-1  | 2026/02/03 18:01:01 Kafka producer connected to kafka:29092
+producer3-1  | 2026/02/03 18:01:01 Producer replica 3 using chunk /data/chunks/chunk_3.csv
+producer3-1  | 2026/02/03 18:01:01 Started reading CSV file: /data/chunks/chunk_3.csv
+producer0-1  | 2026/02/03 18:01:02 Produced 100 messages (total: 100, processed lines: 101)
+producer4-1  | 2026/02/03 18:01:02 Produced 100 messages (total: 100, processed lines: 101)
+producer1-1  | 2026/02/03 18:01:02 Produced 100 messages (total: 100, processed lines: 101)
+producer2-1  | 2026/02/03 18:01:02 Produced 100 messages (total: 100, processed lines: 101)
+producer3-1  | 2026/02/03 18:01:02 Produced 100 messages (total: 100, processed lines: 101)
+producer0-1  | 2026/02/03 18:01:03 Produced 11 messages (total: 111, processed lines: 112)
+producer0-1  | 2026/02/03 18:01:03 Production complete! Total messages produced: 111, Total lines processed: 112
+producer0-1  | 2026/02/03 18:01:03 Performance: Duration=2.08s, Throughput=53.46 msg/s
+producer1-1  | 2026/02/03 18:01:03 Produced 11 messages (total: 111, processed lines: 112)
+producer1-1  | 2026/02/03 18:01:03 Production complete! Total messages produced: 111, Total lines processed: 112
+producer1-1  | 2026/02/03 18:01:03 Performance: Duration=2.06s, Throughput=53.95 msg/s
+producer2-1  | 2026/02/03 18:01:03 Produced 11 messages (total: 111, processed lines: 112)
+producer4-1  | 2026/02/03 18:01:03 Produced 8 messages (total: 108, processed lines: 109)
+producer2-1  | 2026/02/03 18:01:03 Production complete! Total messages produced: 111, Total lines processed: 112
+producer2-1  | 2026/02/03 18:01:03 Performance: Duration=2.06s, Throughput=53.98 msg/s
+producer4-1  | 2026/02/03 18:01:03 Production complete! Total messages produced: 108, Total lines processed: 109
+producer4-1  | 2026/02/03 18:01:03 Performance: Duration=2.08s, Throughput=52.04 msg/s
+producer3-1  | 2026/02/03 18:01:03 Produced 11 messages (total: 111, processed lines: 112)
+producer3-1  | 2026/02/03 18:01:03 Production complete! Total messages produced: 111, Total lines processed: 112
+producer3-1  | 2026/02/03 18:01:03 Performance: Duration=2.05s, Throughput=54.16 msg/s
+producer3-1 exited with code 0
+producer2-1 exited with code 0
+producer0-1 exited with code 0
+producer1-1 exited with code 0
+producer4-1 exited with code 0
+
+
+
+
+docker compose logs -f consumer
+consumer-1  | 2026/02/03 18:00:56 Connected to Cassandra cluster
+consumer-1  | 2026/02/03 18:00:56 Kafka consumer connected, consuming from topic: bme280-measurements
+consumer-1  | 2026/02/03 18:01:04 Inserted 100 records (total: 100, consumed messages: 100)
+consumer-1  | 2026/02/03 18:01:04 Inserted 100 records (total: 200, consumed messages: 200)
+consumer-1  | 2026/02/03 18:01:04 Inserted 100 records (total: 300, consumed messages: 300)
+consumer-1  | 2026/02/03 18:01:04 Inserted 100 records (total: 400, consumed messages: 400)
+consumer-1  | 2026/02/03 18:01:04 Inserted 100 records (total: 500, consumed messages: 500)

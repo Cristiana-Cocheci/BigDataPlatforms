@@ -5,6 +5,38 @@ x-cassandra-env: &cassandra-env
   MAX_HEAP_SIZE: 512M
   HEAP_NEWSIZE: 100M
 
+x-producer-base: &producer-base
+  build:
+    context: .
+    dockerfile: dockerfile
+  profiles:
+    - workers
+  depends_on:
+    kafka:
+      condition: service_healthy
+    cassandra1:
+      condition: service_healthy
+  networks:
+    - cassandra_net
+  volumes:
+    - ../data:/data
+  command: ./producer
+
+x-consumer-base: &consumer-base
+  build:
+    context: .
+    dockerfile: dockerfile
+  profiles:
+    - workers
+  depends_on:
+    kafka:
+      condition: service_healthy
+    cassandra1:
+      condition: service_healthy
+  networks:
+    - cassandra_net
+  command: ./consumer
+
 services:
   cassandra1:
     image: cassandra:latest
@@ -91,32 +123,55 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
     networks:
       - cassandra_net
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
 
-  producer:
-    build:
-      context: .
-      dockerfile: dockerfile
-    depends_on:
-      - kafka
-      - cassandra1
-    networks:
-      - cassandra_net
-    volumes:
-      - ../data:/data
-    command: ./producer
+  producer0:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=0
 
-  consumer:
-    build:
-      context: .
-      dockerfile: dockerfile
-    depends_on:
-      - kafka
-      - cassandra1
-    networks:
-      - cassandra_net
-    command: ./consumer
+  producer1:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=1
+
+  producer2:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=2
+
+  producer3:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=3
+
+  producer4:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=4
+
+  consumer0:
+    <<: *consumer-base
+
+  consumer1:
+    <<: *consumer-base
+
+  consumer2:
+    <<: *consumer-base
+
+  consumer3:
+    <<: *consumer-base
+
+  consumer4:
+    <<: *consumer-base
 
 networks:
   cassandra_net:

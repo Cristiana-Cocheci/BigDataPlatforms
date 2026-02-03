@@ -10,5 +10,3 @@ COPY . .
 RUN go build -o producer producer.go types.go
 
 RUN go build -o consumer consumer.go types.go
-
-CMD ["./producer"]

@@ -1,16 +1,49 @@
+#ONE DAY DATASET SIZE
+Created 2025-06-01_bme280.csv: 2914834 records for 2025-06-01
+225M
+
+
+# FOR ME
+cd assignment-1-103803829/assignment-1-103803829/code/
+
 go mod init dataingest
 go get github.com/gocql/gocql
 go get github.com/segmentio/kafka-go
 
+# BUILDiNG CLUSTER
 docker compose down -v
 docker compose up --build 
+
 docker exec -it cassandra1 cqlsh
-> SOURCE '/init.cql';
+
+# CHECK The cluster is ready
 > SELECT data_center, host_id FROM system.peers;
+> SOURCE '/init.cql';
 
-docker compose up -d --build --scale producer=5 --scale consumer=5
+# DELETE ALL DATABASE ROWS
+> TRUNCATE mysimbdp_weather.sensor_measurements_by_sensor_day;
+
+# TESTING
+docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --list
+
+docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 \
+  --delete --topic bme280-measurements
+
+docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 \
+  --create --topic bme280-measurements --partitions 5 --replication-factor 1
+
+docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --describe --topic bme280-measurements
 
 
+docker compose --profile workers up -d --build
+docker compose logs -f producer0 producer1 producer2 producer3 producer4
+docker compose logs -f consumer0 consumer1 consumer2 consumer3 consumer4
+
+# SELECT NUMBER OF CONSUMERS 
+docker compose --profile workers up -d producer0 producer1 consumer0 consumer1
+
+
+# CHECKING RESULTS
 SELECT * FROM mysimbdp_weather.sensor_measurements_by_sensor_day LIMIT 5;
 
 
