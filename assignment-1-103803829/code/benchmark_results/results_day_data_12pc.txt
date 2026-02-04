@@ -1,3 +1,5 @@
+CONSISTENCY Quorum
+
 producer6-1 exited with code 0
 producer0-1   | 2026/02/04 16:52:14 Produced 10000 messages (total: 240000, processed lines: 240001)
 producer8-1 exited with code 0

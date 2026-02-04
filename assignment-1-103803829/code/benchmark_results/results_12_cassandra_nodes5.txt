@@ -1,0 +1,23 @@
+Consistency quorum
+
+producer1-1 exited with code 0
+producer7-1   | 2026/02/04 17:36:51 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer7-1   | 2026/02/04 17:36:51 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer7-1   | 2026/02/04 17:36:51 Performance: Duration=26.83s, Throughput=9054.58 msg/s
+producer8-1 exited with code 0
+producer0-1 exited with code 0
+producer9-1   | 2026/02/04 17:36:51 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer9-1   | 2026/02/04 17:36:51 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer9-1   | 2026/02/04 17:36:51 Performance: Duration=27.01s, Throughput=8992.65 msg/s
+producer4-1   | 2026/02/04 17:36:51 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer4-1   | 2026/02/04 17:36:51 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer4-1   | 2026/02/04 17:36:51 Performance: Duration=27.02s, Throughput=8989.67 msg/s
+producer2-1 exited with code 0
+producer11-1 exited with code 0
+producer7-1 exited with code 0
+producer9-1 exited with code 0
+producer4-1 exited with code 0
+
+
+
+2026/02/04 17:37:02 Throughput: 2829.55 records/s over 10.0s (total inserted: 28300)

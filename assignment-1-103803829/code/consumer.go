@@ -197,7 +197,7 @@ func consumeMessages(session *gocql.Session) error {
 			return fmt.Errorf("failed to insert final batch: %w", err)
 		}
 		insertCount += len(batch)
-		log.Printf("Inserted %d records (total: %d, consumed messages: %d)", len(batch), insertCount, messageCount)
+		log.Printf("Inserted %d records (total: %d, consumed messages: %d, time_since_start %.2fs)", len(batch), insertCount, messageCount, time.Since(startTime).Seconds())
 	}
 
 	duration := time.Since(startTime)
@@ -209,11 +209,12 @@ func consumeMessages(session *gocql.Session) error {
 
 func main() {
 	// Create cluster
-	cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3")
-	//cluster := gocql.NewCluster("cassandra1", "cassandra2")
+	//cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3")
+	cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3", "cassandra4", "cassandra5") // Add more nodes for better performance
 	cluster.Keyspace = cassandraKeyspace
-	//cluster.Consistency = gocql.Quorum
-	cluster.Consistency = gocql.One
+	cluster.Consistency = gocql.Quorum
+	// cluster.Consistency = gocql.One
+	//cluster.Consistency = gocql.All
 	cluster.Timeout = 120 * time.Second
 	// Increase connection pool for better throughput
 	cluster.NumConns = 4

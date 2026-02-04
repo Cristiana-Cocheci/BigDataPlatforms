@@ -29,6 +29,7 @@ SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01;
 
 # Query by hour (efficient - single partition scan):
 SELECT * FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10 LIMIT 5;
+SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10;
 
 # Query by hour and sensor (also efficient - filtered within partition):
 SELECT * FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10 AND sensor_id = 113 LIMIT 5;
@@ -41,14 +42,18 @@ docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 \
   --delete --topic bme280-measurements
 
 docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 \
-  --create --topic bme280-measurements --partitions 10 --replication-factor 1
+  --create --topic bme280-measurements --partitions 12 --replication-factor 1
+
+  ORRRRRR
+
+docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --alter --topic bme280-measurements --partitions 12
 
 docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --describe --topic bme280-measurements
 
 
 docker compose --profile workers up -d --build
-docker compose logs -f producer0 producer1 producer2 producer3 producer4 producer5 producer6 producer7 producer8 producer9
-docker compose logs -f consumer0 consumer1 consumer2 consumer3 consumer4 consumer5 consumer6 consumer7 consumer8 consumer9
+docker compose logs -f producer0 producer1 producer2 producer3 producer4 producer5 producer6 producer7 producer8 producer9 producer10 producer11
+docker compose logs -f consumer0 consumer1 consumer2 consumer3 consumer4 consumer5 consumer6 consumer7 consumer8 consumer9 consumer10 consumer11
 
 # SELECT NUMBER OF CONSUMERS 
 # ONLY 1 PC
