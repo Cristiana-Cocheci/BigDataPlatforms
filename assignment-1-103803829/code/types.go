@@ -40,6 +40,7 @@ type Measurement struct {
 	lat               *float32
 	lon               *float32
 	day               string
+	hour              int
 	timestamp         string
 	pressure          *float32
 	altitude          *float32
@@ -81,8 +82,26 @@ func createDay(t string) string {
 	return day
 }
 
+func extractHour(t string) int {
+	// 2025-01-01T01:13:29 -> extract 01
+	parts := strings.Split(t, "T")
+	if len(parts) < 2 {
+		return 0
+	}
+	timeParts := strings.Split(parts[1], ":")
+	if len(timeParts) < 1 {
+		return 0
+	}
+	hour, err := strconv.Atoi(timeParts[0])
+	if err != nil {
+		return 0
+	}
+	return hour
+}
+
 func jsonToMeasurement(mj *MeasurementJSON) (*Measurement, error) {
 	t := createDay(mj.Timestamp)
+	hour := extractHour(mj.Timestamp)
 
 	m := &Measurement{
 		sensor_id:         mj.SensorID,
@@ -91,6 +110,7 @@ func jsonToMeasurement(mj *MeasurementJSON) (*Measurement, error) {
 		lat:               mj.Lat,
 		lon:               mj.Lon,
 		day:               t,
+		hour:              hour,
 		timestamp:         mj.Timestamp,
 		pressure:          mj.Pressure,
 		altitude:          mj.Altitude,

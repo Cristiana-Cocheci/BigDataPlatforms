@@ -45,7 +45,7 @@ func produceMessages() error {
 	w := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:      []string{kafkaBrokers},
 		Topic:        kafkaTopic,
-		Balancer:     &kafka.LeastBytes{},
+		Balancer:     &kafka.Hash{}, // Use hash balancer for key-based partitioning
 		RequiredAcks: -1,
 		MaxAttempts:  3,
 	})

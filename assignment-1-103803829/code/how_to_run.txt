@@ -21,7 +21,18 @@ docker exec -it cassandra1 cqlsh
 > SOURCE '/init.cql';
 
 # DELETE ALL DATABASE ROWS
-> TRUNCATE mysimbdp_weather.sensor_measurements_by_sensor_day;
+> TRUNCATE mysimbdp_weather.sensor_measurements_BME280_2025_06_01;
+
+# CHECKING RESULTS (table created dynamically based on first message's sensor_type and day)
+SELECT * FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 LIMIT 5;
+SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01;
+
+# Query by hour (efficient - single partition scan):
+SELECT * FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10 LIMIT 5;
+
+# Query by hour and sensor (also efficient - filtered within partition):
+SELECT * FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10 AND sensor_id = 113 LIMIT 5;
+
 
 # TESTING
 docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --list
@@ -30,21 +41,20 @@ docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 \
   --delete --topic bme280-measurements
 
 docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 \
-  --create --topic bme280-measurements --partitions 5 --replication-factor 1
+  --create --topic bme280-measurements --partitions 10 --replication-factor 1
 
 docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --describe --topic bme280-measurements
 
 
 docker compose --profile workers up -d --build
-docker compose logs -f producer0 producer1 producer2 producer3 producer4
-docker compose logs -f consumer0 consumer1 consumer2 consumer3 consumer4
+docker compose logs -f producer0 producer1 producer2 producer3 producer4 producer5 producer6 producer7 producer8 producer9
+docker compose logs -f consumer0 consumer1 consumer2 consumer3 consumer4 consumer5 consumer6 consumer7 consumer8 consumer9
 
 # SELECT NUMBER OF CONSUMERS 
-docker compose --profile workers up -d producer0 producer1 consumer0 consumer1
+# ONLY 1 PC
+docker compose --profile workers down
+docker compose --profile workers up -d producer0 consumer0
 
-
-# CHECKING RESULTS
-SELECT * FROM mysimbdp_weather.sensor_measurements_by_sensor_day LIMIT 5;
 
 
 
@@ -56,18 +66,22 @@ WITH replication = {
 };
 
 
-CREATE TABLE IF NOT EXISTS mysimbdp_weather.sensor_measurements_by_sensor_day (
-    sensor_id text,
-    sensor_type int,
+-- Table created dynamically per sensor_type and day at consumer startup
+-- Format: mysimbdp_weather.sensor_measurements_[sensor_type]_[day_with_underscores]
+-- Example (from first message read):
+CREATE TABLE IF NOT EXISTS mysimbdp_weather.sensor_measurements_BME280_2025_06_01 (
+    sensor_id int,
+    sensor_type text,
     location float,
     lat float,
     lon float,
-    day date,
-    timestamp string,
+    day text,
+    hour int,
+    timestamp text,
     pressure float,
     altitude float,
     pressure_sealevel float,
     temperature float,
     humidity float,
-    PRIMARY KEY ((sensor_id, day, timestamp))
+    PRIMARY KEY ((hour), sensor_id, timestamp)
 );

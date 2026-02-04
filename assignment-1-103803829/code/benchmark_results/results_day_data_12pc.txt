@@ -1,0 +1,65 @@
+producer6-1 exited with code 0
+producer0-1   | 2026/02/04 16:52:14 Produced 10000 messages (total: 240000, processed lines: 240001)
+producer8-1 exited with code 0
+producer9-1   | 2026/02/04 16:52:14 Produced 10000 messages (total: 240000, processed lines: 240001)
+producer1-1   | 2026/02/04 16:52:14 Produced 10000 messages (total: 240000, processed lines: 240001)
+producer7-1   | 2026/02/04 16:52:14 Produced 10000 messages (total: 240000, processed lines: 240001)
+producer11-1  | 2026/02/04 16:52:14 Produced 2901 messages (total: 242901, processed lines: 242902)
+producer11-1  | 2026/02/04 16:52:14 Production complete! Total messages produced: 242901, Total lines processed: 242902
+producer11-1  | 2026/02/04 16:52:14 Performance: Duration=26.43s, Throughput=9190.80 msg/s
+producer5-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer5-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer5-1   | 2026/02/04 16:52:15 Performance: Duration=26.16s, Throughput=9283.91 msg/s
+producer2-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer2-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer2-1   | 2026/02/04 16:52:15 Performance: Duration=26.35s, Throughput=9218.39 msg/s
+producer11-1 exited with code 0
+producer3-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer3-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer3-1   | 2026/02/04 16:52:15 Performance: Duration=26.26s, Throughput=9251.49 msg/s
+producer10-1  | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer10-1  | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer10-1  | 2026/02/04 16:52:15 Performance: Duration=26.29s, Throughput=9238.72 msg/s
+producer4-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer4-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer4-1   | 2026/02/04 16:52:15 Performance: Duration=26.10s, Throughput=9307.47 msg/s
+producer0-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer0-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer0-1   | 2026/02/04 16:52:15 Performance: Duration=26.13s, Throughput=9294.98 msg/s
+producer9-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer9-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer9-1   | 2026/02/04 16:52:15 Performance: Duration=26.26s, Throughput=9249.89 msg/s
+producer1-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer1-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer1-1   | 2026/02/04 16:52:15 Performance: Duration=26.15s, Throughput=9288.94 msg/s
+producer7-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer7-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer7-1   | 2026/02/04 16:52:15 Performance: Duration=26.19s, Throughput=9273.62 msg/s
+producer1-1 exited with code 0
+producer5-1 exited with code 0
+producer3-1 exited with code 0
+producer2-1 exited with code 0
+producer4-1 exited with code 0
+producer0-1 exited with code 0
+producer10-1 exited with code 0
+producer9-1 exited with code 0
+
+
+
+2026/02/04 16:53:12 Throughput: 4219.90 records/s over 10.0s (total inserted: 42200)
+
+
+
+SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10;
+
+
+ count
+--------
+ 122388
+
+
+ cqlsh> SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 0 and sensor_id=113;
+
+ count
+-------
+    24

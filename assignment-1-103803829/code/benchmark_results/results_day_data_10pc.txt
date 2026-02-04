@@ -1,0 +1,47 @@
+producer4-1  | 2026/02/04 16:40:12 Produced 1484 messages (total: 291484, processed lines: 291485)
+producer4-1  | 2026/02/04 16:40:12 Production complete! Total messages produced: 291484, Total lines processed: 291485
+producer4-1  | 2026/02/04 16:40:12 Performance: Duration=31.32s, Throughput=9305.63 msg/s
+producer9-1  | 2026/02/04 16:40:12 Produced 1478 messages (total: 291478, processed lines: 291479)
+producer9-1  | 2026/02/04 16:40:12 Production complete! Total messages produced: 291478, Total lines processed: 291479
+producer9-1  | 2026/02/04 16:40:12 Performance: Duration=31.34s, Throughput=9300.01 msg/s
+producer2-1  | 2026/02/04 16:40:12 Produced 1484 messages (total: 291484, processed lines: 291485)
+producer2-1  | 2026/02/04 16:40:12 Production complete! Total messages produced: 291484, Total lines processed: 291485
+producer2-1  | 2026/02/04 16:40:12 Performance: Duration=31.27s, Throughput=9320.77 msg/s
+producer6-1  | 2026/02/04 16:40:13 Produced 1484 messages (total: 291484, processed lines: 291485)
+producer6-1  | 2026/02/04 16:40:13 Production complete! Total messages produced: 291484, Total lines processed: 291485
+producer6-1  | 2026/02/04 16:40:13 Performance: Duration=31.27s, Throughput=9322.22 msg/s
+producer0-1 exited with code 0
+producer5-1 exited with code 0
+producer1-1 exited with code 0
+producer4-1 exited with code 0
+producer9-1 exited with code 0
+producer2-1 exited with code 0
+producer6-1 exited with code 0
+
+
+2026/02/04 16:41:06 Throughput: 5025.97 records/s over 10.0s
+
+
+
+
+SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10;
+
+ count
+--------
+ 122388
+
+
+SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 0;
+
+ count
+--------
+ 121010
+
+
+ cqlsh> SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 0 and sensor_id=113;
+
+ count
+-------
+    24
+
+(1 rows)

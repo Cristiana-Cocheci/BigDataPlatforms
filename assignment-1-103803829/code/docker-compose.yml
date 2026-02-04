@@ -158,6 +158,41 @@ services:
     environment:
       - CHUNK_NUM=4
 
+  producer5:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=5
+  
+  producer6:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=6
+
+  producer7:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=7
+
+  producer8:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=8
+  
+  producer9:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=9
+    
+  producer10:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=10
+  
+  producer11:
+    <<: *producer-base
+    environment:
+      - CHUNK_NUM=11
+
   consumer0:
     <<: *consumer-base
 
@@ -172,6 +207,27 @@ services:
 
   consumer4:
     <<: *consumer-base
+
+  consumer5:
+    <<: *consumer-base
+  
+  consumer6:
+    <<: *consumer-base
+  
+  consumer7:
+    <<: *consumer-base
+  
+  consumer8:
+    <<: *consumer-base
+  
+  consumer9:
+    <<: *consumer-base
+
+  consumer10:
+    <<: *consumer-base
+  consumer11:
+    <<: *consumer-base
+
 
 networks:
   cassandra_net:
