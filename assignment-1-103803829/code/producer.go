@@ -97,6 +97,7 @@ func produceMessages() error {
 		}
 
 		messages = append(messages, kafka.Message{
+			// Partition key for kafka is sensor_id, so that all measurements from the same sensor go to the same partition
 			Key:   []byte(strconv.Itoa(m.SensorID)),
 			Value: data,
 		})
