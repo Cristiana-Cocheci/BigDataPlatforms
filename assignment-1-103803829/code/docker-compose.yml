@@ -98,47 +98,6 @@ services:
       timeout: 5s
       retries: 30
       start_period: 40s
-
-  cassandra4:
-    image: cassandra:latest
-    hostname: cassandra4
-    container_name: cassandra4
-    environment:
-      <<: *cassandra-env
-      CASSANDRA_DC: DC2
-    depends_on:
-      - cassandra1
-    networks:
-      - cassandra_net
-    volumes:
-      - cassandra4_data:/var/lib/cassandra
-    healthcheck:
-      test: ["CMD", "cqlsh", "-e", "SELECT now() FROM system.local;"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 40s
-
-  cassandra5:
-    image: cassandra:latest
-    hostname: cassandra5
-    container_name: cassandra5
-    environment:
-      <<: *cassandra-env
-      CASSANDRA_DC: DC2
-    depends_on:
-      - cassandra1
-    networks:
-      - cassandra_net
-    volumes:
-      - cassandra5_data:/var/lib/cassandra
-    healthcheck:
-      test: ["CMD", "cqlsh", "-e", "SELECT now() FROM system.local;"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 40s 
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
@@ -278,5 +237,3 @@ volumes:
   cassandra1_data:
   cassandra2_data:
   cassandra3_data:
-  cassandra4_data:
-  cassandra5_data:

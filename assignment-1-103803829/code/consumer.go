@@ -209,8 +209,8 @@ func consumeMessages(session *gocql.Session) error {
 
 func main() {
 	// Create cluster
-	//cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3")
-	cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3", "cassandra4", "cassandra5") // Add more nodes for better performance
+	cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3")
+	// cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3", "cassandra4", "cassandra5") // Add more nodes for better performance
 	cluster.Keyspace = cassandraKeyspace
 	cluster.Consistency = gocql.Quorum
 	// cluster.Consistency = gocql.One

@@ -1,0 +1,66 @@
+./query_counts
+2026/02/05 22:52:24 Connected to Cassandra. Table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+2026/02/05 22:52:24 Using 4 parallel workers
+
+Hour     Count           Status      
+-----------------------------------
+0        121010          OK          
+1        120596          OK          
+2        121226          OK          
+3        121270          OK          
+4        121716          OK          
+5        122160          OK          
+6        121972          OK          
+7        122047          OK          
+8        122059          OK          
+9        121469          OK          
+10       122388          OK          
+11       122080          OK          
+12       122113          OK          
+13       122285          OK          
+14       122394          OK          
+15       122311          OK          
+16       122187          OK          
+17       120226          OK          
+18       112774          OK          
+19       121233          OK          
+20       121961          OK          
+21       121507          OK          
+22       121348          OK          
+23       121231          OK          
+-----------------------------------
+Total records: 2911563
+Total time: 2.89 seconds
+Errors: 0
+
+
+./query_c
+ounts -workers 1 | tail -3
+Testing with 1 worker:
+2026/02/05 22:53:37 Connected to Cassandra. Table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+2026/02/05 22:53:37 Using 1 parallel workers
+Total records: 2911563
+Total time: 9.24 seconds
+Errors: 0
+
+
+./query_counts -workers 8 
+| tail -3
+Testing with 8 workers:
+2026/02/05 22:55:04 Connected to Cassandra. Table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+2026/02/05 22:55:04 Using 8 parallel workers
+Total records: 2911563
+Total time: 2.46 seconds
+Errors: 0
+
+./query_counts -hour 10
+2026/02/05 22:55:54 Connected to Cassandra. Table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+2026/02/05 22:55:54 Using 4 parallel workers
+Hour 10: 122388 records (444.99 ms)
+
+./query_counts -workers 12
+2026/02/05 22:56:57 Connected to Cassandra. Table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+2026/02/05 22:56:57 Using 12 parallel workers
+Total records: 2911563
+Total time: 2.60 seconds
+Errors: 0

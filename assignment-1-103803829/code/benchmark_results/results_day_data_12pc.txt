@@ -65,3 +65,11 @@ SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHER
  count
 -------
     24
+
+
+
+
+
+   2026/02/05 20:46:25 Created table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+   2026/02/05 20:46:35 Throughput: 1618.23 records/s over 10.0s (total inserted: 16200)
+   2026/02/05 20:47:48 Inserted 25 records (total: 243650, consumed messages: 243650)

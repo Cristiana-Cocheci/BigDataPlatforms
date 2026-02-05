@@ -109,13 +109,33 @@ In Cassandra, this record is stored as a single row in the table `mysimbdp_weath
 
 The consistency options for Cassandra are ONE (where only 1 node needs to acknowledge a datapoint), QUORUM (where the majority is asked) and ALL (all nodes need to have received the record properly). I chose QUORUM for the balance between speed / availability and consistency.
 
-4. 
- 
-5. 
+4. Logs of the different tests can be found in [benchmark_results](../code/benchmark_results/). The following table has been tested on 3 nodes with QUORUM consistency.
+
+|Nodes|Producer Performance (time (s) / throughput (msg/10s))| Consumer Performance (throughput (msg/s))| Comments|
+|:--:|:--:|:--:|:--:|
+|1|16.61s /175490.22 msg/s |4738.74 records/s over 10.0s| CRASHED after 20 minutes - internal network failure|
+|5|59.36s / 9820.54 msg/s|3306.25 records/s over 10.0s| COMPELTED in <2 min|
+|10|31.27 / 9322.22 msg/s|5025.97 records/s over 10.0s| COMPELTED in <1.5 min|
+|12|26.19s / 9273.62 msg/s| 4219.90 records/s over 10.0s| COMPELTED in <1.5 min|
+
+I have also tested different consistency strategies (more replication with 5 nodes, ALL/ ONE consistency etc.), but the performance was virtually the same in all of them, even if theoretically there should have been differences. The assumption is that because everything is done locally on my machine, the transit and messaging complexity is very low.
+
+5. The script to querying data as a tenant can be found in [query_counts.go](../code/query_counts.go). It implements the basic usecase of querying hourly data about sensors. I have tested it for multiple concurrent workers. The logs of the results can be seen in [tenant_tests](../code/benchmark_results/tenant_tests.txt). The query is looking through almost 3 million records and the performance is as follows:
+
+|workers|speed (seconds)|errors|
+|:--:|:--:|:--:|
+|1| 9.24 | 0|
+|4| 2.89 | 0|
+|8| 2.46 | 0|
+|12| 2.6 | 0|
+
+
+
+
 
 ## PART 3 - EXTENSION
 
-1.
+1. 
 
 2.
 
@@ -123,4 +143,11 @@ The consistency options for Cassandra are ONE (where only 1 node needs to acknow
 
 4.
 
-5.
+5. 
+For sensor data, a natural constraint would be:
+- **Hot space:** Data from the last 30 days. These records have high query frequency (real-time dashboards, recent trend analysis, anomaly detection), require low latency (<100ms), and are frequently updated/verified. This data is stored on fast SSD-based Cassandra nodes with replication factor 3.
+- **Cold space:** Data older than 30 days. These records have low query frequency (historical analysis, compliance archival), can tolerate higher latency (1-5s), and are immutable. This data is stored on cheaper HDD-based nodes or object storage (S3/Azure Blob) with replication factor 1.
+
+For migration from Hot to Cold, a daily service could run, that selects the tables from the days that are old enough and exports them to the cold storage, after which it delets them from the hot one.
+
+A possible inconsistency problem is if a query arrives during migration, it may hit partially-migrated data. This should be avoided by marking data as *in-transit-data*.

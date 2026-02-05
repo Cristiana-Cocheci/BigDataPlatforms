@@ -1,8 +1,0 @@
-{
-    "baseURL"     : "https://archive.sensor.community",
-	"sensorTypes" : ["bme280", "bmp180", "bmp280", "dht22", "ds18b20", "hpm", "sds011"],
-    "batchSize"   : 100,
-    "maxRetries"  : 3,
-    "tenantID"    : "your-tenant-id",
-    "cassandraKeyspace": "mysimpdb"
-}
