@@ -109,7 +109,7 @@ In Cassandra, this record is stored as a single row in the table `mysimbdp_weath
 
 The consistency options for Cassandra are ONE (where only 1 node needs to acknowledge a datapoint), QUORUM (where the majority is asked) and ALL (all nodes need to have received the record properly). I chose QUORUM for the balance between speed / availability and consistency.
 
-4. Logs of the different tests can be found in [benchmark_results](../code/benchmark_results/). The following table has been tested on 3 nodes with QUORUM consistency.
+4. Logs of the different tests can be found in [benchmark_results](../code/benchmark_results/). The following table has been tested on 3 nodes with QUORUM consistency. The dataset size is 3mil records, or 250MB.
 
 |Nodes|Producer Performance (time (s) / throughput (msg/10s))| Consumer Performance (throughput (msg/s))| Comments|
 |:--:|:--:|:--:|:--:|
