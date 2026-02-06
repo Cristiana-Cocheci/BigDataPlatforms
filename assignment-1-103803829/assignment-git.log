@@ -1,2 +1,65 @@
-the content of this file should be the output of the log of your own git project for this assignment
-using git log command to export your git log
+commit c3a758b790615731c194ca59fb280cd1143ee55b (HEAD -> main, origin/main)
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Fri Feb 6 10:21:20 2026 +0200
+
+    report revision
+
+commit 4a383ad3c9976f35879cc7e37276080be859c8eb
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Fri Feb 6 10:01:26 2026 +0200
+
+    demo revision
+
+commit 3b580daf06c50dbcf63422187d6d98e417803930
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Fri Feb 6 09:18:34 2026 +0200
+
+    part 3
+
+commit a1e89a243f12716bc9694e5cb4f5bddfceafaba7
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Feb 5 23:37:11 2026 +0200
+
+    revise report
+
+commit 325af1ac25167cfd6e8e9bb9594013ac57584d20
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Feb 5 23:34:59 2026 +0200
+
+    report part 2 and deployment instructions
+
+commit 3a17d7eb78639b621d06b78f87b076fad1725192
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Feb 5 22:02:36 2026 +0200
+
+    report part 1
+
+commit a408ba6af124140f3face62b20827ad354a5365e
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Wed Feb 4 19:45:43 2026 +0200
+
+    tried different consistencies and number of cassandra nodes
+
+commit 85a0a6e50c315ddc196d93642886f0d9bb144325
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Wed Feb 4 19:01:42 2026 +0200
+
+    ingestion testing with 10 and 12 parallel nodes
+
+commit 1ed877b8b05500212b9d42d273222dc4d8fa00f4
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Feb 3 21:21:26 2026 +0200
+
+    ingestion with proper parallelization, part 1
+
+commit 4240bfe0cd034cb78af93449e7bc22cde7da6779
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Feb 3 11:46:33 2026 +0200
+
+    ingestion skeleton
+
+commit fb557c77c3f849f5d0bbf6e851d21131fe2ac6e9
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Sat Jan 31 10:40:34 2026 +0200
+
+    Initial commit

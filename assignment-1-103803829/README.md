@@ -35,7 +35,7 @@ The assignment delivery will be everything within the top directory **assignment
 
 ## Programming Languages
 
-You must use only **Java, JavaScript/TypeScript, Python, or shell scripts**
+You must use only **Java, JavaScript/TypeScript, Python, GoLang or shell scripts**
 >If you want to use other programming languages you can discuss with the responsible teacher
 
 ## Recommendations
