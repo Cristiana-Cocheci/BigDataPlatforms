@@ -68,7 +68,14 @@ docker exec -it cassandra1 cqlsh
 
 # Query by hour and sensor (also efficient - filtered within partition):
 > SELECT * FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10 AND sensor_id = 113 LIMIT 5;
+```
 
+8. Tenant Querying script testing
 
+```
+./query_counts -workers [num_workers]
 
+#Optionally, you can further filter data by
+
+./query_counts -workers [num_workers] --day [day] --hour [hour]
 ```

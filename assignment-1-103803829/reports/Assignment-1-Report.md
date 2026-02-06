@@ -61,7 +61,7 @@ Kafka and Cassandra are third parties.
 
 **Why Go?** It has integrated concurrency through the go channels. It is very fast.
 
-![Design Schema](../bdp_full_2.drawio.svg)
+![Design Schema](../code/auxx/bdp_full_2.drawio.svg)
 
 3. The Cassandra cluster is shared between tenants. It is configured to have 3 nodes, split between 2 datacenters (DC1 and DC2). This enables a resilience against the single-point-of-failure problem. All nodes are holding the same data - this replication grants the desired redundancy.
 
@@ -71,14 +71,14 @@ Kafka and Cassandra are third parties.
 
 ## PART 2 - IMPLEMENTATION
 
-1. ![Schema implementation](../bdp.drawio%20(1).svg)
+1. ![Schema implementation](../code/auxx/bdp.drawio%20(1).svg)
 For this assignment's implementation everything is run locally on my computer. I have 12 cores, so that s the maximum number of producers/consumers/partitions i can run at once.
 
 The datacenters in the figure above are only theoretical.
 
 The following figure shows the database schema used. There is only one table called  *mysimbdp_weather.sensor_measurements_BME280_2025_06_01*. This table holds all the data for sensor BME280 from the respective day (230 MB).
 
-![Table](../table_example.drawio.svg)
+![Table](../code/auxx/table_example.drawio.svg)
 
 2. The partitioning inside data ingestion is made by *sensor_id*. This is done so that the consumers can insert a whole batch at once into Cassandra, without any overhead, since all points will end up in the same Cassandra partition anyway. For example,a bad partition key I have tried was (hour, sensor_id) - this was too agressive, so consumers were stuck trying to fill up a batch of points from the same sensor in the same hour, which severly impacted throughput.
 
@@ -135,18 +135,114 @@ I have also tested different consistency strategies (more replication with 5 nod
 
 ## PART 3 - EXTENSION
 
-1. 
+1. The types of lineage that would be useful to support are:
+ - source lineage : original data source, original file name, size, timestamp
+ - ingestion lineage : producer/consumer instance id, partition assignment, ingestion timestamp
+ - database lineage : number of replication, nodes, consistency 
+ - quality control : number of ingested vs. stored records
 
-2.
+They would be captured at the levels of [producer.go](../code/producer.go), at broker level, at [consumer.go](../code/consumer.go)...
 
-3.
+They would be stored in a separate lineage table inside Cassandra.
 
-4.
+Example: 
+
+```json
+{
+  "lineage_id": "lineage-2025-06-01-bme280-tenant123",
+  "tenant_id": "tenant-123",
+  "source": {
+    "type": "http-csv",
+    "url": "http://archive.sensor.community/2025-06-01_bme280.csv",
+    "file_size_bytes": 247123456,
+    "record_count": 2914834,
+    "download_timestamp": "2025-06-01T08:15:00Z"
+  },
+  "dataset": {
+    "sensor_type": "BME280",
+    "day": "2025-06-01",
+    "cassandra_table": "mysimbdp_weather.sensor_measurements_BME280_2025_06_01"
+  },
+  "pipeline": {
+    "kafka_topic": "bme280-measurements",
+    "producer_id": "producer-3",
+    "kafka_partitions_used": 12,
+    "consumer_id": "consumer-5",
+    "replication_factor": 1
+  },
+  "execution": {
+    "start_time": "2025-06-01T08:16:00Z",
+    "end_time": "2025-06-01T08:18:26Z",
+    "duration_seconds": 146
+  },
+  "data_quality": {
+    "records_ingested": 2914834,
+    "records_stored": 2914834,
+    "records_failed": 0,
+    "consistency_level": "QUORUM"
+  }
+}
+```
+
+2. 
+Since each tenant needs a dedicated mysimbdp-coredms, the registry (etcd/Consul/ZooKeeper) would store a hierarchical mapping of tenant → coredms configuration. The schema would include:
+
+**Registry Structure:**
+```
+/mysimbdp/
+  /tenants/
+    /tenant-1/
+      /coredms/
+        - cassandra_hosts: ["cassandra-tenant1-1:9042", "cassandra-tenant1-2:9042", "cassandra-tenant1-3:9042"]
+        - cassandra_keyspace: "mysimbdp_weather_tenant1"
+        - replication_factor: 3
+        - consistency_level: "QUORUM"
+        - datacenter: "DC1"
+        - status: "healthy"
+      /kafka/
+        - brokers: ["kafka-tenant1:9092"]
+        - topic_prefix: "tenant1-"
+        - partitions: 12
+    
+    /tenant-2/
+      /coredms/
+        - cassandra_hosts: ["cassandra-tenant2:9042"]
+        - cassandra_keyspace: "mysimbdp_weather_tenant2"
+        - replication_factor: 1
+        - consistency_level: "ONE"
+        - datacenter: "DC2"
+        - status: "healthy"
+      ...
+```
+<!-- 
+**Discovery Workflow:**
+1. Tenant "tenant-123" wants to ingest data
+2. mysimbdp-dataingest queries registry: `GET /mysimbdp/tenants/tenant-123/coredms`
+3. Gets back: cassandra_hosts, keyspace, consistency_level
+4. Connects to the dedicated Cassandra cluster for that tenant -->
+
+This schema enables service discovery by storing which Cassandra cluster (mysimbdp-coredms) belongs to which tenant, allowing the ingestion pipeline to dynamically discover and connect to the correct database instance.
+
+3. **Integrating Service and Data Discovery into mysimbdp-dataingest:**
+
+To integrate with the discovery schema defined in Q2, mysimbdp-dataingest (producer.go and consumer.go) would need the following changes:
+- Add etcd/Consul client library
+- On startup, query `/mysimbdp/tenants/{tenant_id}/kafka/brokers` to get Kafka broker addresses instead of hardcoded `kafka:29092`
+- On startup, query `/mysimbdp/tenants/{tenant_id}/coredms` to get Cassandra hosts, keyspace, and consistency_level instead of hardcoded values, then connect to the desired Cassandra cluster
+
+
+With this integration, multi-tenant instances automatically discover their dedicated mysimbdp-coredms cluster, can scale without code changes, and the system tracks which producer/consumer instances are healthy.
+
+4. With a new Data-as-a-Service (DaaS) layer, I change mysimbdp-dataingest to write through mysimbdp-daas instead of directly to Cassandra. Architecture:
+
+![DAAS](../code/auxx/daas.drawio.svg)
+
+Benefits: Single entry point for all data access, enforces tenant isolation and enforces authentication. External producers/consumers also use mysimbdp-daas APIs to read/write, ensuring consistent access patterns and security.
 
 5. 
 For sensor data, a natural constraint would be:
 - **Hot space:** Data from the last 30 days. These records have high query frequency (real-time dashboards, recent trend analysis, anomaly detection), require low latency (<100ms), and are frequently updated/verified. This data is stored on fast SSD-based Cassandra nodes with replication factor 3.
-- **Cold space:** Data older than 30 days. These records have low query frequency (historical analysis, compliance archival), can tolerate higher latency (1-5s), and are immutable. This data is stored on cheaper HDD-based nodes or object storage (S3/Azure Blob) with replication factor 1.
+- **Cold space:** Data older than 30 days. These records have low query frequency (historical analysis, compliance archival), can tolerate higher latency (1-5s), and are immutable. This data is stored on cheaper nodes or object storage (S3/Azure Blob) with replication factor 1.
 
 For migration from Hot to Cold, a daily service could run, that selects the tables from the days that are old enough and exports them to the cold storage, after which it delets them from the hot one.
 
