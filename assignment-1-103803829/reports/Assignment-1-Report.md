@@ -1,8 +1,8 @@
 # This your assignment report
 
 **AI Usage Disclosure**:
->I declare that I have not used AI for writing the assignment report
->I declare that I have not used/I have used XYZ for code generation (include scripts, configuration, ...)
+>I declare that I have not used AI for writing the assignment report\
+>I declare that I have used VSCode Copilot for code generation.
 
 
 
@@ -67,12 +67,12 @@ Kafka and Cassandra are third parties.
 
 4. At Cassandra level, replication is 3 - because of the 3 nodes. At Kafka level, ideally replication would also be 2/3 when the number of Brokers is more than 1. 
 
-5. Ideally, the two datacenters would be in different geographical locations, and the dataingest will be as close as possible to the datacenter with more nodes. The advantage of this is that the path from tenant to datacenter has to be done either way, so we move the whole process to DC1, for instance. Then during ingestion, since the majority of nodes are in the same location, there is little network traffic. Of course, there is traffic from DC1 to DC2, but that would also be inevitable, since the nodes from cassandra communicate with eachother.
+5. Ideally, the two datacenters would be in different geographical locations, and the dataingest will be as close as possible to the datacenter with more nodes. The **advantage** of this is that the path from tenant to datacenter has to be done either way, so we move the whole process to DC1, for instance. Then during ingestion, since the majority of nodes are in the same location, there is little network traffic. Of course, **adisadvantage** is that there is traffic from DC1 to DC2, but that would also be inevitable, since the nodes from cassandra communicate with eachother. Also, in case of DC1 failure, the traffic would increase.
 
 ## PART 2 - IMPLEMENTATION
 
 1. ![Schema implementation](../code/auxx/bdp.drawio%20(1).svg)
-For this assignment's implementation everything is run locally on my computer. I have 12 cores, so that s the maximum number of producers/consumers/partitions i can run at once.
+For this assignment's implementation everything is run locally on my computer. I have 12 cores, so that s the maximum number of producers/consumers/partitions i can run at once. The resources are very limited, hence the need for heavy parallelization for scalability.
 
 The datacenters in the figure above are only theoretical.
 
@@ -109,7 +109,7 @@ In Cassandra, this record is stored as a single row in the table `mysimbdp_weath
 
 The consistency options for Cassandra are ONE (where only 1 node needs to acknowledge a datapoint), QUORUM (where the majority is asked) and ALL (all nodes need to have received the record properly). I chose QUORUM for the balance between speed / availability and consistency.
 
-4. Logs of the different tests can be found in [benchmark_results](../code/benchmark_results/). The following table has been tested on 3 nodes with QUORUM consistency. The dataset size is 3mil records, or 250MB.
+4. More logs of the different tests can be found in `[benchmark_results](../code/benchmark_results/)`. The following table has been tested on 3 nodes with QUORUM consistency. The dataset size is 3mil records, or 250MB.
 
 |Nodes|Producer Performance (time (s) / throughput (msg/10s))| Consumer Performance (throughput (msg/s))| Comments|
 |:--:|:--:|:--:|:--:|
@@ -118,18 +118,108 @@ The consistency options for Cassandra are ONE (where only 1 node needs to acknow
 |10|31.27 / 9322.22 msg/s|5025.97 records/s over 10.0s| COMPELTED in <1.5 min|
 |12|26.19s / 9273.62 msg/s| 4219.90 records/s over 10.0s| COMPELTED in <1.5 min|
 
-I have also tested different consistency strategies (more replication with 5 nodes, ALL/ ONE consistency etc.), but the performance was virtually the same in all of them, even if theoretically there should have been differences. The assumption is that because everything is done locally on my machine, the transit and messaging complexity is very low.
+**!!!** I have also tested different consistency strategies (more replication with 5 nodes, ALL/ ONE consistency etc.), but the performance was virtually the same in all of them, even if theoretically there should have been differences. The assumption is that because everything is done locally on my machine, the transit and messaging complexity is very low. The logs from those can also be found in `[benchmark_results](../code/benchmark_results/)`
+
+
+**Producer logs - 12 concurrent producers**
+```
+...
+producer0-1   | 2026/02/04 16:52:15 Performance: Duration=26.13s, Throughput=9294.98 msg/s
+producer9-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer9-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer9-1   | 2026/02/04 16:52:15 Performance: Duration=26.26s, Throughput=9249.89 msg/s
+producer1-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer1-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer1-1   | 2026/02/04 16:52:15 Performance: Duration=26.15s, Throughput=9288.94 msg/s
+producer7-1   | 2026/02/04 16:52:15 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer7-1   | 2026/02/04 16:52:15 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer7-1   | 2026/02/04 16:52:15 Performance: Duration=26.19s, Throughput=9273.62 msg/s
+producer1-1 exited with code 0
+producer5-1 exited with code 0
+producer3-1 exited with code 0
+producer2-1 exited with code 0
+producer4-1 exited with code 0
+producer0-1 exited with code 0
+producer10-1 exited with code 0
+producer9-1 exited with code 0
+```
+
+**Consumer logs**
+```
+2026/02/05 20:46:25 Created table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+
+... 
+
+2026/02/05 20:46:35 Throughput: 1618.23 records/s over 10.0s (total inserted: 16200)
+
+... 
+
+2026/02/05 20:47:48 Inserted 25 records (total: 243650, consumed messages: 243650)
+```
+
+**Testing after ingestion**
+```
+ cqlsh> SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 10;
+
+
+ count
+--------
+ 122388
+
+
+ cqlsh> SELECT COUNT(*) FROM mysimbdp_weather.sensor_measurements_BME280_2025_06_01 WHERE hour = 0 and sensor_id=113;
+
+ count
+-------
+    24
+```
 
 5. The script to querying data as a tenant can be found in [query_counts.go](../code/query_counts.go). It implements the basic usecase of querying hourly data about sensors. I have tested it for multiple concurrent workers. The logs of the results can be seen in [tenant_tests](../code/benchmark_results/tenant_tests.txt). The query is looking through almost 3 million records and the performance is as follows:
 
-|workers|speed (seconds)|errors|
-|:--:|:--:|:--:|
-|1| 9.24 | 0|
-|4| 2.89 | 0|
-|8| 2.46 | 0|
-|12| 2.6 | 0|
+|workers|speed (seconds)|errors|redords queried|
+|:--:|:--:|:--:|:--:|
+|1| 9.24 | 0|2911563|
+|4| 2.89 | 0|2911563|
+|8| 2.46 | 0|2911563|
+|12| 2.6 | 0|2911563|
 
 
+```
+./query_counts
+2026/02/05 22:52:24 Connected to Cassandra. Table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+2026/02/05 22:52:24 Using 4 parallel workers
+
+Hour     Count           Status      
+-----------------------------------
+0        121010          OK          
+1        120596          OK          
+2        121226          OK          
+3        121270          OK          
+4        121716          OK          
+5        122160          OK          
+6        121972          OK          
+7        122047          OK          
+8        122059          OK          
+9        121469          OK          
+10       122388          OK          
+11       122080          OK          
+12       122113          OK          
+13       122285          OK          
+14       122394          OK          
+15       122311          OK          
+16       122187          OK          
+17       120226          OK          
+18       112774          OK          
+19       121233          OK          
+20       121961          OK          
+21       121507          OK          
+22       121348          OK          
+23       121231          OK          
+-----------------------------------
+Total records: 2911563
+Total time: 2.89 seconds
+Errors: 0
+```
 
 
 
@@ -185,7 +275,7 @@ Example:
 ```
 
 2. 
-Since each tenant needs a dedicated mysimbdp-coredms, the registry (etcd/Consul/ZooKeeper) would store a hierarchical mapping of tenant → coredms configuration. The schema would include:
+Since each tenant needs a dedicated mysimbdp-coredms, the registry (etcd/Consul/ZooKeeper) would store a hierarchical mapping of tenant - coredms configuration. The schema would include:
 
 **Registry Structure:**
 ```
@@ -208,8 +298,8 @@ Since each tenant needs a dedicated mysimbdp-coredms, the registry (etcd/Consul/
       /coredms/
         - cassandra_hosts: ["cassandra-tenant2:9042"]
         - cassandra_keyspace: "mysimbdp_weather_tenant2"
-        - replication_factor: 1
-        - consistency_level: "ONE"
+        - replication_factor: 3
+        - consistency_level: "QUORUM"
         - datacenter: "DC2"
         - status: "healthy"
       ...
