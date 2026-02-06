@@ -84,6 +84,9 @@ docker exec -it cassandra1 cqlsh
 8. Tenant Querying script testing
 
 ```
+# Build file first
+go build query_counts.go
+# Then run
 ./query_counts --day "2025_01_01" --workers [num_workers] 
 
 #Optionally, you can further filter data by
