@@ -1,0 +1,11 @@
+20:11:52 Started
+2026/02/05 20:23:25 Throughput: 4738.74 records/s over 10.0s (total inserted: 1440300)
+
+2026/02/05 20:31:01 error: failed to connect to "[HostInfo hostname=\"cassandra1\" connectAddress=\"172.19.0.3\" peer=\"<nil>\" rpc_address=\"<nil>\" broadcast_address=\"<nil>\" preferred_ip=\"<nil>\" connect_addr=\"172.19.0.3\" connect_addr_source=\"connect_address\" port=9042 data_centre=\"\" rack=\"\" host_id=\"aa2947da-1304-421c-a09e-856168991d64\" version=\"v0.0.0\" state=UP num_tokens=0]" due to error: gocql: no response received from cassandra within timeout period
+
+
+producer0-1  | 2026/02/05 20:11:52 Started reading CSV file: /data/chunks/chunk_0.csv
+producer0-1  | 2026/02/05 20:12:09 Production complete! Total messages produced: 2914834, Total lines processed: 2914835
+producer0-1  | 2026/02/05 20:12:09 Performance: Duration=16.61s, Throughput=175490.22 msg/s
+producer0-1 exited with code 0
+

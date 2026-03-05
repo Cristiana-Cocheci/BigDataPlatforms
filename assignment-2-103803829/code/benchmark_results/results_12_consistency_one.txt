@@ -1,0 +1,23 @@
+2026/02/04 17:12:25 Throughput: 3465.88 records/s over 10.0s (total inserted: 62950)
+
+2026/02/04 17:12:05 Created table: mysimbdp_weather.sensor_measurements_BME280_2025_06_01
+
+2026/02/04 17:12:05 Inserted 25 records (total: 25, consumed messages: 25)
+2026/02/04 17:13:31 Inserted 25 records (total: 223900, consumed messages: 223900)
+
+
+producer6-1   | 2026/02/04 17:11:42 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer6-1   | 2026/02/04 17:11:42 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer6-1   | 2026/02/04 17:11:42 Performance: Duration=25.88s, Throughput=9387.44 msg/s
+producer0-1   | 2026/02/04 17:11:42 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer0-1   | 2026/02/04 17:11:42 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer0-1   | 2026/02/04 17:11:42 Performance: Duration=25.89s, Throughput=9380.64 msg/s
+producer4-1 exited with code 0
+producer7-1   | 2026/02/04 17:11:42 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer7-1   | 2026/02/04 17:11:42 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer7-1   | 2026/02/04 17:11:42 Performance: Duration=25.81s, Throughput=9412.21 msg/s
+producer9-1   | 2026/02/04 17:11:42 Produced 2903 messages (total: 242903, processed lines: 242904)
+producer9-1   | 2026/02/04 17:11:42 Production complete! Total messages produced: 242903, Total lines processed: 242904
+producer9-1   | 2026/02/04 17:11:42 Performance: Duration=25.81s, Throughput=9411.98 msg/s
+producer5-1 exited with code 0
+producer8-1 exited with code 0

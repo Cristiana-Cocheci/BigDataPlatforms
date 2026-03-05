@@ -1,0 +1,21 @@
+# kafka producer batch 10.000
+
+producer0-1  | 2026/02/03 19:04:14 Produced 2967 messages (total: 582967, processed lines: 582968)
+producer0-1  | 2026/02/03 19:04:14 Production complete! Total messages produced: 582967, Total lines processed: 582968
+producer0-1  | 2026/02/03 19:04:14 Performance: Duration=55.96s, Throughput=10418.31 msg/s
+producer2-1  | 2026/02/03 19:04:14 Produced 10000 messages (total: 560000, processed lines: 560001)
+producer0-1 exited with code 0
+producer1-1  | 2026/02/03 19:04:15 Produced 2967 messages (total: 582967, processed lines: 582968)
+producer1-1  | 2026/02/03 19:04:15 Production complete! Total messages produced: 582967, Total lines processed: 582968
+producer1-1  | 2026/02/03 19:04:15 Performance: Duration=56.99s, Throughput=10228.69 msg/s
+producer2-1  | 2026/02/03 19:04:15 Produced 10000 messages (total: 570000, processed lines: 570001)
+producer1-1 exited with code 0
+producer2-1  | 2026/02/03 19:04:16 Produced 10000 messages (total: 580000, processed lines: 580001)
+producer2-1  | 2026/02/03 19:04:17 Produced 2967 messages (total: 582967, processed lines: 582968)
+producer2-1  | 2026/02/03 19:04:17 Production complete! Total messages produced: 582967, Total lines processed: 582968
+producer2-1  | 2026/02/03 19:04:17 Performance: Duration=59.36s, Throughput=9820.54 msg/s
+producer2-1 exited with code 0
+
+# batching consumer 25
+
+consumer3-1  | 2026/02/03 19:06:13 Throughput: 3306.25 records/s over 10.0s (total inserted: 584675)
