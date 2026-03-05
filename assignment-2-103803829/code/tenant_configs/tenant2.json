@@ -1,0 +1,8 @@
+{
+  "tenant_id": "tenant2",
+  "schema_profile": "dht22",
+  "table_prefix": "sensor_observations",
+  "csv_format": "dht22_compact",
+  "source_csv": "/data/tenant2/2025-06-01_dht22.csv",
+  "source_chunk_dir": "/data/tenant2/chunks"
+}

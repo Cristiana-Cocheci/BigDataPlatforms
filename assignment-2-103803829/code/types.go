@@ -1,21 +1,36 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 const (
-	smallcsvFilePath   = "/data/2025-01-01_bme280_sensor_113.csv"
-	csvFilePath        = "/data/2025-06_bme280.csv"
-	mediumcsvFilePath  = "/data/2025-06-01_bme280.csv"
-	kafkaBrokers       = "kafka:29092"
-	kafkaTopic         = "bme280-measurements"
-	kafkaConsumerGroup = "bme280-consumer-group"
-	cassandraKeyspace  = "mysimbdp_weather"
-	batchSize          = 25    // for Cassandra inserts
-	kafkaBatchSize     = 10000 // for Kafka producer
+	smallcsvFilePath          = "/data/2025-01-01_bme280_sensor_113.csv"
+	csvFilePath               = "/data/2025-06-01_bme280.csv"
+	defaultKafkaBrokers       = "kafka:29092"
+	defaultKafkaTopic         = "bme280-measurements"
+	defaultKafkaConsumerGroup = "bme280-consumer-group"
+	defaultCassandraKeyspace  = "mysimbdp_weather"
+	defaultCassandraHosts     = "cassandra1,cassandra2,cassandra3"
+	defaultTenantConfigDir    = "./tenant_configs"
+	csvFormatBME280Full       = "bme280_full"
+	csvFormatDHT22Compact     = "dht22_compact"
+	batchSize                 = 25    // for Cassandra inserts
+	kafkaBatchSize            = 10000 // for Kafka producer
+)
+
+var (
+	kafkaBrokers       = getEnv("KAFKA_BROKERS", defaultKafkaBrokers)
+	kafkaTopic         = getEnv("KAFKA_TOPIC", defaultKafkaTopic)
+	kafkaConsumerGroup = getEnv("KAFKA_CONSUMER_GROUP", defaultKafkaConsumerGroup)
+	cassandraKeyspace  = getEnv("CASSANDRA_KEYSPACE", defaultCassandraKeyspace)
+	cassandraHosts     = parseCSVList(getEnv("CASSANDRA_HOSTS", defaultCassandraHosts))
 )
 
 type MeasurementJSON struct {
@@ -47,6 +62,97 @@ type Measurement struct {
 	pressure_sealevel *float32
 	temperature       *float32
 	humidity          *float32
+}
+
+type TenantConfig struct {
+	TenantID       string `json:"tenant_id"`
+	SchemaProfile  string `json:"schema_profile"`
+	TablePrefix    string `json:"table_prefix"`
+	CSVFormat      string `json:"csv_format"`
+	SourceCSV      string `json:"source_csv"`
+	SourceChunkDir string `json:"source_chunk_dir"`
+}
+
+func getEnv(key string, defaultValue string) string {
+	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func parseCSVList(value string) []string {
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+
+	if len(result) == 0 {
+		return []string{"cassandra1", "cassandra2", "cassandra3"}
+	}
+
+	return result
+}
+
+func loadTenantConfig(tenantID string) (TenantConfig, error) {
+	normalizedTenantID := strings.ToLower(strings.TrimSpace(tenantID))
+	if normalizedTenantID == "" {
+		normalizedTenantID = "tenant1"
+	}
+
+	configDir := getEnv("TENANT_CONFIG_DIR", defaultTenantConfigDir)
+	configPath := filepath.Join(configDir, normalizedTenantID+".json")
+
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return TenantConfig{}, fmt.Errorf("failed to read tenant config %s: %w", configPath, err)
+	}
+
+	var config TenantConfig
+	if err := json.Unmarshal(content, &config); err != nil {
+		return TenantConfig{}, fmt.Errorf("failed to parse tenant config %s: %w", configPath, err)
+	}
+
+	config.applyDefaults(normalizedTenantID)
+	return config, nil
+}
+
+func (config *TenantConfig) applyDefaults(tenantID string) {
+	if strings.TrimSpace(config.TenantID) == "" {
+		config.TenantID = tenantID
+	}
+
+	if strings.TrimSpace(config.SchemaProfile) == "" {
+		if tenantID == "tenant2" {
+			config.SchemaProfile = "dht22"
+		} else {
+			config.SchemaProfile = "bme280"
+		}
+	}
+
+	if strings.TrimSpace(config.TablePrefix) == "" {
+		config.TablePrefix = "sensor_measurements"
+	}
+
+	if strings.TrimSpace(config.CSVFormat) == "" {
+		if tenantID == "tenant2" {
+			config.CSVFormat = csvFormatDHT22Compact
+		} else {
+			config.CSVFormat = csvFormatBME280Full
+		}
+	}
+
+	if strings.TrimSpace(config.SourceCSV) == "" {
+		config.SourceCSV = csvFilePath
+	}
+
+	if strings.TrimSpace(config.SourceChunkDir) == "" {
+		config.SourceChunkDir = "/data/chunks"
+	}
 }
 
 // Shared helper functions

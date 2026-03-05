@@ -10,6 +10,8 @@ from pathlib import Path
 
 # Hardcode the date to extract
 TARGET_DATE = "2025-06-01"
+SENSORTYPE = ["bme280", "dht22"]  # Not used in this script, but can be extended for future filtering by sensor type
+target_sensor=SENSORTYPE[1]
 
 def extract_by_date(input_file, target_date):
     """Extract only specified date from CSV file."""
@@ -50,7 +52,7 @@ def extract_by_date(input_file, target_date):
         sys.exit(1)
     
     # Write output file
-    output_file = output_dir / f"{target_date}_bme280.csv"
+    output_file = output_dir / f"{target_date}_{target_sensor}.csv"
     
     with open(output_file, 'w', newline='') as f:
         writer = csv.writer(f, delimiter=';')

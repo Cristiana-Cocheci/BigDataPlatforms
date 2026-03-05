@@ -1,0 +1,8 @@
+{
+  "tenant_id": "tenant1",
+  "schema_profile": "bme280",
+  "table_prefix": "sensor_measurements",
+  "csv_format": "bme280_full",
+  "source_csv": "/data/tenant1/2025-06-01_bme280.csv",
+  "source_chunk_dir": "/data/tenant1/chunks"
+}

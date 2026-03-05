@@ -14,43 +14,229 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-func getTableName(sensorType string, day string) string {
-	// Replace dashes with underscores for valid Cassandra table name
-	safeDay := strings.ReplaceAll(day, "-", "_")
-	return fmt.Sprintf("mysimbdp_weather.sensor_measurements_%s_%s", sensorType, safeDay)
+type tenantSchemaProfile struct {
+	Name           string
+	TablePrefix    string
+	CreateTableCQL func(tableName string) string
+	InsertCQL      func(tableName string) string
+	BindValues     func(measurement *Measurement) []any
 }
 
-func createTableIfNotExists(session *gocql.Session, sensorType string, day string) error {
-	tableName := getTableName(sensorType, day)
+func activeTenantID() string {
+	tenantID := strings.ToLower(strings.TrimSpace(os.Getenv("TENANT_ID")))
+	if tenantID == "" {
+		return "tenant1"
+	}
+	return tenantID
+}
 
-	createQuery := fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			sensor_id int,
-			sensor_type text,
-			location float,
-			lat float,
-			lon float,
-			day text,
-			hour int,
-			timestamp text,
-			pressure float,
-			altitude float,
-			pressure_sealevel float,
-			temperature float,
-			humidity float,
-			PRIMARY KEY ((hour), sensor_id, timestamp)
-		)
-	`, tableName)
+func schemaForTenant(config TenantConfig) tenantSchemaProfile {
+	switch strings.ToLower(strings.TrimSpace(config.CSVFormat)) {
+	case csvFormatDHT22Compact:
+		return dht22CompactSchema(config)
+	case csvFormatBME280Full:
+		fallthrough
+	default:
+		return bme280Schema(config)
+	}
+}
 
-	if err := session.Query(createQuery).Exec(); err != nil {
-		return fmt.Errorf("failed to create table %s: %w", tableName, err)
+func bme280Schema(config TenantConfig) tenantSchemaProfile {
+	schemaName := strings.TrimSpace(config.SchemaProfile)
+	if schemaName == "" {
+		schemaName = "bme280"
 	}
 
-	log.Printf("Created table: %s", tableName)
+	tablePrefix := strings.TrimSpace(config.TablePrefix)
+	if tablePrefix == "" {
+		tablePrefix = "sensor_measurements"
+	}
+
+	return tenantSchemaProfile{
+		Name:        schemaName,
+		TablePrefix: tablePrefix,
+		CreateTableCQL: func(tableName string) string {
+			return fmt.Sprintf(`
+				CREATE TABLE IF NOT EXISTS %s (
+					sensor_id int,
+					sensor_type text,
+					location float,
+					lat float,
+					lon float,
+					day text,
+					hour int,
+					timestamp text,
+					pressure float,
+					altitude float,
+					pressure_sealevel float,
+					temperature float,
+					humidity float,
+					PRIMARY KEY ((day, hour), sensor_id, timestamp)
+				)
+			`, tableName)
+		},
+		InsertCQL: func(tableName string) string {
+			return fmt.Sprintf(
+				"INSERT INTO %s (sensor_id, sensor_type, location, lat, lon, day, hour, timestamp, pressure, altitude, pressure_sealevel, temperature, humidity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				tableName,
+			)
+		},
+		BindValues: func(measurement *Measurement) []any {
+			return []any{
+				measurement.sensor_id,
+				measurement.sensor_type,
+				measurement.location,
+				measurement.lat,
+				measurement.lon,
+				measurement.day,
+				measurement.hour,
+				measurement.timestamp,
+				measurement.pressure,
+				measurement.altitude,
+				measurement.pressure_sealevel,
+				measurement.temperature,
+				measurement.humidity,
+			}
+		},
+	}
+}
+
+func dht22CompactSchema(config TenantConfig) tenantSchemaProfile {
+	schemaName := strings.TrimSpace(config.SchemaProfile)
+	if schemaName == "" {
+		schemaName = "dht22"
+	}
+
+	tablePrefix := strings.TrimSpace(config.TablePrefix)
+	if tablePrefix == "" {
+		tablePrefix = "sensor_observations"
+	}
+
+	return tenantSchemaProfile{
+		Name:        schemaName,
+		TablePrefix: tablePrefix,
+		CreateTableCQL: func(tableName string) string {
+			return fmt.Sprintf(`
+				CREATE TABLE IF NOT EXISTS %s (
+					sensor_id int,
+					sensor_type text,
+					location float,
+					lat float,
+					lon float,
+					day text,
+					hour int,
+					timestamp text,
+					temperature float,
+					humidity float,
+					PRIMARY KEY ((day, hour), sensor_id, timestamp)
+				)
+			`, tableName)
+		},
+		InsertCQL: func(tableName string) string {
+			return fmt.Sprintf(
+				"INSERT INTO %s (sensor_id, sensor_type, location, lat, lon, day, hour, timestamp, temperature, humidity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				tableName,
+			)
+		},
+		BindValues: func(measurement *Measurement) []any {
+			return []any{
+				measurement.sensor_id,
+				measurement.sensor_type,
+				measurement.location,
+				measurement.lat,
+				measurement.lon,
+				measurement.day,
+				measurement.hour,
+				measurement.timestamp,
+				measurement.temperature,
+				measurement.humidity,
+			}
+		},
+	}
+}
+
+func float32ToText(value *float32) any {
+	if value == nil {
+		return nil
+	}
+	return strconv.FormatFloat(float64(*value), 'f', -1, 32)
+}
+
+func sanitizeIdentifierPart(input string, fallback string) string {
+	trimmed := strings.ToLower(strings.TrimSpace(input))
+	if trimmed == "" {
+		return fallback
+	}
+
+	var builder strings.Builder
+	previousUnderscore := false
+
+	for _, r := range trimmed {
+		switch {
+		case r >= 'a' && r <= 'z':
+			builder.WriteRune(r)
+			previousUnderscore = false
+		case r >= '0' && r <= '9':
+			builder.WriteRune(r)
+			previousUnderscore = false
+		case r == '_' || r == '-' || r == ' ' || r == '.':
+			if !previousUnderscore {
+				builder.WriteRune('_')
+				previousUnderscore = true
+			}
+		}
+	}
+
+	output := strings.Trim(builder.String(), "_")
+	if output == "" {
+		return fallback
+	}
+
+	return output
+}
+
+func validateManagedWorkerContract() error {
+	required := []string{
+		"TENANT_ID",
+		"KAFKA_BROKERS",
+		"KAFKA_TOPIC",
+		"KAFKA_CONSUMER_GROUP",
+		"CASSANDRA_KEYSPACE",
+		"CASSANDRA_HOSTS",
+	}
+
+	missing := make([]string, 0)
+	for _, key := range required {
+		if strings.TrimSpace(os.Getenv(key)) == "" {
+			missing = append(missing, key)
+		}
+	}
+
+	if len(missing) > 0 {
+		return fmt.Errorf("managed worker contract violation: missing env %s", strings.Join(missing, ", "))
+	}
+
 	return nil
 }
 
-func insertBatch(session *gocql.Session, tableName string, measurements []*Measurement) error {
+func getTableName(schema tenantSchemaProfile, sensorType string) string {
+	safeSensorType := sanitizeIdentifierPart(sensorType, "unknown_sensor")
+	return fmt.Sprintf("%s.%s_%s_bronze", cassandraKeyspace, schema.TablePrefix, safeSensorType)
+}
+
+func createTableIfNotExists(session *gocql.Session, schema tenantSchemaProfile, sensorType string) (string, error) {
+	tableName := getTableName(schema, sensorType)
+	createQuery := schema.CreateTableCQL(tableName)
+
+	if err := session.Query(createQuery).Exec(); err != nil {
+		return "", fmt.Errorf("failed to create table %s: %w", tableName, err)
+	}
+
+	log.Printf("Created table using schema=%s: %s", schema.Name, tableName)
+	return tableName, nil
+}
+
+func insertBatch(session *gocql.Session, schema tenantSchemaProfile, tableName string, measurements []*Measurement) error {
 	if len(measurements) == 0 {
 		return nil
 	}
@@ -58,28 +244,10 @@ func insertBatch(session *gocql.Session, tableName string, measurements []*Measu
 	// Use UnloggedBatch for better performance
 	batch := session.NewBatch(gocql.UnloggedBatch)
 
-	insertQuery := fmt.Sprintf(
-		"INSERT INTO %s (sensor_id, sensor_type, location, lat, lon, day, hour, timestamp, pressure, altitude, pressure_sealevel, temperature, humidity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		tableName,
-	)
+	insertQuery := schema.InsertCQL(tableName)
 
 	for _, m := range measurements {
-		batch.Query(
-			insertQuery,
-			m.sensor_id,
-			m.sensor_type,
-			m.location,
-			m.lat,
-			m.lon,
-			m.day,
-			m.hour,
-			m.timestamp,
-			m.pressure,
-			m.altitude,
-			m.pressure_sealevel,
-			m.temperature,
-			m.humidity,
-		)
+		batch.Query(insertQuery, schema.BindValues(m)...)
 	}
 
 	if err := session.ExecuteBatch(batch); err != nil {
@@ -91,6 +259,21 @@ func insertBatch(session *gocql.Session, tableName string, measurements []*Measu
 
 func consumeMessages(session *gocql.Session) error {
 	startTime := time.Now()
+	tenantID := activeTenantID()
+	tenantConfig, err := loadTenantConfig(tenantID)
+	if err != nil {
+		return fmt.Errorf("failed to load tenant config for tenant=%s: %w", tenantID, err)
+	}
+
+	schema := schemaForTenant(tenantConfig)
+	log.Printf(
+		"Tenant schema selected: tenant=%s profile=%s format=%s table_prefix=%s",
+		tenantConfig.TenantID,
+		schema.Name,
+		tenantConfig.CSVFormat,
+		schema.TablePrefix,
+	)
+
 	logInterval := 10 * time.Second
 	if v := os.Getenv("THROUGHPUT_LOG_SECONDS"); v != "" {
 		if secs, err := strconv.Atoi(v); err == nil && secs > 0 {
@@ -127,14 +310,16 @@ func consumeMessages(session *gocql.Session) error {
 
 	sensorType := firstMeasurement.sensor_type
 	day := firstMeasurement.day
-	tableName := getTableName(sensorType, day)
+	tableName := getTableName(schema, sensorType)
 
-	log.Printf("Detected sensor_type=%s, day=%s, creating table: %s", sensorType, day, tableName)
+	log.Printf("Detected sensor_type=%s, day=%s, creating table with profile=%s: %s", sensorType, day, schema.Name, tableName)
 
 	// Create table once at the beginning
-	if err := createTableIfNotExists(session, sensorType, day); err != nil {
+	createdTableName, err := createTableIfNotExists(session, schema, sensorType)
+	if err != nil {
 		return err
 	}
+	tableName = createdTableName
 
 	// Start consuming with the first message already read
 	batch := make([]*Measurement, 0, batchSize)
@@ -173,7 +358,7 @@ func consumeMessages(session *gocql.Session) error {
 
 		// Insert batch when size reached
 		if len(batch) >= batchSize {
-			if err := insertBatch(session, tableName, batch); err != nil {
+			if err := insertBatch(session, schema, tableName, batch); err != nil {
 				return fmt.Errorf("failed to insert batch: %w", err)
 			}
 			insertCount += len(batch)
@@ -193,7 +378,7 @@ func consumeMessages(session *gocql.Session) error {
 
 	// Insert remaining records
 	if len(batch) > 0 {
-		if err := insertBatch(session, tableName, batch); err != nil {
+		if err := insertBatch(session, schema, tableName, batch); err != nil {
 			return fmt.Errorf("failed to insert final batch: %w", err)
 		}
 		insertCount += len(batch)
@@ -208,8 +393,23 @@ func consumeMessages(session *gocql.Session) error {
 }
 
 func main() {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("WORKER_MODE")), "managed") {
+		if err := validateManagedWorkerContract(); err != nil {
+			log.Fatalf("%v", err)
+		}
+
+		log.Printf(
+			"managed worker init: tenant=%s topic=%s group=%s keyspace=%s brokers=%s",
+			os.Getenv("TENANT_ID"),
+			kafkaTopic,
+			kafkaConsumerGroup,
+			cassandraKeyspace,
+			kafkaBrokers,
+		)
+	}
+
 	// Create cluster
-	cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3")
+	cluster := gocql.NewCluster(cassandraHosts...)
 	// cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3", "cassandra4", "cassandra5") // Add more nodes for better performance
 	cluster.Keyspace = cassandraKeyspace
 	cluster.Consistency = gocql.Quorum

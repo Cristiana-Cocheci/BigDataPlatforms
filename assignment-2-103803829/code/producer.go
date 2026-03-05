@@ -14,24 +14,27 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-func getChunkFilePath() string {
+func getChunkFilePath(config TenantConfig) string {
 	replicaStr := os.Getenv("CHUNK_NUM")
+	defaultCSV := config.SourceCSV
+
 	if replicaStr == "" {
-		log.Println("CHUNK_NUM not set, using main CSV")
-		return csvFilePath
+		log.Printf("CHUNK_NUM not set, using tenant default CSV: %s", defaultCSV)
+		return defaultCSV
 	}
 
 	replica, err := strconv.Atoi(replicaStr)
 	if err != nil {
-		log.Printf("Invalid CHUNK_NUM=%s, using main CSV", replicaStr)
-		return csvFilePath
+		log.Printf("Invalid CHUNK_NUM=%s, using tenant default CSV: %s", replicaStr, defaultCSV)
+		return defaultCSV
 	}
 
-	chunkPath := fmt.Sprintf("/data/chunks/chunk_%d.csv", replica)
+	chunkDir := strings.TrimRight(config.SourceChunkDir, "/")
+	chunkPath := fmt.Sprintf("%s/chunk_%d.csv", chunkDir, replica)
 
 	if _, err := os.Stat(chunkPath); os.IsNotExist(err) {
-		log.Printf("Chunk not found: %s, using main CSV", chunkPath)
-		return csvFilePath
+		log.Printf("Chunk not found: %s, using tenant default CSV: %s", chunkPath, defaultCSV)
+		return defaultCSV
 	}
 
 	log.Printf("Producer replica %d using chunk %s", replica, chunkPath)
@@ -40,6 +43,19 @@ func getChunkFilePath() string {
 
 func produceMessages() error {
 	startTime := time.Now()
+
+	tenantConfig, err := loadTenantConfig(os.Getenv("TENANT_ID"))
+	if err != nil {
+		return err
+	}
+
+	log.Printf(
+		"Loaded tenant config: tenant=%s format=%s source=%s chunk_dir=%s",
+		tenantConfig.TenantID,
+		tenantConfig.CSVFormat,
+		tenantConfig.SourceCSV,
+		tenantConfig.SourceChunkDir,
+	)
 
 	// Create Kafka writer
 	w := kafka.NewWriter(kafka.WriterConfig{
@@ -54,7 +70,7 @@ func produceMessages() error {
 	log.Println("Kafka producer connected to", kafkaBrokers)
 
 	// Open CSV chunk file
-	filePath := getChunkFilePath()
+	filePath := getChunkFilePath(tenantConfig)
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open CSV: %w", err)
@@ -83,7 +99,7 @@ func produceMessages() error {
 			continue
 		}
 
-		m, err := parseMeasurement(line)
+		m, err := parseMeasurement(line, tenantConfig)
 		if err != nil {
 			log.Printf("Warning: Failed to parse line %d: %v", lineCount, err)
 			continue
@@ -133,26 +149,57 @@ func produceMessages() error {
 	return nil
 }
 
-func parseMeasurement(line string) (*MeasurementJSON, error) {
+func parseMeasurement(line string, tenantConfig TenantConfig) (*MeasurementJSON, error) {
 	fields := strings.Split(line, ";")
-	if len(fields) < 11 {
-		return nil, fmt.Errorf("invalid number of fields: %d", len(fields))
-	}
 
-	return &MeasurementJSON{
-		SensorID:         parseInt(strings.TrimSpace(fields[0])),
-		SensorType:       strings.TrimSpace(fields[1]),
-		Location:         parseFloat32(strings.TrimSpace(fields[2])),
-		Lat:              parseFloat32(strings.TrimSpace(fields[3])),
-		Lon:              parseFloat32(strings.TrimSpace(fields[4])),
-		Day:              createDay(strings.TrimSpace(fields[5])),
-		Timestamp:        strings.TrimSpace(fields[5]),
-		Pressure:         parseFloat32(strings.TrimSpace(fields[6])),
-		Altitude:         parseFloat32(strings.TrimSpace(fields[7])),
-		PressureSealevel: parseFloat32(strings.TrimSpace(fields[8])),
-		Temperature:      parseFloat32(strings.TrimSpace(fields[9])),
-		Humidity:         parseFloat32(strings.TrimSpace(fields[10])),
-	}, nil
+	switch strings.ToLower(strings.TrimSpace(tenantConfig.CSVFormat)) {
+	case csvFormatBME280Full:
+		if len(fields) < 11 {
+			return nil, fmt.Errorf("invalid number of fields for format=%s: %d", tenantConfig.CSVFormat, len(fields))
+		}
+
+		timestamp := strings.TrimSpace(fields[5])
+
+		return &MeasurementJSON{
+			SensorID:         parseInt(strings.TrimSpace(fields[0])),
+			SensorType:       strings.TrimSpace(fields[1]),
+			Location:         parseFloat32(strings.TrimSpace(fields[2])),
+			Lat:              parseFloat32(strings.TrimSpace(fields[3])),
+			Lon:              parseFloat32(strings.TrimSpace(fields[4])),
+			Day:              createDay(timestamp),
+			Timestamp:        timestamp,
+			Pressure:         parseFloat32(strings.TrimSpace(fields[6])),
+			Altitude:         parseFloat32(strings.TrimSpace(fields[7])),
+			PressureSealevel: parseFloat32(strings.TrimSpace(fields[8])),
+			Temperature:      parseFloat32(strings.TrimSpace(fields[9])),
+			Humidity:         parseFloat32(strings.TrimSpace(fields[10])),
+		}, nil
+
+	case csvFormatDHT22Compact:
+		if len(fields) < 8 {
+			return nil, fmt.Errorf("invalid number of fields for format=%s: %d", tenantConfig.CSVFormat, len(fields))
+		}
+
+		timestamp := strings.TrimSpace(fields[5])
+
+		return &MeasurementJSON{
+			SensorID:         parseInt(strings.TrimSpace(fields[0])),
+			SensorType:       strings.TrimSpace(fields[1]),
+			Location:         parseFloat32(strings.TrimSpace(fields[2])),
+			Lat:              parseFloat32(strings.TrimSpace(fields[3])),
+			Lon:              parseFloat32(strings.TrimSpace(fields[4])),
+			Day:              createDay(timestamp),
+			Timestamp:        timestamp,
+			Pressure:         nil,
+			Altitude:         nil,
+			PressureSealevel: nil,
+			Temperature:      parseFloat32(strings.TrimSpace(fields[6])),
+			Humidity:         parseFloat32(strings.TrimSpace(fields[7])),
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported csv_format=%s for tenant=%s", tenantConfig.CSVFormat, tenantConfig.TenantID)
+	}
 }
 
 func main() {
