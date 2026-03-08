@@ -40,6 +40,7 @@ type MeasurementJSON struct {
 	Lat              *float32 `json:"lat"`
 	Lon              *float32 `json:"lon"`
 	Day              string   `json:"day"`
+	Hour             int      `json:"hour"`
 	Timestamp        string   `json:"timestamp"`
 	Pressure         *float32 `json:"pressure"`
 	Altitude         *float32 `json:"altitude"`

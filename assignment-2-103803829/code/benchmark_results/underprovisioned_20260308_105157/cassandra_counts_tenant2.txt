@@ -1,0 +1,12 @@
+=== mysimbdp_tenant2.sensor_observations_dht22_bronze ===
+
+ count
+--------
+ 425685
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+

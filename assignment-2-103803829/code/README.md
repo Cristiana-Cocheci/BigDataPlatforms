@@ -261,3 +261,62 @@ go build -o streamingestmanager streamingestmanager.go
 docker exec -it cassandra1 cqlsh -e "SELECT * FROM mysimbdp_tenant1.sensor_measurements_bme280_bronze LIMIT 5;"
 docker exec -it cassandra1 cqlsh -e "SELECT * FROM mysimbdp_tenant2.sensor_observations_dht22_bronze LIMIT 5;"
 ```
+
+## Heavy under-provisioned benchmark script
+
+Use `run_underprovisioned_benchmark.sh` to demonstrate intensive ingestion with intentionally limited worker capacity, while still running source producers.
+
+Detailed step-by-step instructions are available in `BENCHMARKING_GUIDE.md`.
+
+The script automatically:
+
+- starts infra + manager + monitor
+- starts tenant workers with `--with-source` (and optional chunk preparation)
+- keeps ingestion running for a fixed duration
+- captures monitor/manager/worker/source logs into timestamped files
+- extracts throughput and alert counters
+- checks Cassandra content at the end (table discovery, counts, sample rows)
+
+Quick run (single tenant, under-provisioned):
+
+```sh
+cd code
+chmod +x run_underprovisioned_benchmark.sh
+
+TENANTS="tenant1" \
+WORKERS=1 \
+TEST_DURATION_SECONDS=120 \
+MIN_THROUGHPUT_RPS=1000000 \
+./run_underprovisioned_benchmark.sh
+```
+
+Heavier run (both tenants, same worker limit):
+
+```sh
+cd code
+TENANTS="tenant1 tenant2" \
+WORKERS=1 \
+TEST_DURATION_SECONDS=300 \
+PREPARE_CHUNKS=false \
+MIN_THROUGHPUT_RPS=1000000 \
+./run_underprovisioned_benchmark.sh
+```
+
+Notes:
+
+- `TEST_DURATION_SECONDS` is configurable and defaults to `300` in the script.
+- Increase `TEST_DURATION_SECONDS` further (for example `600`) when you want more records to be inserted before stopping.
+
+Main output folder:
+
+- `benchmark_results/underprovisioned_<timestamp>/`
+
+Important files inside each run folder:
+
+- `run_summary.env`: top-level counters and run metadata
+- `monitor_throughput_by_tenant.csv`: per-tenant throughput/latency summary from monitor logs
+- `worker_performance_lines.txt`: worker-level `Performance: Duration... Throughput...` lines
+- `producer_performance_lines.txt`: producer-side throughput lines
+- `cassandra_tables_<tenant>.txt`: discovered Cassandra tables in tenant keyspace
+- `cassandra_counts_<tenant>.txt`: `COUNT(*)` results for each `*_bronze` table
+- `cassandra_samples_<tenant>.txt`: `SELECT ... LIMIT 5` sample rows for each `*_bronze` table

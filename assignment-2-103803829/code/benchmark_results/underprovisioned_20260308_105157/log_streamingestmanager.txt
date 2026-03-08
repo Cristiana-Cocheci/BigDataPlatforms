@@ -1,0 +1,11 @@
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=b500369ae11d severity=warning reasons=throughput 217.22 rps below minimum 1000000.00 rps throughput=217.22 avg_batch_ms=10.03
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=b500369ae11d severity=warning reasons=throughput 4404.11 rps below minimum 1000000.00 rps throughput=4404.11 avg_batch_ms=5.36
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=a0b79f62db55 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=b500369ae11d severity=warning reasons=throughput 4998.99 rps below minimum 1000000.00 rps throughput=4998.99 avg_batch_ms=4.71
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=a0b79f62db55 severity=warning reasons=throughput 4905.78 rps below minimum 1000000.00 rps throughput=4905.78 avg_batch_ms=4.82
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=b500369ae11d severity=warning reasons=throughput 4868.50 rps below minimum 1000000.00 rps throughput=4868.50 avg_batch_ms=4.87
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=a0b79f62db55 severity=warning reasons=throughput 5033.88 rps below minimum 1000000.00 rps throughput=5033.88 avg_batch_ms=4.69
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=b500369ae11d severity=warning reasons=throughput 4892.50 rps below minimum 1000000.00 rps throughput=4892.50 avg_batch_ms=4.84
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=a0b79f62db55 severity=warning reasons=throughput 4907.25 rps below minimum 1000000.00 rps throughput=4907.25 avg_batch_ms=4.82
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=b500369ae11d severity=warning reasons=throughput 4892.50 rps below minimum 1000000.00 rps throughput=4892.50 avg_batch_ms=4.83
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=a0b79f62db55 severity=warning reasons=throughput 4835.63 rps below minimum 1000000.00 rps throughput=4835.63 avg_batch_ms=4.90

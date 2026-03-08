@@ -1,0 +1,158 @@
+ Container streamingestmanager  Running
+ Container cassandra1  Running
+ Container streamingestmonitor  Running
+ Container zookeeper-tenant2  Running
+ Container cassandra2  Running
+ Container kafka-tenant2  Running
+ Container cassandra3  Running
+Created topic dht22-measurements.
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.86kB done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from dockerfile
+#2 transferring dockerfile: 344B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.23-alpine
+#3 DONE 1.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/9] FROM docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f
+#5 resolve docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 8.96MB 0.1s done
+#6 DONE 0.1s
+
+#7 [2/9] WORKDIR /app
+#7 CACHED
+
+#8 [3/9] COPY go.mod go.sum ./
+#8 CACHED
+
+#9 [4/9] RUN go mod download
+#9 CACHED
+
+#10 [5/9] COPY . .
+#10 DONE 0.1s
+
+#11 [6/9] RUN go build -o producer producer.go types.go
+#11 DONE 5.9s
+
+#12 [7/9] RUN go build -o consumer consumer.go types.go
+#12 DONE 1.9s
+
+#13 [8/9] RUN go build -o streamingestmanager streamingestmanager.go
+#13 DONE 0.5s
+
+#14 [9/9] RUN go build -o streamingestmonitor streamingestmonitor.go
+#14 DONE 0.4s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 2.6s done
+#15 exporting manifest sha256:5375c1008963d37b71b83640a0a930a888575ce39ef3d9f79f2a4d1e0ca1d6e4 done
+#15 exporting config sha256:e9cdc28a245b022ce956eaaa951ca7601a0b9472e4132bf1fd2892c6b214b2ad done
+#15 exporting attestation manifest sha256:d5cdc87b486d137e12da8a7b0d0810f3715f1512a9db9f56ef1a542635173d95 done
+#15 exporting manifest list sha256:1752ad94f8168cc3436d6b843c788f954e7e239f93b51557f4ffc9069dfeea4c done
+#15 naming to docker.io/library/code-tenant2-streamingestworker:latest done
+#15 unpacking to docker.io/library/code-tenant2-streamingestworker:latest
+#15 unpacking to docker.io/library/code-tenant2-streamingestworker:latest 0.8s done
+#15 DONE 3.4s
+
+#16 resolving provenance for metadata file
+#16 DONE 0.0s
+ code-tenant2-streamingestworker  Built
+ Container streamingestmanager  Running
+ Container zookeeper-tenant2  Running
+ Container cassandra1  Running
+ Container streamingestmonitor  Running
+ Container kafka-tenant2  Running
+ Container code-tenant2-streamingestworker-1  Creating
+ Container code-tenant2-streamingestworker-1  Created
+ Container kafka-tenant2  Waiting
+ Container cassandra1  Waiting
+ Container kafka-tenant2  Healthy
+ Container cassandra1  Healthy
+ Container code-tenant2-streamingestworker-1  Starting
+ Container code-tenant2-streamingestworker-1  Started
+#1 [internal] load local bake definitions
+#1 reading from stdin 669B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from dockerfile
+#2 transferring dockerfile: 344B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.23-alpine
+#3 DONE 0.3s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/9] FROM docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f
+#5 resolve docker.io/library/golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f 0.0s done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 17.09kB done
+#6 DONE 0.0s
+
+#7 [2/9] WORKDIR /app
+#7 CACHED
+
+#8 [3/9] COPY go.mod go.sum ./
+#8 CACHED
+
+#9 [4/9] RUN go mod download
+#9 CACHED
+
+#10 [5/9] COPY . .
+#10 DONE 0.1s
+
+#11 [6/9] RUN go build -o producer producer.go types.go
+#11 DONE 5.5s
+
+#12 [7/9] RUN go build -o consumer consumer.go types.go
+#12 DONE 1.7s
+
+#13 [8/9] RUN go build -o streamingestmanager streamingestmanager.go
+#13 DONE 0.5s
+
+#14 [9/9] RUN go build -o streamingestmonitor streamingestmonitor.go
+#14 DONE 0.4s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 2.7s done
+#15 exporting manifest sha256:49d5ea1506cf2b239fc54c4aeb7d5fbe2d67cd72c1791250725c8da698e7fc29
+#15 exporting manifest sha256:49d5ea1506cf2b239fc54c4aeb7d5fbe2d67cd72c1791250725c8da698e7fc29 done
+#15 exporting config sha256:b10df5ddaa88c556e40ec63e86d8ec0cbf5dcdef0d926b4df9a9e118cb05fe4e done
+#15 exporting attestation manifest sha256:3b057c86a96da5907eda53aed52c430aa7e5918405d19af5f07ef86739b53249 done
+#15 exporting manifest list sha256:10b4bbda1ce24c79b8d628b8d52f3506a640670fc4a7de17911b30883566eb80 done
+#15 naming to docker.io/library/code-tenant2-source:latest done
+#15 unpacking to docker.io/library/code-tenant2-source:latest
+#15 unpacking to docker.io/library/code-tenant2-source:latest 0.7s done
+#15 DONE 3.4s
+
+#16 resolving provenance for metadata file
+#16 DONE 0.0s
+ code-tenant2-source  Built
+ Container zookeeper-tenant2  Running
+ Container cassandra1  Running
+ Container kafka-tenant2  Running
+ Container code-tenant2-source-1  Creating
+ Container code-tenant2-source-1  Created
+ Container kafka-tenant2  Waiting
+ Container cassandra1  Waiting
+ Container cassandra1  Healthy
+ Container kafka-tenant2  Healthy
+ Container code-tenant2-source-1  Starting
+ Container code-tenant2-source-1  Started
+tenant=tenant2 started: workers=1 with-source=true prepare-chunks=false schema=dht22
