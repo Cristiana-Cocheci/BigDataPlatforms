@@ -4,5 +4,27 @@
   "table_prefix": "sensor_measurements",
   "csv_format": "bme280_full",
   "source_csv": "/data/tenant1/2025-06-01_bme280.csv",
-  "source_chunk_dir": "/data/tenant1/chunks"
+  "source_chunk_dir": "/data/tenant1/chunks",
+  "schema": {
+    "table_suffix_field": "sensor_type",
+    "columns": [
+      { "name": "sensor_id", "type": "int", "field": "sensor_id" },
+      { "name": "sensor_type", "type": "text", "field": "sensor_type" },
+      { "name": "location", "type": "float", "field": "location" },
+      { "name": "lat", "type": "float", "field": "lat" },
+      { "name": "lon", "type": "float", "field": "lon" },
+      { "name": "day", "type": "text", "field": "day" },
+      { "name": "hour", "type": "int", "field": "hour" },
+      { "name": "timestamp", "type": "text", "field": "timestamp" },
+      { "name": "pressure", "type": "float", "field": "pressure" },
+      { "name": "altitude", "type": "float", "field": "altitude" },
+      { "name": "pressure_sealevel", "type": "float", "field": "pressure_sealevel" },
+      { "name": "temperature", "type": "float", "field": "temperature" },
+      { "name": "humidity", "type": "float", "field": "humidity" }
+    ],
+    "primary_key": {
+      "partition": ["day", "hour"],
+      "clustering": ["sensor_id", "timestamp"]
+    }
+  }
 }

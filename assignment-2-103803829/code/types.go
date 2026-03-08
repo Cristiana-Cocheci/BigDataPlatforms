@@ -65,12 +65,30 @@ type Measurement struct {
 }
 
 type TenantConfig struct {
-	TenantID       string `json:"tenant_id"`
-	SchemaProfile  string `json:"schema_profile"`
-	TablePrefix    string `json:"table_prefix"`
-	CSVFormat      string `json:"csv_format"`
-	SourceCSV      string `json:"source_csv"`
-	SourceChunkDir string `json:"source_chunk_dir"`
+	TenantID       string             `json:"tenant_id"`
+	SchemaProfile  string             `json:"schema_profile"`
+	TablePrefix    string             `json:"table_prefix"`
+	CSVFormat      string             `json:"csv_format"`
+	SourceCSV      string             `json:"source_csv"`
+	SourceChunkDir string             `json:"source_chunk_dir"`
+	Schema         TenantSchemaConfig `json:"schema"`
+}
+
+type TenantSchemaColumnConfig struct {
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Field string `json:"field"`
+}
+
+type TenantPrimaryKeyConfig struct {
+	Partition  []string `json:"partition"`
+	Clustering []string `json:"clustering"`
+}
+
+type TenantSchemaConfig struct {
+	Columns          []TenantSchemaColumnConfig `json:"columns"`
+	PrimaryKey       TenantPrimaryKeyConfig     `json:"primary_key"`
+	TableSuffixField string                     `json:"table_suffix_field"`
 }
 
 func getEnv(key string, defaultValue string) string {
@@ -127,11 +145,7 @@ func (config *TenantConfig) applyDefaults(tenantID string) {
 	}
 
 	if strings.TrimSpace(config.SchemaProfile) == "" {
-		if tenantID == "tenant2" {
-			config.SchemaProfile = "dht22"
-		} else {
-			config.SchemaProfile = "bme280"
-		}
+		config.SchemaProfile = "custom"
 	}
 
 	if strings.TrimSpace(config.TablePrefix) == "" {
@@ -139,11 +153,7 @@ func (config *TenantConfig) applyDefaults(tenantID string) {
 	}
 
 	if strings.TrimSpace(config.CSVFormat) == "" {
-		if tenantID == "tenant2" {
-			config.CSVFormat = csvFormatDHT22Compact
-		} else {
-			config.CSVFormat = csvFormatBME280Full
-		}
+		config.CSVFormat = csvFormatBME280Full
 	}
 
 	if strings.TrimSpace(config.SourceCSV) == "" {
@@ -152,6 +162,10 @@ func (config *TenantConfig) applyDefaults(tenantID string) {
 
 	if strings.TrimSpace(config.SourceChunkDir) == "" {
 		config.SourceChunkDir = "/data/chunks"
+	}
+
+	if strings.TrimSpace(config.Schema.TableSuffixField) == "" {
+		config.Schema.TableSuffixField = "sensor_type"
 	}
 }
 

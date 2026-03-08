@@ -2,4 +2,4 @@ docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml d
 
 docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml up -d cassandra1 cassandra2 cassandra3 zookeeper-tenant1 kafka-tenant1 zookeeper-tenant2 kafka-tenant2 && docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml ps
 
-for i in {1..60}; do PS_OUT="$(docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml ps)"; if echo "$PS_OUT" | grep -q 'cassandra1.*(healthy)' && echo "$PS_OUT" | grep -q 'kafka-tenant1.*(healthy)' && echo "$PS_OUT" | grep -q 'kafka-tenant2.*(healthy)'; then echo "INFRA_READY=1"; echo "$PS_OUT"; exit 0; fi; sleep 5; done; echo "INFRA_READY=0"; echo "$PS_OUT"; exit 1
+go build -o streamingestmanager streamingestmanager.go && ./streamingestmanager --command start --tenant tenant1 --workers 2 --with-source --prepare-chunks

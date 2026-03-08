@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,6 +30,35 @@ type ManagerTenantConfig struct {
 	SourceChunkDir string `json:"source_chunk_dir"`
 }
 
+type WorkerPerformanceReport struct {
+	TenantID                string  `json:"tenant_id"`
+	WorkerID                string  `json:"worker_id"`
+	KafkaTopic              string  `json:"kafka_topic"`
+	ReportedAt              string  `json:"reported_at"`
+	WindowSeconds           float64 `json:"window_seconds"`
+	RecordsInWindow         int     `json:"records_in_window"`
+	BatchesInWindow         int     `json:"batches_in_window"`
+	AvgBatchIngestMS        float64 `json:"avg_batch_ingest_ms"`
+	ThroughputRecordsPerSec float64 `json:"throughput_records_per_sec"`
+	TotalInserted           int     `json:"total_inserted"`
+	TotalConsumed           int     `json:"total_consumed"`
+}
+
+type AlertThresholds struct {
+	MinThroughputRPS    float64 `json:"min_throughput_rps"`
+	MaxAvgBatchIngestMS float64 `json:"max_avg_batch_ingest_ms"`
+}
+
+type MonitorAlert struct {
+	TenantID    string                  `json:"tenant_id"`
+	WorkerID    string                  `json:"worker_id"`
+	TriggeredAt string                  `json:"triggered_at"`
+	Severity    string                  `json:"severity"`
+	Reasons     []string                `json:"reasons"`
+	Thresholds  AlertThresholds         `json:"thresholds"`
+	Report      WorkerPerformanceReport `json:"report"`
+}
+
 var tenantRegistry = map[string]TenantSpec{
 	"tenant1": {
 		TenantID:          "tenant1",
@@ -46,7 +76,7 @@ var tenantRegistry = map[string]TenantSpec{
 		Kafka:             "kafka-tenant2",
 		WorkerService:     "tenant2-streamingestworker",
 		SourceService:     "tenant2-source",
-		KafkaTopic:        "bme280-measurements",
+		KafkaTopic:        "dht22-measurements",
 		CassandraKeyspace: "mysimbdp_tenant2",
 		SchemaProfile:     "dht22",
 	},
@@ -63,6 +93,7 @@ func main() {
 	stopSource := flag.Bool("stop-source", true, "When command=stop, also stop tenant source simulator")
 	stopBroker := flag.Bool("stop-broker", false, "When command=stop, also stop tenant Kafka+ZooKeeper")
 	topicPartitions := flag.Int("partitions", 5, "Kafka topic partition count when command=start")
+	alertListenAddr := flag.String("alert-listen-addr", ":8082", "Listen address for command=listen-alerts")
 	composeFilesRaw := flag.String("compose-files", "docker-compose.yml,docker-compose.multitenant-brokers.yml", "Comma-separated docker compose files")
 
 	flag.Parse()
@@ -115,8 +146,13 @@ func main() {
 			fatalf("status failed: %v", err)
 		}
 
+	case "listen-alerts":
+		if err := listenForMonitorAlerts(*alertListenAddr); err != nil {
+			fatalf("listen-alerts failed: %v", err)
+		}
+
 	default:
-		fatalf("invalid command: %s (expected: start | stop | status)", *command)
+		fatalf("invalid command: %s (expected: start | stop | status | listen-alerts)", *command)
 	}
 }
 
@@ -130,6 +166,7 @@ func startTenant(composeFiles []string, spec TenantSpec, workers int, withSource
 	if err := composeUp(composeFiles,
 		"cassandra1", "cassandra2", "cassandra3",
 		spec.Zookeeper, spec.Kafka,
+		"streamingestmanager", "streamingestmonitor",
 	); err != nil {
 		return err
 	}
@@ -184,11 +221,84 @@ func showAllStatus(composeFiles []string) error {
 	for _, spec := range tenantRegistry {
 		services = append(services, spec.Zookeeper, spec.Kafka, spec.SourceService, spec.WorkerService)
 	}
+	services = append(services, "streamingestmanager", "streamingestmonitor")
 	return composePs(composeFiles, services...)
 }
 
 func showTenantStatus(composeFiles []string, spec TenantSpec) error {
-	return composePs(composeFiles, spec.Zookeeper, spec.Kafka, spec.SourceService, spec.WorkerService)
+	return composePs(composeFiles, spec.Zookeeper, spec.Kafka, spec.SourceService, spec.WorkerService, "streamingestmanager", "streamingestmonitor")
+}
+
+func listenForMonitorAlerts(listenAddr string) error {
+	trimmedAddr := strings.TrimSpace(listenAddr)
+	if trimmedAddr == "" {
+		return errors.New("alert-listen-addr cannot be empty")
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
+	mux.HandleFunc("/alerts", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		defer r.Body.Close()
+
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		var alert MonitorAlert
+		if err := decoder.Decode(&alert); err != nil {
+			http.Error(w, fmt.Sprintf("invalid alert payload: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		tenantID := strings.TrimSpace(alert.TenantID)
+		if tenantID == "" {
+			http.Error(w, "tenant_id is required", http.StatusBadRequest)
+			return
+		}
+
+		workerID := strings.TrimSpace(alert.WorkerID)
+		if workerID == "" {
+			workerID = "unknown"
+		}
+
+		severity := strings.TrimSpace(alert.Severity)
+		if severity == "" {
+			severity = "warning"
+		}
+
+		reasons := strings.Join(alert.Reasons, " | ")
+		if strings.TrimSpace(reasons) == "" {
+			reasons = "unspecified"
+		}
+
+		fmt.Printf(
+			"monitor alert received: tenant=%s worker=%s severity=%s reasons=%s throughput=%.2f avg_batch_ms=%.2f\n",
+			tenantID,
+			workerID,
+			severity,
+			reasons,
+			alert.Report.ThroughputRecordsPerSec,
+			alert.Report.AvgBatchIngestMS,
+		)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = w.Write([]byte(`{"status":"acknowledged"}`))
+	})
+
+	fmt.Printf("mysimbdp-streamingestmanager alert receiver listening on %s\n", trimmedAddr)
+	return http.ListenAndServe(trimmedAddr, mux)
 }
 
 func ensureTenantKeyspace(composeFiles []string, spec TenantSpec) error {
@@ -207,7 +317,7 @@ func ensureTenantTopic(composeFiles []string, spec TenantSpec, partitions int) e
 	args = append(args,
 		"exec", "-T", spec.Kafka,
 		"kafka-topics",
-		"--bootstrap-server", "localhost:9092",
+		"--bootstrap-server", "localhost:29092",
 		"--create",
 		"--if-not-exists",
 		"--topic", spec.KafkaTopic,

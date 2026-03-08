@@ -37,12 +37,16 @@ For each tenant, it can:
 4. Start/scale `streamingestworker` instances on-demand
 5. Stop worker/source instances and optionally stop tenant broker
 6. Show tenant or global status
+7. Receive performance alerts from `mysimbdp-streamingestmonitor`
 
 ### Commands
 
 ```sh
 # build manager
 go build -o streamingestmanager streamingestmanager.go
+
+# run manager alert receiver (used by streamingestmonitor)
+./streamingestmanager --command listen-alerts --alert-listen-addr :8082
 
 # start tenant workers
 ./streamingestmanager --command start --tenant tenant1 --workers 2
@@ -62,6 +66,97 @@ go build -o streamingestmanager streamingestmanager.go
 # stop tenant workers/source and tenant broker stack
 ./streamingestmanager --command stop --tenant tenant2 --stop-broker
 ```
+
+## Observability component (`mysimbdp-streamingestmonitor`)
+
+The observability path has 3 parts:
+
+1. `mysimbdp-streamingestworker` (consumer) periodically emits performance reports.
+2. `mysimbdp-streamingestmonitor` receives reports and checks thresholds.
+3. `mysimbdp-streamingestmonitor` informs `mysimbdp-streamingestmanager` when performance is below thresholds.
+
+### Report format (worker -> monitor)
+
+Workers send `POST` requests to `/reports` with JSON payload:
+
+```json
+{
+  "tenant_id": "tenant1",
+  "worker_id": "code-tenant1-streamingestworker-1",
+  "kafka_topic": "bme280-measurements",
+  "reported_at": "2026-03-07T16:40:00Z",
+  "window_seconds": 15.0,
+  "records_in_window": 4200,
+  "batches_in_window": 168,
+  "avg_batch_ingest_ms": 12.7,
+  "throughput_records_per_sec": 280.0,
+  "total_inserted": 158000,
+  "total_consumed": 158500
+}
+```
+
+### Alert format (monitor -> manager)
+
+When thresholds are violated, monitor sends `POST /alerts` to manager:
+
+```json
+{
+  "tenant_id": "tenant1",
+  "worker_id": "code-tenant1-streamingestworker-1",
+  "triggered_at": "2026-03-07T16:40:05Z",
+  "severity": "warning",
+  "reasons": [
+    "throughput 280.00 rps below minimum 300.00 rps"
+  ],
+  "thresholds": {
+    "min_throughput_rps": 300.0,
+    "max_avg_batch_ingest_ms": 250.0
+  },
+  "report": {
+    "tenant_id": "tenant1",
+    "worker_id": "code-tenant1-streamingestworker-1",
+    "kafka_topic": "bme280-measurements",
+    "reported_at": "2026-03-07T16:40:00Z",
+    "window_seconds": 15.0,
+    "records_in_window": 4200,
+    "batches_in_window": 168,
+    "avg_batch_ingest_ms": 12.7,
+    "throughput_records_per_sec": 280.0,
+    "total_inserted": 158000,
+    "total_consumed": 158500
+  }
+}
+```
+
+### Threshold and reporting mechanism
+
+- Worker report destination: `MONITOR_REPORT_URL` (default `http://streamingestmonitor:8081/reports`)
+- Report interval: `MONITOR_REPORT_INTERVAL_SECONDS` (default `15`)
+- Monitor threshold: `MONITOR_MIN_THROUGHPUT_RPS` (default `300`)
+- Monitor threshold: `MONITOR_MAX_AVG_BATCH_INGEST_MS` (default `250`)
+- Alert cooldown per tenant: `MONITOR_ALERT_COOLDOWN_SECONDS` (default `30`)
+- Manager alert endpoint: `POST /alerts` (listens on `:8082`)
+
+### Demonstration commands
+
+```sh
+# from code/
+go build -o streamingestmanager streamingestmanager.go
+./streamingestmanager --command start --tenant tenant1 --workers 2 --with-source --prepare-chunks
+
+# observe worker reports and monitor decisions
+docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml logs -f streamingestmonitor streamingestmanager
+
+# force alerts for demo by setting strict throughput threshold and recreating monitor
+MONITOR_MIN_THROUGHPUT_RPS=100000 \
+docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml up -d --force-recreate streamingestmonitor
+```
+
+Expected behavior in logs:
+
+- `streamingestmonitor`: `report received ...`
+- `streamingestmonitor`: `alert forwarded ...`
+- `streamingestmanager`: `monitor alert received ...`
 
 ## Black-box model for streamingestworker
 
@@ -90,8 +185,14 @@ Tenant-specific behavior is centralized in:
 Each file defines:
 
 - `csv_format` (parsing rules in producer)
-- `table_prefix` + `schema_profile` (table/datatype behavior in consumer)
+- `table_prefix` + `schema_profile` (high-level schema identity)
+- `schema.table_suffix_field` (payload field used to derive per-sensor/per-device table suffix)
+- `schema.columns[]` (column name/type and mapping to measurement fields)
+- `schema.primary_key.partition[]` + `schema.primary_key.clustering[]`
 - `source_csv` + `source_chunk_dir` (source input paths)
+
+`consumer.go` no longer has tenant-specific hardcoded insert statements. It now builds `CREATE TABLE` and `INSERT` CQL directly from each tenant JSON schema.
+Kafka payloads are decoded as generic JSON maps, and values are cast according to each configured CQL column type.
 
 Supported `csv_format` values:
 
@@ -100,14 +201,15 @@ Supported `csv_format` values:
 
 ## Tenant-specific tables and datatypes
 
-The worker now supports tenant schema profiles selected by `TENANT_ID`.
+The worker uses tenant JSON schema directly for table DDL and inserts.
 
-- `tenant1` (`bme280_full`) writes `pressure`, `altitude`, `pressure_sealevel`, `temperature`, `humidity`
-- `tenant2` (`dht22_compact`) writes only `temperature`, `humidity`
-- Table prefixes are tenant-specific via config (default examples: `sensor_measurements` for tenant1, `sensor_observations` for tenant2)
-- Primary key: `PRIMARY KEY ((day, hour), sensor_id, timestamp)`
+- Column set and column datatypes are read from `schema.columns`
+- Measurement-to-column mapping is read from `schema.columns[].field`
+- Primary key structure is read from `schema.primary_key`
+- Table suffix source field is read from `schema.table_suffix_field`
+- Table prefix remains tenant-specific via `table_prefix`
 
-Tables are generated dynamically from `sensor_type` and table names are sanitized before execution.
+Tables are generated dynamically from the configured `schema.table_suffix_field` value, and table names are sanitized before execution.
 
 When starting a tenant, `mysimbdp-streamingestmanager` also bootstraps a keyspace-local registry table:
 
@@ -147,12 +249,12 @@ docker exec -i cassandra1 cqlsh < init_multitenant.cql
 
 # build manager and start workers/sources
 go build -o streamingestmanager streamingestmanager.go
-./streamingestmanager --command start --tenant tenant1 --workers 2 --with-source
-./streamingestmanager --command start --tenant tenant2 --workers 2 --with-source
+./streamingestmanager --command start --tenant tenant1 --workers 5 --with-source
+./streamingestmanager --command start --tenant tenant2 --workers 5 --with-source
 
 # optional: regenerate chunks from source CSVs using workers count
-./streamingestmanager --command start --tenant tenant1 --workers 2 --with-source --prepare-chunks
-./streamingestmanager --command start --tenant tenant2 --workers 2 --with-source --prepare-chunks
+./streamingestmanager --command start --tenant tenant1 --workers 5 --with-source --prepare-chunks
+./streamingestmanager --command start --tenant tenant2 --workers 5 --with-source --prepare-chunks
 
 # verify
 ./streamingestmanager --command status
