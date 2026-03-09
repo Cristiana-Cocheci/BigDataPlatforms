@@ -1,0 +1,72 @@
+Preparing chunks: tenant=tenant1 source=../data/tenant1/2025-06-01_bme280.csv chunks=7
+Total rows: 2914834
+Number of chunks: 7
+Rows per chunk: 416405
+Creating chunks in: ../data/tenant1/chunks
+
+Created chunk_0.csv: rows 0-416404 (416405 records)
+Created chunk_1.csv: rows 416405-832809 (416405 records)
+Created chunk_2.csv: rows 832810-1249214 (416405 records)
+Created chunk_3.csv: rows 1249215-1665619 (416405 records)
+Created chunk_4.csv: rows 1665620-2082024 (416405 records)
+Created chunk_5.csv: rows 2082025-2498429 (416405 records)
+Created chunk_6.csv: rows 2498430-2914833 (416404 records)
+
+Chunking complete! Files ready in: ../data/tenant1/chunks
+ Container streamingestmanager  Running
+ Container zookeeper-tenant1  Running
+ Container streamingestmonitor  Running
+ Container cassandra1  Running
+ Container kafka-tenant1  Running
+ Container cassandra3  Running
+ Container cassandra2  Running
+Created topic bme280-measurements.
+ Container zookeeper-tenant1  Running
+ Container cassandra1  Running
+ Container kafka-tenant1  Running
+ Container streamingestmanager  Running
+ Container streamingestmonitor  Running
+ Container code-tenant1-streamingestworker-7  Creating
+ Container code-tenant1-streamingestworker-1  Creating
+ Container code-tenant1-streamingestworker-3  Creating
+ Container code-tenant1-streamingestworker-2  Creating
+ Container code-tenant1-streamingestworker-6  Creating
+ Container code-tenant1-streamingestworker-5  Creating
+ Container code-tenant1-streamingestworker-4  Creating
+ Container code-tenant1-streamingestworker-4  Created
+ Container code-tenant1-streamingestworker-1  Created
+ Container code-tenant1-streamingestworker-2  Created
+ Container code-tenant1-streamingestworker-5  Created
+ Container code-tenant1-streamingestworker-6  Created
+ Container code-tenant1-streamingestworker-3  Created
+ Container code-tenant1-streamingestworker-7  Created
+ Container cassandra1  Waiting
+ Container kafka-tenant1  Waiting
+ Container cassandra1  Healthy
+ Container kafka-tenant1  Healthy
+ Container code-tenant1-streamingestworker-6  Starting
+ Container code-tenant1-streamingestworker-6  Started
+ Container code-tenant1-streamingestworker-7  Starting
+ Container code-tenant1-streamingestworker-7  Started
+ Container code-tenant1-streamingestworker-1  Starting
+ Container code-tenant1-streamingestworker-1  Started
+ Container code-tenant1-streamingestworker-3  Starting
+ Container code-tenant1-streamingestworker-3  Started
+ Container code-tenant1-streamingestworker-2  Starting
+ Container code-tenant1-streamingestworker-2  Started
+ Container code-tenant1-streamingestworker-5  Starting
+ Container code-tenant1-streamingestworker-5  Started
+ Container code-tenant1-streamingestworker-4  Starting
+ Container code-tenant1-streamingestworker-4  Started
+ Container cassandra1  Running
+ Container zookeeper-tenant1  Running
+ Container kafka-tenant1  Running
+ Container code-tenant1-source-1  Creating
+ Container code-tenant1-source-1  Created
+ Container kafka-tenant1  Waiting
+ Container cassandra1  Waiting
+ Container cassandra1  Healthy
+ Container kafka-tenant1  Healthy
+ Container code-tenant1-source-1  Starting
+ Container code-tenant1-source-1  Started
+tenant=tenant1 started: workers=7 with-source=true prepare-chunks=true schema=bme280

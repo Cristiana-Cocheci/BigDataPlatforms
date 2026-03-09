@@ -1,0 +1,24 @@
+[20:04:43] Benchmark output directory: benchmark_results/underprovisioned_20260308_200443
+[20:04:43] Resetting compose stack
+[20:04:46] Building manager binary
+[20:04:46] Starting infrastructure and control services
+[20:04:50] Waiting for cassandra1 to be ready
+[20:05:25] Waiting for kafka-tenant1 to be ready
+[20:05:25] Waiting for kafka-tenant2 to be ready
+[20:05:25] Starting tenant=tenant1 workers=10 with source producer
+[20:05:46] Starting tenant=tenant2 workers=10 with source producer
+[20:06:00] Collecting runtime for 500s
+[20:14:20] Capturing compose status and logs
+[20:14:22] Stopping tenant=tenant1 source/worker
+[20:14:23] Stopping tenant=tenant2 source/worker
+[20:14:24] Waiting 15s for Cassandra write pressure to settle
+[20:14:39] Collecting Cassandra snapshot for tenant=tenant1 keyspace=mysimbdp_tenant1
+[20:15:24] Collecting Cassandra snapshot for tenant=tenant2 keyspace=mysimbdp_tenant2
+[20:15:57] Extracting worker and producer performance lines
+[20:15:57] Benchmark completed. Main outputs:
+[20:15:57] - benchmark_results/underprovisioned_20260308_200443/run_summary.env
+[20:15:57] - benchmark_results/underprovisioned_20260308_200443/monitor_throughput_by_tenant.csv
+[20:15:57] - benchmark_results/underprovisioned_20260308_200443/worker_performance_lines.txt
+[20:15:57] - benchmark_results/underprovisioned_20260308_200443/producer_performance_lines.txt
+[20:15:57] - benchmark_results/underprovisioned_20260308_200443/cassandra_counts_<tenant>.txt
+[20:15:57] - benchmark_results/underprovisioned_20260308_200443/cassandra_samples_<tenant>.txt

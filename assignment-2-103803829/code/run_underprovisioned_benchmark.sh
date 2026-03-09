@@ -155,6 +155,7 @@ run_cqlsh_query() {
 collect_cassandra_snapshot() {
   local tenant="$1"
   local keyspace="$2"
+  local count_day="$CASSANDRA_COUNT_DAY"
 
   local table_file="$RUN_DIR/cassandra_tables_${tenant}.txt"
   local registry_file="$RUN_DIR/cassandra_registry_${tenant}.txt"
@@ -176,11 +177,39 @@ collect_cassandra_snapshot() {
   fi
 
   local table
+  local hour
+  local table_total
+  local table_failed
+  local partition_output
+  local partition_count
   for table in $tables; do
     {
       echo "=== ${keyspace}.${table} ==="
-      if ! run_cqlsh_query "SELECT COUNT(*) FROM ${keyspace}.${table};"; then
-        echo "COUNT(*) failed for ${keyspace}.${table}; falling back to size estimates"
+      echo "Partition counts for day=${count_day}"
+      table_total=0
+      table_failed=0
+
+      for hour in {0..23}; do
+        if partition_output="$(run_cqlsh_query "SELECT COUNT(*) FROM ${keyspace}.${table} WHERE day='${count_day}' AND hour = ${hour};" 2>&1)"; then
+          partition_count="$(printf '%s\n' "$partition_output" | awk '/^[[:space:]]+[0-9]+[[:space:]]*$/ {gsub(/ /, ""); print; exit}')"
+          if [[ -n "$partition_count" ]]; then
+            echo "hour=${hour},count=${partition_count}"
+            table_total=$((table_total + partition_count))
+          else
+            echo "hour=${hour},count_parse_failed"
+            printf '%s\n' "$partition_output"
+            table_failed=1
+          fi
+        else
+          echo "hour=${hour},count_query_failed"
+          printf '%s\n' "$partition_output"
+          table_failed=1
+        fi
+      done
+
+      echo "total_for_day=${table_total}"
+      if [[ "$table_failed" -eq 1 ]]; then
+        echo "One or more partition count queries failed; falling back to size estimates"
         run_cqlsh_query "SELECT mean_partition_size, partitions_count FROM system.size_estimates WHERE keyspace_name='${keyspace}' AND table_name='${table}';" || true
       fi
       echo
@@ -213,6 +242,7 @@ ALERT_COOLDOWN_SECONDS="${ALERT_COOLDOWN_SECONDS:-15}"
 REPORT_INTERVAL_SECONDS="${REPORT_INTERVAL_SECONDS:-10}"
 CQLSH_REQUEST_TIMEOUT_SECONDS="${CQLSH_REQUEST_TIMEOUT_SECONDS:-180}"
 POST_STOP_SETTLE_SECONDS="${POST_STOP_SETTLE_SECONDS:-15}"
+CASSANDRA_COUNT_DAY="${CASSANDRA_COUNT_DAY:-2025-06-01}"
 
 RESULTS_ROOT="${RESULTS_ROOT:-benchmark_results}"
 RUN_ID="$(date +"%Y%m%d_%H%M%S")"
@@ -257,6 +287,7 @@ ALERT_COOLDOWN_SECONDS=$ALERT_COOLDOWN_SECONDS
 REPORT_INTERVAL_SECONDS=$REPORT_INTERVAL_SECONDS
 CQLSH_REQUEST_TIMEOUT_SECONDS=$CQLSH_REQUEST_TIMEOUT_SECONDS
 POST_STOP_SETTLE_SECONDS=$POST_STOP_SETTLE_SECONDS
+CASSANDRA_COUNT_DAY=$CASSANDRA_COUNT_DAY
 EOF
 
 log "Benchmark output directory: $RUN_DIR"

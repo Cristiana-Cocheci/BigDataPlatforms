@@ -306,6 +306,7 @@ Notes:
 
 - `TEST_DURATION_SECONDS` is configurable and defaults to `300` in the script.
 - Increase `TEST_DURATION_SECONDS` further (for example `600`) when you want more records to be inserted before stopping.
+- `CASSANDRA_COUNT_DAY` controls which day is queried for per-hour Cassandra counts (default: `2025-06-01`).
 
 Main output folder:
 
@@ -318,5 +319,5 @@ Important files inside each run folder:
 - `worker_performance_lines.txt`: worker-level `Performance: Duration... Throughput...` lines
 - `producer_performance_lines.txt`: producer-side throughput lines
 - `cassandra_tables_<tenant>.txt`: discovered Cassandra tables in tenant keyspace
-- `cassandra_counts_<tenant>.txt`: `COUNT(*)` results for each `*_bronze` table
+- `cassandra_counts_<tenant>.txt`: per-hour counts for `CASSANDRA_COUNT_DAY` (`hour=0..23`) and `total_for_day`, with fallback to `system.size_estimates` if needed
 - `cassandra_samples_<tenant>.txt`: `SELECT ... LIMIT 5` sample rows for each `*_bronze` table

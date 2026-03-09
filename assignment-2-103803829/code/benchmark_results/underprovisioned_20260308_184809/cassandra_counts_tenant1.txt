@@ -1,0 +1,25 @@
+=== mysimbdp_tenant1.sensor_measurements_bme280_bronze ===
+<stdin>:1:ReadTimeout: Error from server: code=1200 [Coordinator node timed out waiting for replica nodes' responses] message="Operation timed out - received only 0 responses." info={'consistency': 'ONE', 'required_responses': 1, 'received_responses': 0}
+COUNT(*) failed for mysimbdp_tenant1.sensor_measurements_bme280_bronze; falling back to size estimates
+
+ mean_partition_size | partitions_count
+---------------------+------------------
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9631747 |                2
+             9898102 |                1
+             9898102 |                1
+                   0 |                0
+             9631747 |                2
+                   0 |                0
+
+(16 rows)
+

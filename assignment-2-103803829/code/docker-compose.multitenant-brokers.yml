@@ -141,7 +141,7 @@ services:
     environment:
       - TENANT_ID=tenant2
       - KAFKA_BROKERS=kafka-tenant2:29092
-      - KAFKA_TOPIC=bme280-measurements
+      - KAFKA_TOPIC=dht22-measurements
 
   tenant1-streamingestworker:
     build:
@@ -194,7 +194,7 @@ services:
       - WORKER_MODE=managed
       - TENANT_ID=tenant2
       - KAFKA_BROKERS=kafka-tenant2:29092
-      - KAFKA_TOPIC=bme280-measurements
+      - KAFKA_TOPIC=dht22-measurements
       - KAFKA_CONSUMER_GROUP=tenant2-ingest-group
       - CASSANDRA_KEYSPACE=mysimbdp_tenant2
       - CASSANDRA_HOSTS=cassandra1,cassandra2,cassandra3

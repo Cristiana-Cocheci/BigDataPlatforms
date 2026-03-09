@@ -65,6 +65,18 @@ MIN_THROUGHPUT_RPS=1000000 \
 ./run_underprovisioned_benchmark.sh
 ```
 
+Custom efficient benchmark:
+```sh
+TENANTS="tenant1 tenant2" \
+WORKERS=10 \
+TEST_DURATION_SECONDS=500 \
+PREPARE_CHUNKS=true \
+RESET_STACK=true \
+MIN_THROUGHPUT_RPS=1000000 \
+CASSANDRA_COUNT_DAY=2025-06-01 \
+./run_underprovisioned_benchmark.sh
+```
+
 ## Main parameters
 
 All parameters are environment variables. If omitted, defaults are used.
@@ -82,6 +94,7 @@ All parameters are environment variables. If omitted, defaults are used.
 - `REPORT_INTERVAL_SECONDS` default: `10`
 - `CQLSH_REQUEST_TIMEOUT_SECONDS` default: `180`
 - `POST_STOP_SETTLE_SECONDS` default: `15`
+- `CASSANDRA_COUNT_DAY` default: `2025-06-01`
 - `RESULTS_ROOT` default: `benchmark_results`
 
 ## Recommended tuning
@@ -115,7 +128,7 @@ Important files:
 - `log_<service>.txt`: raw service logs
 - `cassandra_tables_<tenant>.txt`: discovered tenant tables
 - `cassandra_registry_<tenant>.txt`: schema profile registry rows
-- `cassandra_counts_<tenant>.txt`: table counts (`COUNT(*)`, with fallback when needed)
+- `cassandra_counts_<tenant>.txt`: per-hour counts for `CASSANDRA_COUNT_DAY` (`hour=0..23`) and `total_for_day`; includes `system.size_estimates` fallback on failures
 - `cassandra_samples_<tenant>.txt`: sample rows
 
 ## How to read success rate
@@ -137,12 +150,12 @@ Interpretation:
 
 ## Cassandra count behavior under load
 
-`COUNT(*)` may time out for large hot tables. The script handles this by:
+Per-hour partition counts can still fail under heavy load. The script handles this by:
 
 - logging count timeout/failure in `cassandra_counts_<tenant>.txt`
 - falling back to `system.size_estimates`
 
-If you need exact totals anyway, run partition-aware counts (for example by `day` and `hour`) and sum them.
+By default, the script queries `day='2025-06-01'` for `hour=0..23` and writes `total_for_day=...`. Override day with `CASSANDRA_COUNT_DAY`.
 
 ## Troubleshooting
 
