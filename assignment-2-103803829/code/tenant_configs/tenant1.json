@@ -1,5 +1,6 @@
 {
   "tenant_id": "tenant1",
+  "tier": "gold",
   "schema_profile": "bme280",
   "table_prefix": "sensor_measurements",
   "csv_format": "bme280_full",

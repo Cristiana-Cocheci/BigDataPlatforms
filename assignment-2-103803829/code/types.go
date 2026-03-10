@@ -19,6 +19,9 @@ const (
 	defaultCassandraKeyspace  = "mysimbdp_weather"
 	defaultCassandraHosts     = "cassandra1,cassandra2,cassandra3"
 	defaultTenantConfigDir    = "./tenant_configs"
+	defaultTenantTier         = "gold"
+	tenantTierGold            = "gold"
+	tenantTierSilver          = "silver"
 	csvFormatBME280Full       = "bme280_full"
 	csvFormatDHT22Compact     = "dht22_compact"
 	batchSize                 = 25    // for Cassandra inserts
@@ -67,6 +70,7 @@ type Measurement struct {
 
 type TenantConfig struct {
 	TenantID       string             `json:"tenant_id"`
+	Tier           string             `json:"tier"`
 	SchemaProfile  string             `json:"schema_profile"`
 	TablePrefix    string             `json:"table_prefix"`
 	CSVFormat      string             `json:"csv_format"`
@@ -145,6 +149,8 @@ func (config *TenantConfig) applyDefaults(tenantID string) {
 		config.TenantID = tenantID
 	}
 
+	config.Tier = normalizeTenantTier(config.Tier)
+
 	if strings.TrimSpace(config.SchemaProfile) == "" {
 		config.SchemaProfile = "custom"
 	}
@@ -167,6 +173,17 @@ func (config *TenantConfig) applyDefaults(tenantID string) {
 
 	if strings.TrimSpace(config.Schema.TableSuffixField) == "" {
 		config.Schema.TableSuffixField = "sensor_type"
+	}
+}
+
+func normalizeTenantTier(tier string) string {
+	switch strings.ToLower(strings.TrimSpace(tier)) {
+	case tenantTierGold:
+		return tenantTierGold
+	case tenantTierSilver:
+		return tenantTierSilver
+	default:
+		return defaultTenantTier
 	}
 }
 

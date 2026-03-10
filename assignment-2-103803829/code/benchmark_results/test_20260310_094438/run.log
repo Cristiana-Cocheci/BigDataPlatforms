@@ -1,0 +1,29 @@
+[09:44:38] Benchmark output directory: benchmark_results/test_20260310_094438
+[09:44:38] Resetting compose stack
+[09:44:38] Building manager binary
+[09:44:38] Starting infrastructure and control services
+[09:44:40] Waiting for cassandra1 to be ready
+[09:45:11] Waiting for kafka-tenant1 to be ready
+[09:45:11] Waiting for kafka-tenant2 to be ready
+[09:45:11] Starting tenant=tenant1 workers=10 with source producer
+[09:45:32] Starting tenant=tenant2 workers=10 with source producer
+[09:45:48] Collecting runtime for 700s
+[09:57:28] Capturing compose status and logs
+[09:57:30] Stopping tenant=tenant1 source/worker
+[09:57:31] Stopping tenant=tenant2 source/worker
+[09:57:32] Waiting 15s for Cassandra write pressure to settle
+[09:57:47] Collecting Cassandra snapshot for tenant=tenant1 keyspace=mysimbdp_tenant1
+[09:58:37] Collecting Cassandra snapshot for tenant=tenant2 keyspace=mysimbdp_tenant2
+[09:59:09] Computing expected rows and inserted rows by tenant
+[09:59:11] Extracting worker and producer performance lines
+[09:59:11] Benchmark completed. Main outputs:
+[09:59:11] - benchmark_results/test_20260310_094438/run_summary.env
+[09:59:11] - benchmark_results/test_20260310_094438/monitor_throughput_by_tenant.csv
+[09:59:11] - benchmark_results/test_20260310_094438/worker_performance_lines.txt
+[09:59:11] - benchmark_results/test_20260310_094438/producer_performance_lines.txt
+[09:59:11] - benchmark_results/test_20260310_094438/cassandra_counts_<tenant>.txt
+[09:59:11] - benchmark_results/test_20260310_094438/cassandra_samples_<tenant>.txt
+[09:59:11] - benchmark_results/test_20260310_094438/initial_rows_by_tenant.csv
+[09:59:11] - benchmark_results/test_20260310_094438/cassandra_rows_by_tenant.csv
+[09:59:11] - benchmark_results/test_20260310_094438/worker_insert_exception_counts.csv
+[09:59:11] - benchmark_results/test_20260310_094438/worker_insert_exceptions_by_tenant.txt

@@ -1,0 +1,4 @@
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=b7f3fa1b0837 severity=warning reasons=throughput 1592.36 rps below minimum 1000000.00 rps throughput=1592.36 avg_batch_ms=5.22
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=f5e1684f2d5e severity=warning reasons=throughput 1299.84 rps below minimum 1000000.00 rps throughput=1299.84 avg_batch_ms=6.82
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=b7f3fa1b0837 severity=warning reasons=throughput 3883.06 rps below minimum 1000000.00 rps throughput=3883.06 avg_batch_ms=6.13
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=f5e1684f2d5e severity=warning reasons=throughput 4430.79 rps below minimum 1000000.00 rps throughput=4430.79 avg_batch_ms=5.29

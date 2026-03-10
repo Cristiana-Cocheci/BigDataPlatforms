@@ -1,5 +1,6 @@
 {
   "tenant_id": "tenant2",
+  "tier": "silver",
   "schema_profile": "dht22",
   "table_prefix": "sensor_observations",
   "csv_format": "dht22_compact",

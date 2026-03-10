@@ -60,6 +60,30 @@ func activeWorkerID() string {
 	return "worker-unknown"
 }
 
+func cassandraConsistencyForTier(tier string) gocql.Consistency {
+	switch normalizeTenantTier(tier) {
+	case tenantTierSilver:
+		return gocql.One
+	case tenantTierGold:
+		return gocql.Quorum
+	default:
+		return gocql.Quorum
+	}
+}
+
+func cassandraConsistencyName(consistency gocql.Consistency) string {
+	switch consistency {
+	case gocql.One:
+		return "ONE"
+	case gocql.Quorum:
+		return "QUORUM"
+	case gocql.All:
+		return "ALL"
+	default:
+		return fmt.Sprintf("%d", int(consistency))
+	}
+}
+
 func schemaForTenant(config TenantConfig) (tenantSchemaProfile, error) {
 	schemaName := strings.TrimSpace(config.SchemaProfile)
 	if schemaName == "" {
@@ -590,9 +614,13 @@ func consumeMessages(session *gocql.Session) error {
 		return fmt.Errorf("invalid tenant schema for tenant=%s: %w", tenantID, err)
 	}
 
+	tenantConsistency := cassandraConsistencyForTier(tenantConfig.Tier)
+
 	log.Printf(
-		"Tenant schema selected: tenant=%s profile=%s format=%s table_prefix=%s columns=%d",
+		"Tenant schema selected: tenant=%s tier=%s consistency=%s profile=%s format=%s table_prefix=%s columns=%d",
 		tenantConfig.TenantID,
+		tenantConfig.Tier,
+		cassandraConsistencyName(tenantConsistency),
 		schema.Name,
 		tenantConfig.CSVFormat,
 		schema.TablePrefix,
@@ -818,6 +846,14 @@ func sendPerformanceReport(client *http.Client, reportURL string, report workerP
 }
 
 func main() {
+	tenantID := activeTenantID()
+	tenantConfig, err := loadTenantConfig(tenantID)
+	if err != nil {
+		log.Fatalf("failed to load tenant config for tenant=%s: %v", tenantID, err)
+	}
+
+	tierConsistency := cassandraConsistencyForTier(tenantConfig.Tier)
+
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("WORKER_MODE")), "managed") {
 		if err := validateManagedWorkerContract(); err != nil {
 			log.Fatalf("%v", err)
@@ -837,7 +873,7 @@ func main() {
 	cluster := gocql.NewCluster(cassandraHosts...)
 	// cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3", "cassandra4", "cassandra5") // Add more nodes for better performance
 	cluster.Keyspace = cassandraKeyspace
-	cluster.Consistency = gocql.Quorum
+	cluster.Consistency = tierConsistency
 	// cluster.Consistency = gocql.One
 	//cluster.Consistency = gocql.All
 	cluster.Timeout = 120 * time.Second
@@ -853,7 +889,12 @@ func main() {
 	}
 	defer session.Close()
 
-	log.Println("Connected to Cassandra cluster")
+	log.Printf(
+		"Connected to Cassandra cluster with tier policy: tenant=%s tier=%s consistency=%s",
+		tenantConfig.TenantID,
+		tenantConfig.Tier,
+		cassandraConsistencyName(tierConsistency),
+	)
 
 	if err := consumeMessages(session); err != nil {
 		log.Fatalf("Consumer error: %v", err)

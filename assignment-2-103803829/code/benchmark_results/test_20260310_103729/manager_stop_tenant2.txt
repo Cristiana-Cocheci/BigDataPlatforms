@@ -1,0 +1,14 @@
+ Container code-tenant2-streamingestworker-2  Stopping
+ Container code-tenant2-streamingestworker-1  Stopping
+ Container code-tenant2-streamingestworker-3  Stopping
+ Container code-tenant2-streamingestworker-1  Stopped
+ Container code-tenant2-streamingestworker-3  Stopped
+ Container code-tenant2-streamingestworker-2  Stopped
+Going to remove code-tenant2-streamingestworker-1, code-tenant2-streamingestworker-3, code-tenant2-streamingestworker-2
+ Container code-tenant2-streamingestworker-2  Removing
+ Container code-tenant2-streamingestworker-3  Removing
+ Container code-tenant2-streamingestworker-1  Removing
+ Container code-tenant2-streamingestworker-1  Removed
+ Container code-tenant2-streamingestworker-3  Removed
+ Container code-tenant2-streamingestworker-2  Removed
+tenant=tenant2 stopped: stop-source=false stop-broker=false
