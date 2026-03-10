@@ -1,0 +1,280 @@
+tenant2-source-10  | 2026/03/10 17:53:03 Waiting for Kafka to be ready...
+tenant2-source-10  | 2026/03/10 17:53:08 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-10  | 2026/03/10 17:53:08 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-10  | 2026/03/10 17:53:08 Producer identity=c919f0d1ff4d auto-assigned chunk 6: /data/tenant2/chunks/chunk_6.csv
+tenant2-source-10  | 2026/03/10 17:53:08 Started reading CSV file: /data/tenant2/chunks/chunk_6.csv
+tenant2-source-10  | 2026/03/10 17:53:09 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-10  | 2026/03/10 17:53:10 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-10  | 2026/03/10 17:53:11 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-10  | 2026/03/10 17:53:12 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-10  | 2026/03/10 17:53:13 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-10  | 2026/03/10 17:53:14 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-10  | 2026/03/10 17:53:15 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-10  | 2026/03/10 17:53:16 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-10  | 2026/03/10 17:53:17 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-10  | 2026/03/10 17:53:18 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-10  | 2026/03/10 17:53:19 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-10  | 2026/03/10 17:53:20 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-10  | 2026/03/10 17:53:21 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-10  | 2026/03/10 17:53:22 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-10  | 2026/03/10 17:53:24 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-10  | 2026/03/10 17:53:25 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-10  | 2026/03/10 17:53:26 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-10  | 2026/03/10 17:53:27 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-10  | 2026/03/10 17:53:28 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-10  | 2026/03/10 17:53:29 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-10  | 2026/03/10 17:53:30 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-10  | 2026/03/10 17:53:30 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-10  | 2026/03/10 17:53:30 Performance: Duration=22.30s, Throughput=9361.90 msg/s
+tenant2-source-2   | 2026/03/10 17:53:00 Waiting for Kafka to be ready...
+tenant2-source-2   | 2026/03/10 17:53:05 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-2   | 2026/03/10 17:53:05 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-2   | 2026/03/10 17:53:05 Producer identity=9e2b68c03c68 auto-assigned chunk 0: /data/tenant2/chunks/chunk_0.csv
+tenant2-source-2   | 2026/03/10 17:53:05 Started reading CSV file: /data/tenant2/chunks/chunk_0.csv
+tenant2-source-2   | 2026/03/10 17:53:07 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-2   | 2026/03/10 17:53:08 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-2   | 2026/03/10 17:53:09 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-2   | 2026/03/10 17:53:10 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-2   | 2026/03/10 17:53:11 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-2   | 2026/03/10 17:53:12 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-2   | 2026/03/10 17:53:13 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-2   | 2026/03/10 17:53:14 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-2   | 2026/03/10 17:53:15 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-2   | 2026/03/10 17:53:16 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-2   | 2026/03/10 17:53:17 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-2   | 2026/03/10 17:53:18 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-2   | 2026/03/10 17:53:19 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-2   | 2026/03/10 17:53:21 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-2   | 2026/03/10 17:53:22 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-2   | 2026/03/10 17:53:23 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-2   | 2026/03/10 17:53:24 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-2   | 2026/03/10 17:53:25 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-2   | 2026/03/10 17:53:26 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-2   | 2026/03/10 17:53:27 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-2   | 2026/03/10 17:53:28 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-2   | 2026/03/10 17:53:28 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-2   | 2026/03/10 17:53:28 Performance: Duration=22.53s, Throughput=9266.22 msg/s
+tenant2-source-6   | 2026/03/10 17:53:03 Waiting for Kafka to be ready...
+tenant2-source-6   | 2026/03/10 17:53:08 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-6   | 2026/03/10 17:53:08 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-7   | 2026/03/10 17:53:01 Waiting for Kafka to be ready...
+tenant2-source-7   | 2026/03/10 17:53:06 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-7   | 2026/03/10 17:53:06 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-7   | 2026/03/10 17:53:06 Producer identity=eb99cfa2ca07 auto-assigned chunk 2: /data/tenant2/chunks/chunk_2.csv
+tenant2-source-7   | 2026/03/10 17:53:06 Started reading CSV file: /data/tenant2/chunks/chunk_2.csv
+tenant2-source-7   | 2026/03/10 17:53:08 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-7   | 2026/03/10 17:53:09 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-7   | 2026/03/10 17:53:10 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-6   | 2026/03/10 17:53:08 Producer identity=14be84aab664 auto-assigned chunk 9: /data/tenant2/chunks/chunk_9.csv
+tenant2-source-6   | 2026/03/10 17:53:08 Started reading CSV file: /data/tenant2/chunks/chunk_9.csv
+tenant2-source-6   | 2026/03/10 17:53:09 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-6   | 2026/03/10 17:53:10 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-7   | 2026/03/10 17:53:11 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-7   | 2026/03/10 17:53:12 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-7   | 2026/03/10 17:53:13 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-7   | 2026/03/10 17:53:14 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-7   | 2026/03/10 17:53:15 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-7   | 2026/03/10 17:53:16 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-7   | 2026/03/10 17:53:17 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-7   | 2026/03/10 17:53:18 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-7   | 2026/03/10 17:53:19 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-7   | 2026/03/10 17:53:20 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-7   | 2026/03/10 17:53:21 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-7   | 2026/03/10 17:53:22 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-6   | 2026/03/10 17:53:12 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-6   | 2026/03/10 17:53:13 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-6   | 2026/03/10 17:53:14 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-6   | 2026/03/10 17:53:15 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-6   | 2026/03/10 17:53:16 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-6   | 2026/03/10 17:53:17 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-6   | 2026/03/10 17:53:18 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-6   | 2026/03/10 17:53:19 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-6   | 2026/03/10 17:53:20 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-6   | 2026/03/10 17:53:21 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-6   | 2026/03/10 17:53:22 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-6   | 2026/03/10 17:53:23 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-6   | 2026/03/10 17:53:24 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-6   | 2026/03/10 17:53:25 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-6   | 2026/03/10 17:53:26 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-6   | 2026/03/10 17:53:27 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-6   | 2026/03/10 17:53:28 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-7   | 2026/03/10 17:53:23 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-7   | 2026/03/10 17:53:25 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-7   | 2026/03/10 17:53:26 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-7   | 2026/03/10 17:53:27 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-7   | 2026/03/10 17:53:28 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-6   | 2026/03/10 17:53:30 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-6   | 2026/03/10 17:53:31 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-6   | 2026/03/10 17:53:31 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-6   | 2026/03/10 17:53:31 Performance: Duration=22.34s, Throughput=9347.61 msg/s
+tenant2-source-7   | 2026/03/10 17:53:29 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-7   | 2026/03/10 17:53:29 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-7   | 2026/03/10 17:53:29 Performance: Duration=22.27s, Throughput=9374.80 msg/s
+tenant2-source-4   | 2026/03/10 17:53:02 Waiting for Kafka to be ready...
+tenant2-source-4   | 2026/03/10 17:53:07 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-4   | 2026/03/10 17:53:07 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-4   | 2026/03/10 17:53:07 Producer identity=f9c55b5718be auto-assigned chunk 4: /data/tenant2/chunks/chunk_4.csv
+tenant2-source-4   | 2026/03/10 17:53:07 Started reading CSV file: /data/tenant2/chunks/chunk_4.csv
+tenant2-source-4   | 2026/03/10 17:53:08 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-4   | 2026/03/10 17:53:09 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-4   | 2026/03/10 17:53:10 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-4   | 2026/03/10 17:53:11 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-4   | 2026/03/10 17:53:12 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-4   | 2026/03/10 17:53:14 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-4   | 2026/03/10 17:53:15 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-4   | 2026/03/10 17:53:16 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-4   | 2026/03/10 17:53:17 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-4   | 2026/03/10 17:53:18 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-4   | 2026/03/10 17:53:19 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-4   | 2026/03/10 17:53:20 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-4   | 2026/03/10 17:53:21 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-4   | 2026/03/10 17:53:22 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-4   | 2026/03/10 17:53:23 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-4   | 2026/03/10 17:53:24 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-4   | 2026/03/10 17:53:25 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-4   | 2026/03/10 17:53:26 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-4   | 2026/03/10 17:53:27 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-4   | 2026/03/10 17:53:28 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-4   | 2026/03/10 17:53:30 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-4   | 2026/03/10 17:53:30 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-4   | 2026/03/10 17:53:30 Performance: Duration=22.57s, Throughput=9249.76 msg/s
+tenant2-source-3   | 2026/03/10 17:53:03 Waiting for Kafka to be ready...
+tenant2-source-3   | 2026/03/10 17:53:08 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-3   | 2026/03/10 17:53:08 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-3   | 2026/03/10 17:53:08 Producer identity=9b4693ec29c2 auto-assigned chunk 8: /data/tenant2/chunks/chunk_8.csv
+tenant2-source-3   | 2026/03/10 17:53:08 Started reading CSV file: /data/tenant2/chunks/chunk_8.csv
+tenant2-source-3   | 2026/03/10 17:53:09 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-3   | 2026/03/10 17:53:10 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-3   | 2026/03/10 17:53:11 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-3   | 2026/03/10 17:53:12 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-3   | 2026/03/10 17:53:13 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-3   | 2026/03/10 17:53:14 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-3   | 2026/03/10 17:53:16 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-3   | 2026/03/10 17:53:17 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-3   | 2026/03/10 17:53:18 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-3   | 2026/03/10 17:53:19 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-3   | 2026/03/10 17:53:20 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-3   | 2026/03/10 17:53:21 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-3   | 2026/03/10 17:53:22 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-3   | 2026/03/10 17:53:23 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-3   | 2026/03/10 17:53:24 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-3   | 2026/03/10 17:53:25 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-1   | 2026/03/10 17:53:02 Waiting for Kafka to be ready...
+tenant2-source-1   | 2026/03/10 17:53:07 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-1   | 2026/03/10 17:53:07 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-1   | 2026/03/10 17:53:07 Producer identity=cc7dde0ad6b6 auto-assigned chunk 3: /data/tenant2/chunks/chunk_3.csv
+tenant2-source-1   | 2026/03/10 17:53:07 Started reading CSV file: /data/tenant2/chunks/chunk_3.csv
+tenant2-source-1   | 2026/03/10 17:53:08 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-9   | 2026/03/10 17:53:02 Waiting for Kafka to be ready...
+tenant2-source-9   | 2026/03/10 17:53:07 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-9   | 2026/03/10 17:53:07 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-9   | 2026/03/10 17:53:07 Producer identity=8a2435725b57 auto-assigned chunk 5: /data/tenant2/chunks/chunk_5.csv
+tenant2-source-1   | 2026/03/10 17:53:09 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-1   | 2026/03/10 17:53:10 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-1   | 2026/03/10 17:53:11 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-1   | 2026/03/10 17:53:12 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-9   | 2026/03/10 17:53:07 Started reading CSV file: /data/tenant2/chunks/chunk_5.csv
+tenant2-source-9   | 2026/03/10 17:53:08 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-1   | 2026/03/10 17:53:13 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-1   | 2026/03/10 17:53:14 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-1   | 2026/03/10 17:53:15 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-1   | 2026/03/10 17:53:16 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-1   | 2026/03/10 17:53:17 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-1   | 2026/03/10 17:53:18 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-1   | 2026/03/10 17:53:19 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-1   | 2026/03/10 17:53:21 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-1   | 2026/03/10 17:53:22 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-1   | 2026/03/10 17:53:23 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-8   | 2026/03/10 17:53:03 Waiting for Kafka to be ready...
+tenant2-source-8   | 2026/03/10 17:53:08 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-8   | 2026/03/10 17:53:08 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-8   | 2026/03/10 17:53:08 Producer identity=933cfd28ef7d auto-assigned chunk 7: /data/tenant2/chunks/chunk_7.csv
+tenant2-source-8   | 2026/03/10 17:53:08 Started reading CSV file: /data/tenant2/chunks/chunk_7.csv
+tenant2-source-8   | 2026/03/10 17:53:09 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-8   | 2026/03/10 17:53:10 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-8   | 2026/03/10 17:53:11 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-8   | 2026/03/10 17:53:12 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-1   | 2026/03/10 17:53:24 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-1   | 2026/03/10 17:53:25 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-1   | 2026/03/10 17:53:26 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-1   | 2026/03/10 17:53:27 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-1   | 2026/03/10 17:53:28 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-1   | 2026/03/10 17:53:29 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-5   | 2026/03/10 17:53:01 Waiting for Kafka to be ready...
+tenant2-source-5   | 2026/03/10 17:53:06 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-5   | 2026/03/10 17:53:06 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-5   | 2026/03/10 17:53:06 Producer identity=772985f2f13d auto-assigned chunk 1: /data/tenant2/chunks/chunk_1.csv
+tenant2-source-9   | 2026/03/10 17:53:09 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-9   | 2026/03/10 17:53:11 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-1   | 2026/03/10 17:53:29 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-1   | 2026/03/10 17:53:29 Performance: Duration=22.35s, Throughput=9341.29 msg/s
+tenant2-source-5   | 2026/03/10 17:53:06 Started reading CSV file: /data/tenant2/chunks/chunk_1.csv
+tenant2-source-5   | 2026/03/10 17:53:07 Produced 10000 messages (total: 10000, processed lines: 10001)
+tenant2-source-5   | 2026/03/10 17:53:08 Produced 10000 messages (total: 20000, processed lines: 20001)
+tenant2-source-5   | 2026/03/10 17:53:09 Produced 10000 messages (total: 30000, processed lines: 30001)
+tenant2-source-5   | 2026/03/10 17:53:10 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-5   | 2026/03/10 17:53:11 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-5   | 2026/03/10 17:53:12 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-5   | 2026/03/10 17:53:14 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-3   | 2026/03/10 17:53:26 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-3   | 2026/03/10 17:53:27 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-3   | 2026/03/10 17:53:28 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-5   | 2026/03/10 17:53:15 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-5   | 2026/03/10 17:53:16 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-3   | 2026/03/10 17:53:29 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-3   | 2026/03/10 17:53:30 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-3   | 2026/03/10 17:53:30 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-5   | 2026/03/10 17:53:17 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-5   | 2026/03/10 17:53:18 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-8   | 2026/03/10 17:53:13 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-8   | 2026/03/10 17:53:14 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-8   | 2026/03/10 17:53:15 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-8   | 2026/03/10 17:53:16 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-8   | 2026/03/10 17:53:17 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-8   | 2026/03/10 17:53:18 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-9   | 2026/03/10 17:53:12 Produced 10000 messages (total: 40000, processed lines: 40001)
+tenant2-source-9   | 2026/03/10 17:53:13 Produced 10000 messages (total: 50000, processed lines: 50001)
+tenant2-source-8   | 2026/03/10 17:53:20 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-8   | 2026/03/10 17:53:21 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-8   | 2026/03/10 17:53:22 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-5   | 2026/03/10 17:53:19 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-5   | 2026/03/10 17:53:20 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-8   | 2026/03/10 17:53:23 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-8   | 2026/03/10 17:53:24 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-8   | 2026/03/10 17:53:25 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-8   | 2026/03/10 17:53:26 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-8   | 2026/03/10 17:53:27 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-8   | 2026/03/10 17:53:28 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-8   | 2026/03/10 17:53:29 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-8   | 2026/03/10 17:53:30 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-3   | 2026/03/10 17:53:30 Performance: Duration=22.14s, Throughput=9432.03 msg/s
+tenant2-source-5   | 2026/03/10 17:53:21 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-5   | 2026/03/10 17:53:22 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-8   | 2026/03/10 17:53:30 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-8   | 2026/03/10 17:53:30 Performance: Duration=22.27s, Throughput=9375.78 msg/s
+tenant2-source-5   | 2026/03/10 17:53:23 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-5   | 2026/03/10 17:53:24 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-5   | 2026/03/10 17:53:25 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-9   | 2026/03/10 17:53:14 Produced 10000 messages (total: 60000, processed lines: 60001)
+tenant2-source-9   | 2026/03/10 17:53:15 Produced 10000 messages (total: 70000, processed lines: 70001)
+tenant2-source-9   | 2026/03/10 17:53:16 Produced 10000 messages (total: 80000, processed lines: 80001)
+tenant2-source-5   | 2026/03/10 17:53:26 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-5   | 2026/03/10 17:53:27 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-5   | 2026/03/10 17:53:28 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-9   | 2026/03/10 17:53:17 Produced 10000 messages (total: 90000, processed lines: 90001)
+tenant2-source-9   | 2026/03/10 17:53:18 Produced 10000 messages (total: 100000, processed lines: 100001)
+tenant2-source-9   | 2026/03/10 17:53:19 Produced 10000 messages (total: 110000, processed lines: 110001)
+tenant2-source-9   | 2026/03/10 17:53:20 Produced 10000 messages (total: 120000, processed lines: 120001)
+tenant2-source-9   | 2026/03/10 17:53:21 Produced 10000 messages (total: 130000, processed lines: 130001)
+tenant2-source-9   | 2026/03/10 17:53:22 Produced 10000 messages (total: 140000, processed lines: 140001)
+tenant2-source-9   | 2026/03/10 17:53:23 Produced 10000 messages (total: 150000, processed lines: 150001)
+tenant2-source-9   | 2026/03/10 17:53:24 Produced 10000 messages (total: 160000, processed lines: 160001)
+tenant2-source-9   | 2026/03/10 17:53:25 Produced 10000 messages (total: 170000, processed lines: 170001)
+tenant2-source-9   | 2026/03/10 17:53:26 Produced 10000 messages (total: 180000, processed lines: 180001)
+tenant2-source-9   | 2026/03/10 17:53:27 Produced 10000 messages (total: 190000, processed lines: 190001)
+tenant2-source-9   | 2026/03/10 17:53:29 Produced 10000 messages (total: 200000, processed lines: 200001)
+tenant2-source-9   | 2026/03/10 17:53:30 Produced 8811 messages (total: 208811, processed lines: 208812)
+tenant2-source-5   | 2026/03/10 17:53:28 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-5   | 2026/03/10 17:53:28 Performance: Duration=22.53s, Throughput=9267.58 msg/s
+tenant2-source-9   | 2026/03/10 17:53:30 Production complete! Total messages produced: 208811, Total lines processed: 208812
+tenant2-source-9   | 2026/03/10 17:53:30 Performance: Duration=22.33s, Throughput=9351.66 msg/s

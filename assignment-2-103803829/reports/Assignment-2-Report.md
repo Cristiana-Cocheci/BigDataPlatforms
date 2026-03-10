@@ -133,6 +133,75 @@ performance of ingestion tests, failures and exceptions, under normal assumed lo
 then for heavy loads but with a limited capability, under-provisoning of
 streamingestworker due to the limitation of mysimbdp resources
 
+#### Performance Report (Scenario 1): Underprovisioning vs normal run
+
+Description: The normal run has 10 concurrent workers, 10 Kafka partitions. The underprovisioned run has 1 worker and 1 partition. They are both left to run for a total of 120 seconds.
+
+Comparison target:
+- baseline: `code/benchmark_results/underprovisioned_short_120s`
+- chunked multi-source: `code/benchmark_results/validation_10workers_chunked_rerun/test_20260310_195009`
+
+Summary (both tenants combined):
+
+| scenario | reports_received | alerts_forwarded | alert_ratio_pct | total_ingested_mb | total_avg_throughput_rps_sum | producer_rows | inserted_rows | processing_pct | total_final_kafka_lag | insert_exceptions |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| underprovisioned_short_120s | 43 | 22 | 51.16 | 503.7340 | 10181.32 | 5002944 | 2273998 | 45.45 | 2966269 | 0 |
+| chunked_10workers_10sources_rerun | 189 | 23 | 12.17 | 1077.6729 | 50676.30 | 5002944 | 4992427 | 99.79 | 0 | 41 |
+
+Per-tenant details:
+
+| scenario | tenant | avg_throughput_rps | total_avg_throughput_rps (`WORKERS * avg_throughput_rps`) | avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | final_kafka_lag | drain_status | insert_exceptions | duplicate_rows |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| underprovisioned_short_120s | tenant1 | 4613.15 | 4613.15 | 1.0810 | 237.8819 | 2914834 | 1063048 | 36.47 | 2070359 | timeout | 0 | 3137 |
+| underprovisioned_short_120s | tenant2 | 5568.17 | 5568.17 | 1.2641 | 265.8521 | 2088110 | 1210950 | 57.99 | 895910 | timeout | 0 | 840 |
+| chunked_10workers_10sources_rerun | tenant1 | 2258.86 | 22588.60 | 0.5309 | 643.2399 | 2914834 | 2911539 | 99.89 | 0 | drained | 8 | 3137 |
+| chunked_10workers_10sources_rerun | tenant2 | 2808.77 | 28087.70 | 0.6384 | 434.4330 | 2088110 | 2080888 | 99.65 | 0 | drained | 33 | 840 |
+
+Observations:
+- The chunked multi-source run reached full offered load (`5002944` produced rows) while also draining Kafka completely (`final lag = 0` for both tenants). However, the underprovisioned run did not fully insert data into the database in the allocated time, even with additional draining buffer.
+- Total average throughput is reported as `WORKERS * avg_throughput_rps`: baseline uses `WORKERS=1` (same as average throughput), rerun uses `WORKERS=10`.
+- Processing fraction improved from `45.45%` to `99.79%` when each source replica (each kafka producer) read a different chunk file.
+- `total_ingested_mb` increased from `503.7340` to `1077.6729` in the same 120s benchmark window, indicating much higher effective ingestion completion for the normal run than the underprovisioned one.
+- Trade-off: insert exceptions increased (`0` -> `41`).
+
+
+#### Performance Report (Scenario 2) - Cassandra Write-Limit `5ms` vs `20ms` vs `50ms`
+
+Description: In this scenario we have set 1 worker and 1 partition, while throttling the Cassandra writes via an artificial sleep between ingesting batches (CASSANDRA_WRITE_SLEEP_MS). This scenario simulates an intensive ingestion workload where incoming data rate significantly exceeds the processing capability of the ingestion pipeline.
+
+Source folders:
+- `code/benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743`
+- `code/benchmark_results/write_limit_20ms_20260310_163743/test_20260310_164641`
+- `code/benchmark_results/write_limit_50ms_20260310_163743/test_20260310_170348`
+
+
+Combined summary (both tenants):
+
+| sleep_ms | reports_received | alerts_forwarded | alert_ratio_pct | total_avg_throughput_rps | total_avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | total_final_kafka_lag |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5 | 46 | 23 | 50.00 | 3395.15 | 0.7818 | 179.5148 | 5002944 | 807865 | 16.15 | 4282518 |
+| 20 | 46 | 23 | 50.00 | 1652.26 | 0.3807 | 87.6100 | 5002944 | 384581 | 7.69 | 4663719 |
+| 50 | 46 | 23 | 50.00 | 789.36 | 0.1819 | 41.9373 | 5002944 | 184928 | 3.70 | 4840194 |
+
+Per-tenant details:
+
+| sleep_ms | tenant | avg_throughput_rps | avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | final_kafka_lag | drain_status | insert_exceptions | duplicate_rows |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| 5 | tenant1 | 1574.76 | 0.3689 | 88.6252 | 2914834 | 392325 | 13.46 | 2603184 | timeout | 0 | 3137 |
+| 5 | tenant2 | 1820.39 | 0.4129 | 90.8896 | 2088110 | 415540 | 19.90 | 1679334 | timeout | 0 | 840 |
+| 20 | tenant1 | 790.02 | 0.1851 | 44.4771 | 2914834 | 192119 | 6.59 | 2765284 | timeout | 0 | 3137 |
+| 20 | tenant2 | 862.24 | 0.1956 | 43.1329 | 2088110 | 192462 | 9.22 | 1898435 | timeout | 0 | 840 |
+| 50 | tenant1 | 385.14 | 0.0902 | 21.7181 | 2914834 | 94369 | 3.24 | 2841509 | timeout | 0 | 3137 |
+| 50 | tenant2 | 404.22 | 0.0917 | 20.2192 | 2088110 | 90559 | 4.34 | 1998685 | timeout | 0 | 840 |
+
+Observations:
+- Increasing `CASSANDRA_WRITE_SLEEP_MS` from `5` to `20` to `50` reduced throughput and processed fraction.
+- Residual Kafka lag increased monotonically with larger write sleep.
+- Insert exceptions stayed at `0` in all three runs.
+- All three runs timed out during drain due to intentionally high offered load and short runtime.
+
+The results demonstrate that under a heavy ingestion workload, the processing capacity of streamingestworker becomes limited by the downstream Cassandra write latency, resulting in reduced throughput, increasing Kafka backlog, and a low fraction of processed records.
+
 4.
 DESIGN
 mysimbdp-streamingestmonitor
@@ -480,68 +549,3 @@ Notes:
 
 ## Benchmark Addendum (Requested Full Reports)
 
-### Report A (Scenario 1): Initial Short Under-Provisioned vs Chunked Multi-Source
-
-Comparison target:
-- baseline: `code/benchmark_results/underprovisioned_short_120s`
-- chunked multi-source: `code/benchmark_results/validation_10workers_chunked/test_20260310_182912`
-
-Run-level summary (both tenants combined):
-
-| scenario | reports_received | alerts_forwarded | alert_ratio_pct | total_ingested_mb | producer_rows | inserted_rows | processing_pct | total_final_kafka_lag | insert_exceptions |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| underprovisioned_short_120s | 43 | 22 | 51.16 | 503.7340 | 5002944 | 2273998 | 45.45 | 2966269 | 0 |
-| chunked_10workers_10sources | 198 | 20 | 10.10 | 1079.1914 | 5002944 | 4998748 | 99.92 | 0 | 29 |
-
-Per-tenant details:
-
-| scenario | tenant | avg_throughput_rps | avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | final_kafka_lag | drain_status | insert_exceptions | duplicate_rows |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| underprovisioned_short_120s | tenant1 | 4613.15 | 1.0810 | 237.8819 | 2914834 | 1063048 | 36.47 | 2070359 | timeout | 0 | 3137 |
-| underprovisioned_short_120s | tenant2 | 5568.17 | 1.2641 | 265.8521 | 2088110 | 1210950 | 57.99 | 895910 | timeout | 0 | 840 |
-| chunked_10workers_10sources | tenant1 | 2142.24 | 0.5035 | 635.1482 | 2914834 | 2911563 | 99.89 | 0 | drained | 13 | 3137 |
-| chunked_10workers_10sources | tenant2 | 2710.00 | 0.6160 | 444.0432 | 2088110 | 2087185 | 99.96 | 0 | drained | 16 | 840 |
-
-Observations:
-- The chunked multi-source run reached full offered load (`5002944` produced rows) while also draining Kafka completely (`final lag = 0` for both tenants).
-- Processing fraction improved from `45.45%` to `99.92%` when each source replica read a different chunk file.
-- `total_ingested_mb` increased from `503.7340` to `1079.1914` in the same 120s benchmark window, indicating much higher effective ingestion completion.
-- Trade-off: insert exceptions increased (`0` -> `29`), so schema/write-path stability still needs hardening even though throughput completion improved.
-- Producer rows for the chunked run were verified from source logs (`log_tenant1-source.txt`, `log_tenant2-source.txt`) because that run's `producer_ingested_rows` CSV field was not yet reflecting multi-source aggregation.
-
-### Report B: Current Comparison (Cassandra Write-Limit Matrix `5ms` vs `20ms` vs `50ms`)
-
-The experiment simulates an intensive ingestion workload where the incoming data rate significantly exceeds the processing capability of the ingestion pipeline. By artificially introducing Cassandra write latency (CASSANDRA_WRITE_SLEEP_MS), the effective throughput of streamingestworker becomes constrained. As the write latency increases from 5 ms to 50 ms, the ingestion throughput decreases almost proportionally while Kafka backlog increases, demonstrating the effect of limited processing capability under heavy load.
-
-Source folders:
-- `code/benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743`
-- `code/benchmark_results/write_limit_20ms_20260310_163743/test_20260310_164641`
-- `code/benchmark_results/write_limit_50ms_20260310_163743/test_20260310_170348`
-
-
-Combined summary (both tenants):
-
-| sleep_ms | reports_received | alerts_forwarded | alert_ratio_pct | total_avg_throughput_rps | total_avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | total_final_kafka_lag |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 5 | 46 | 23 | 50.00 | 3395.15 | 0.7818 | 179.5148 | 5002944 | 807865 | 16.15 | 4282518 |
-| 20 | 46 | 23 | 50.00 | 1652.26 | 0.3807 | 87.6100 | 5002944 | 384581 | 7.69 | 4663719 |
-| 50 | 46 | 23 | 50.00 | 789.36 | 0.1819 | 41.9373 | 5002944 | 184928 | 3.70 | 4840194 |
-
-Per-tenant details:
-
-| sleep_ms | tenant | avg_throughput_rps | avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | final_kafka_lag | drain_status | insert_exceptions | duplicate_rows |
-|---:|---|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| 5 | tenant1 | 1574.76 | 0.3689 | 88.6252 | 2914834 | 392325 | 13.46 | 2603184 | timeout | 0 | 3137 |
-| 5 | tenant2 | 1820.39 | 0.4129 | 90.8896 | 2088110 | 415540 | 19.90 | 1679334 | timeout | 0 | 840 |
-| 20 | tenant1 | 790.02 | 0.1851 | 44.4771 | 2914834 | 192119 | 6.59 | 2765284 | timeout | 0 | 3137 |
-| 20 | tenant2 | 862.24 | 0.1956 | 43.1329 | 2088110 | 192462 | 9.22 | 1898435 | timeout | 0 | 840 |
-| 50 | tenant1 | 385.14 | 0.0902 | 21.7181 | 2914834 | 94369 | 3.24 | 2841509 | timeout | 0 | 3137 |
-| 50 | tenant2 | 404.22 | 0.0917 | 20.2192 | 2088110 | 90559 | 4.34 | 1998685 | timeout | 0 | 840 |
-
-Observations:
-- Increasing `CASSANDRA_WRITE_SLEEP_MS` from `5` to `20` to `50` reduced throughput and processed fraction almost proportionally.
-- Residual Kafka lag increased monotonically with larger write sleep.
-- Insert exceptions stayed at `0` in all three runs.
-- All three runs timed out during drain due to intentionally high offered load and short runtime.
-
-The results demonstrate that under a heavy ingestion workload, the effective processing capacity of streamingestworker becomes limited by the downstream Cassandra write latency, resulting in reduced throughput, increasing Kafka backlog, and a low fraction of processed records.
