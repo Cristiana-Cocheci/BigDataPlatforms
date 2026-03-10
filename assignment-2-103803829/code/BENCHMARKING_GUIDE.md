@@ -125,9 +125,9 @@ Important files:
 
 - `run.log`: run timeline
 - `test_config.env`: exact run configuration and timestamps
-- `run_summary.env`: top-level counters
-- `monitor_counters.env`: monitor/manager alert counters
-- `monitor_throughput_by_tenant.csv`: per-tenant throughput and latency summary
+- `run_summary.env`: top-level counters (including `total_ingested_mb`)
+- `monitor_counters.env`: monitor/manager alert counters and total ingested MB
+- `monitor_throughput_by_tenant.csv`: per-tenant throughput, latency, and ingested MB summary
 - `worker_performance_lines.txt`: worker throughput snapshots
 - `producer_performance_lines.txt`: producer output lines and producer performance
 - `log_<service>.txt`: raw service logs

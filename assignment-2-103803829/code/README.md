@@ -90,6 +90,11 @@ Workers send `POST` requests to `/reports` with JSON payload:
   "batches_in_window": 168,
   "avg_batch_ingest_ms": 12.7,
   "throughput_records_per_sec": 280.0,
+  "ingested_bytes_in_window": 1543200,
+  "ingested_mb_in_window": 1.4717,
+  "ingested_mb_per_sec": 0.0981,
+  "total_ingested_bytes": 58100000,
+  "total_ingested_mb": 55.4085,
   "total_inserted": 158000,
   "total_consumed": 158500
 }
@@ -122,6 +127,11 @@ When thresholds are violated, monitor sends `POST /alerts` to manager:
     "batches_in_window": 168,
     "avg_batch_ingest_ms": 12.7,
     "throughput_records_per_sec": 280.0,
+    "ingested_bytes_in_window": 1543200,
+    "ingested_mb_in_window": 1.4717,
+    "ingested_mb_per_sec": 0.0981,
+    "total_ingested_bytes": 58100000,
+    "total_ingested_mb": 55.4085,
     "total_inserted": 158000,
     "total_consumed": 158500
   }
@@ -157,6 +167,8 @@ Expected behavior in logs:
 - `streamingestmonitor`: `report received ...`
 - `streamingestmonitor`: `alert forwarded ...`
 - `streamingestmanager`: `monitor alert received ...`
+
+`report received` and `monitor alert received` log lines also include `window_mb=...` and `total_mb=...` for data-volume tracking.
 
 ## Black-box model for streamingestworker
 
@@ -315,7 +327,7 @@ Main output folder:
 Important files inside each run folder:
 
 - `run_summary.env`: top-level counters and run metadata
-- `monitor_throughput_by_tenant.csv`: per-tenant throughput/latency summary from monitor logs
+- `monitor_throughput_by_tenant.csv`: per-tenant throughput/latency summary from monitor logs, including ingested MB metrics
 - `worker_performance_lines.txt`: worker-level `Performance: Duration... Throughput...` lines
 - `producer_performance_lines.txt`: producer-side throughput lines
 - `cassandra_tables_<tenant>.txt`: discovered Cassandra tables in tenant keyspace

@@ -181,20 +181,14 @@ collect_monitor_summary() {
   local monitor_log="$RUN_DIR/log_streamingestmonitor.txt"
   local manager_log="$RUN_DIR/log_streamingestmanager.txt"
 
-  local reports alerts manager_alerts
+  local reports alerts manager_alerts total_ingested_mb
   reports="$(grep -c "report received:" "$monitor_log" 2>/dev/null || true)"
   alerts="$(grep -c "alert forwarded:" "$monitor_log" 2>/dev/null || true)"
   manager_alerts="$(grep -c "monitor alert received:" "$manager_log" 2>/dev/null || true)"
 
-  {
-    echo "reports_received=$reports"
-    echo "alerts_forwarded=$alerts"
-    echo "alerts_seen_by_manager=$manager_alerts"
-  } >"$RUN_DIR/monitor_counters.env"
-
   awk '
 /report received:/ {
-  tenant=""; throughput=""; avg_batch="";
+  tenant=""; throughput=""; avg_batch=""; window_mb=""; total_mb="";
   for (i = 1; i <= NF; i++) {
     if ($i ~ /^tenant=/) {
       split($i, a, "=");
@@ -205,6 +199,12 @@ collect_monitor_summary() {
     } else if ($i ~ /^avg_batch_ms=/) {
       split($i, a, "=");
       avg_batch = a[2] + 0;
+    } else if ($i ~ /^window_mb=/) {
+      split($i, a, "=");
+      window_mb = a[2] + 0;
+    } else if ($i ~ /^total_mb=/) {
+      split($i, a, "=");
+      total_mb = a[2] + 0;
     }
   }
 
@@ -212,22 +212,37 @@ collect_monitor_summary() {
     count[tenant]++;
     sum_throughput[tenant] += throughput;
     sum_batch[tenant] += avg_batch;
+    sum_window_mb[tenant] += window_mb;
     if (!(tenant in min_throughput) || throughput < min_throughput[tenant]) {
       min_throughput[tenant] = throughput;
     }
     if (!(tenant in max_throughput) || throughput > max_throughput[tenant]) {
       max_throughput[tenant] = throughput;
     }
+    if (!(tenant in max_total_mb) || total_mb > max_total_mb[tenant]) {
+      max_total_mb[tenant] = total_mb;
+    }
   }
 }
 
 END {
-  print "tenant,reports,avg_throughput_rps,min_throughput_rps,max_throughput_rps,avg_batch_ingest_ms";
+  print "tenant,reports,avg_throughput_rps,min_throughput_rps,max_throughput_rps,avg_batch_ingest_ms,avg_ingested_mb_per_report,total_ingested_mb";
   for (tenant in count) {
-    printf "%s,%d,%.2f,%.2f,%.2f,%.2f\n", tenant, count[tenant], sum_throughput[tenant] / count[tenant], min_throughput[tenant], max_throughput[tenant], sum_batch[tenant] / count[tenant];
+    avg_window_mb = sum_window_mb[tenant] / count[tenant];
+    tenant_total_mb = (tenant in max_total_mb) ? max_total_mb[tenant] : sum_window_mb[tenant];
+    printf "%s,%d,%.2f,%.2f,%.2f,%.2f,%.4f,%.4f\n", tenant, count[tenant], sum_throughput[tenant] / count[tenant], min_throughput[tenant], max_throughput[tenant], sum_batch[tenant] / count[tenant], avg_window_mb, tenant_total_mb;
   }
 }
 ' "$monitor_log" >"$RUN_DIR/monitor_throughput_by_tenant.csv"
+
+  total_ingested_mb="$(awk -F, 'FNR > 1 {sum += $8} END {printf "%.4f", sum + 0}' "$RUN_DIR/monitor_throughput_by_tenant.csv" 2>/dev/null || echo "0.0000")"
+
+  {
+    echo "reports_received=$reports"
+    echo "alerts_forwarded=$alerts"
+    echo "alerts_seen_by_manager=$manager_alerts"
+    echo "total_ingested_mb=$total_ingested_mb"
+  } >"$RUN_DIR/monitor_counters.env"
 }
 
 map_container_data_path_to_host() {

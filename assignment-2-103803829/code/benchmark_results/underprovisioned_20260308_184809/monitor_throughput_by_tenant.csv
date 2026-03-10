@@ -1,3 +1,0 @@
-tenant,reports,avg_throughput_rps,min_throughput_rps,max_throughput_rps,avg_batch_ingest_ms
-tenant1,148,1891.55,75.00,2638.50,5.62
-tenant2,46,4454.56,1007.44,5117.09,5.24

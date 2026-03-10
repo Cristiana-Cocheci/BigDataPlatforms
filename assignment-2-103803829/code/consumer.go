@@ -36,6 +36,11 @@ type workerPerformanceReport struct {
 	BatchesInWindow         int     `json:"batches_in_window"`
 	AvgBatchIngestMS        float64 `json:"avg_batch_ingest_ms"`
 	ThroughputRecordsPerSec float64 `json:"throughput_records_per_sec"`
+	IngestedBytesInWindow   int64   `json:"ingested_bytes_in_window"`
+	IngestedMBInWindow      float64 `json:"ingested_mb_in_window"`
+	IngestedMBPerSec        float64 `json:"ingested_mb_per_sec"`
+	TotalIngestedBytes      int64   `json:"total_ingested_bytes"`
+	TotalIngestedMB         float64 `json:"total_ingested_mb"`
 	TotalInserted           int     `json:"total_inserted"`
 	TotalConsumed           int     `json:"total_consumed"`
 }
@@ -785,6 +790,7 @@ func consumeMessages(session *gocql.Session) error {
 	reportClient := &http.Client{Timeout: 5 * time.Second}
 	lastReportTime := time.Now()
 	windowInsertStart := 0
+	windowIngestedBytesStart := int64(0)
 	windowBatchLatencyMS := 0.0
 	windowBatchCount := 0
 
@@ -829,13 +835,16 @@ func consumeMessages(session *gocql.Session) error {
 
 	// Start consuming with the first message already read
 	batch := make([]map[string]any, 0, batchSize)
+	batchBytes := int64(0)
 	messageCount := 1
 	insertCount := 0
+	insertedBytesCount := int64(0)
 	lastLogTime := time.Now()
 	lastLogInsert := 0
 
 	// Add first record to batch
 	batch = append(batch, firstRecord)
+	batchBytes += int64(len(firstMsg.Value))
 
 	for {
 		msg, err := r.ReadMessage(context.Background())
@@ -854,6 +863,7 @@ func consumeMessages(session *gocql.Session) error {
 		}
 
 		batch = append(batch, record)
+		batchBytes += int64(len(msg.Value))
 
 		// Insert batch when size reached
 		if len(batch) >= batchSize {
@@ -864,8 +874,10 @@ func consumeMessages(session *gocql.Session) error {
 			windowBatchLatencyMS += time.Since(batchStart).Seconds() * 1000
 			windowBatchCount++
 			insertCount += len(batch)
+			insertedBytesCount += batchBytes
 			log.Printf("Inserted %d records (total: %d, consumed messages: %d)", len(batch), insertCount, messageCount)
 			batch = make([]map[string]any, 0, batchSize)
+			batchBytes = 0
 		}
 
 		if time.Since(lastLogTime) >= logInterval {
@@ -880,11 +892,19 @@ func consumeMessages(session *gocql.Session) error {
 		if reportURL != "" && time.Since(lastReportTime) >= reportInterval {
 			reportWindowSeconds := time.Since(lastReportTime).Seconds()
 			recordsInWindow := insertCount - windowInsertStart
+			bytesInWindow := insertedBytesCount - windowIngestedBytesStart
 			if reportWindowSeconds > 0 && recordsInWindow >= 0 {
 				avgBatchMS := 0.0
 				if windowBatchCount > 0 {
 					avgBatchMS = windowBatchLatencyMS / float64(windowBatchCount)
 				}
+
+				if bytesInWindow < 0 {
+					bytesInWindow = 0
+				}
+
+				windowMB := bytesToMB(bytesInWindow)
+				mbPerSec := windowMB / reportWindowSeconds
 
 				report := workerPerformanceReport{
 					TenantID:                tenantID,
@@ -896,6 +916,11 @@ func consumeMessages(session *gocql.Session) error {
 					BatchesInWindow:         windowBatchCount,
 					AvgBatchIngestMS:        avgBatchMS,
 					ThroughputRecordsPerSec: float64(recordsInWindow) / reportWindowSeconds,
+					IngestedBytesInWindow:   bytesInWindow,
+					IngestedMBInWindow:      windowMB,
+					IngestedMBPerSec:        mbPerSec,
+					TotalIngestedBytes:      insertedBytesCount,
+					TotalIngestedMB:         bytesToMB(insertedBytesCount),
 					TotalInserted:           insertCount,
 					TotalConsumed:           messageCount,
 				}
@@ -907,6 +932,7 @@ func consumeMessages(session *gocql.Session) error {
 
 			lastReportTime = time.Now()
 			windowInsertStart = insertCount
+			windowIngestedBytesStart = insertedBytesCount
 			windowBatchLatencyMS = 0
 			windowBatchCount = 0
 		}
@@ -921,17 +947,27 @@ func consumeMessages(session *gocql.Session) error {
 		windowBatchLatencyMS += time.Since(batchStart).Seconds() * 1000
 		windowBatchCount++
 		insertCount += len(batch)
+		insertedBytesCount += batchBytes
+		batchBytes = 0
 		log.Printf("Inserted %d records (total: %d, consumed messages: %d, time_since_start %.2fs)", len(batch), insertCount, messageCount, time.Since(startTime).Seconds())
 	}
 
 	if reportURL != "" {
 		reportWindowSeconds := time.Since(lastReportTime).Seconds()
 		recordsInWindow := insertCount - windowInsertStart
+		bytesInWindow := insertedBytesCount - windowIngestedBytesStart
 		if reportWindowSeconds > 0 && recordsInWindow >= 0 {
 			avgBatchMS := 0.0
 			if windowBatchCount > 0 {
 				avgBatchMS = windowBatchLatencyMS / float64(windowBatchCount)
 			}
+
+			if bytesInWindow < 0 {
+				bytesInWindow = 0
+			}
+
+			windowMB := bytesToMB(bytesInWindow)
+			mbPerSec := windowMB / reportWindowSeconds
 
 			report := workerPerformanceReport{
 				TenantID:                tenantID,
@@ -943,6 +979,11 @@ func consumeMessages(session *gocql.Session) error {
 				BatchesInWindow:         windowBatchCount,
 				AvgBatchIngestMS:        avgBatchMS,
 				ThroughputRecordsPerSec: float64(recordsInWindow) / reportWindowSeconds,
+				IngestedBytesInWindow:   bytesInWindow,
+				IngestedMBInWindow:      windowMB,
+				IngestedMBPerSec:        mbPerSec,
+				TotalIngestedBytes:      insertedBytesCount,
+				TotalIngestedMB:         bytesToMB(insertedBytesCount),
 				TotalInserted:           insertCount,
 				TotalConsumed:           messageCount,
 			}
@@ -983,6 +1024,14 @@ func sendPerformanceReport(client *http.Client, reportURL string, report workerP
 	}
 
 	return nil
+}
+
+func bytesToMB(bytes int64) float64 {
+	if bytes <= 0 {
+		return 0
+	}
+
+	return float64(bytes) / (1024.0 * 1024.0)
 }
 
 func main() {

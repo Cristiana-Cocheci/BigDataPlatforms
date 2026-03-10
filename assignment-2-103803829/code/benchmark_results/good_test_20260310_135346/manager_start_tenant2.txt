@@ -1,0 +1,87 @@
+Preparing chunks: tenant=tenant2 source=../data/tenant2/2025-06-01_dht22.csv chunks=10
+Total rows: 2088110
+Number of chunks: 10
+Rows per chunk: 208811
+Creating chunks in: ../data/tenant2/chunks
+
+Created chunk_0.csv: rows 0-208810 (208811 records)
+Created chunk_1.csv: rows 208811-417621 (208811 records)
+Created chunk_2.csv: rows 417622-626432 (208811 records)
+Created chunk_3.csv: rows 626433-835243 (208811 records)
+Created chunk_4.csv: rows 835244-1044054 (208811 records)
+Created chunk_5.csv: rows 1044055-1252865 (208811 records)
+Created chunk_6.csv: rows 1252866-1461676 (208811 records)
+Created chunk_7.csv: rows 1461677-1670487 (208811 records)
+Created chunk_8.csv: rows 1670488-1879298 (208811 records)
+Created chunk_9.csv: rows 1879299-2088109 (208811 records)
+
+Chunking complete! Files ready in: ../data/tenant2/chunks
+ Container streamingestmanager  Running
+ Container zookeeper-tenant2  Running
+ Container streamingestmonitor  Running
+ Container cassandra1  Running
+ Container kafka-tenant2  Running
+ Container cassandra2  Running
+ Container cassandra3  Running
+Created topic dht22-measurements.
+ Container streamingestmanager  Running
+ Container zookeeper-tenant2  Running
+ Container cassandra1  Running
+ Container kafka-tenant2  Running
+ Container streamingestmonitor  Running
+ Container code-tenant2-streamingestworker-9  Recreate
+ Container code-tenant2-streamingestworker-7  Recreate
+ Container code-tenant2-streamingestworker-1  Recreate
+ Container code-tenant2-streamingestworker-2  Recreate
+ Container code-tenant2-streamingestworker-8  Recreate
+ Container code-tenant2-streamingestworker-6  Recreate
+ Container code-tenant2-streamingestworker-3  Recreate
+ Container code-tenant2-streamingestworker-4  Recreate
+ Container code-tenant2-streamingestworker-10  Recreate
+ Container code-tenant2-streamingestworker-5  Recreate
+ Container code-tenant2-streamingestworker-4  Recreated
+ Container code-tenant2-streamingestworker-9  Recreated
+ Container code-tenant2-streamingestworker-6  Recreated
+ Container code-tenant2-streamingestworker-7  Recreated
+ Container code-tenant2-streamingestworker-8  Recreated
+ Container code-tenant2-streamingestworker-5  Recreated
+ Container code-tenant2-streamingestworker-2  Recreated
+ Container code-tenant2-streamingestworker-1  Recreated
+ Container code-tenant2-streamingestworker-3  Recreated
+ Container code-tenant2-streamingestworker-10  Recreated
+ Container cassandra1  Waiting
+ Container kafka-tenant2  Waiting
+ Container kafka-tenant2  Healthy
+ Container cassandra1  Healthy
+ Container code-tenant2-streamingestworker-5  Starting
+ Container code-tenant2-streamingestworker-5  Started
+ Container code-tenant2-streamingestworker-1  Starting
+ Container code-tenant2-streamingestworker-1  Started
+ Container code-tenant2-streamingestworker-9  Starting
+ Container code-tenant2-streamingestworker-9  Started
+ Container code-tenant2-streamingestworker-8  Starting
+ Container code-tenant2-streamingestworker-8  Started
+ Container code-tenant2-streamingestworker-7  Starting
+ Container code-tenant2-streamingestworker-7  Started
+ Container code-tenant2-streamingestworker-3  Starting
+ Container code-tenant2-streamingestworker-3  Started
+ Container code-tenant2-streamingestworker-6  Starting
+ Container code-tenant2-streamingestworker-6  Started
+ Container code-tenant2-streamingestworker-10  Starting
+ Container code-tenant2-streamingestworker-10  Started
+ Container code-tenant2-streamingestworker-2  Starting
+ Container code-tenant2-streamingestworker-2  Started
+ Container code-tenant2-streamingestworker-4  Starting
+ Container code-tenant2-streamingestworker-4  Started
+ Container zookeeper-tenant2  Running
+ Container cassandra1  Running
+ Container kafka-tenant2  Running
+ Container code-tenant2-source-1  Recreate
+ Container code-tenant2-source-1  Recreated
+ Container kafka-tenant2  Waiting
+ Container cassandra1  Waiting
+ Container cassandra1  Healthy
+ Container kafka-tenant2  Healthy
+ Container code-tenant2-source-1  Starting
+ Container code-tenant2-source-1  Started
+tenant=tenant2 started: workers=10 with-source=true prepare-chunks=true schema=dht22

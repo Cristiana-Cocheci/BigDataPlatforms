@@ -40,6 +40,11 @@ type WorkerPerformanceReport struct {
 	BatchesInWindow         int     `json:"batches_in_window"`
 	AvgBatchIngestMS        float64 `json:"avg_batch_ingest_ms"`
 	ThroughputRecordsPerSec float64 `json:"throughput_records_per_sec"`
+	IngestedBytesInWindow   int64   `json:"ingested_bytes_in_window"`
+	IngestedMBInWindow      float64 `json:"ingested_mb_in_window"`
+	IngestedMBPerSec        float64 `json:"ingested_mb_per_sec"`
+	TotalIngestedBytes      int64   `json:"total_ingested_bytes"`
+	TotalIngestedMB         float64 `json:"total_ingested_mb"`
 	TotalInserted           int     `json:"total_inserted"`
 	TotalConsumed           int     `json:"total_consumed"`
 }
@@ -283,13 +288,15 @@ func listenForMonitorAlerts(listenAddr string) error {
 		}
 
 		fmt.Printf(
-			"monitor alert received: tenant=%s worker=%s severity=%s reasons=%s throughput=%.2f avg_batch_ms=%.2f\n",
+			"monitor alert received: tenant=%s worker=%s severity=%s reasons=%s throughput=%.2f avg_batch_ms=%.2f window_mb=%.4f total_mb=%.4f\n",
 			tenantID,
 			workerID,
 			severity,
 			reasons,
 			alert.Report.ThroughputRecordsPerSec,
 			alert.Report.AvgBatchIngestMS,
+			alert.Report.IngestedMBInWindow,
+			alert.Report.TotalIngestedMB,
 		)
 
 		w.Header().Set("Content-Type", "application/json")

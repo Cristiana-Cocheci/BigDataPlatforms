@@ -154,7 +154,12 @@ type workerPerformanceReport struct {
 	RecordsInWindow         int     `json:"records_in_window"`
 	BatchesInWindow         int     `json:"batches_in_window"`
 	AvgBatchIngestMS        float64 `json:"avg_batch_ingest_ms"`
-	ThroughputRecordsPerSec float64 `json:"throughput_records_per_sec"`
+  ThroughputRecordsPerSec float64 `json:"throughput_records_per_sec"`
+  IngestedBytesInWindow   int64   `json:"ingested_bytes_in_window"`
+  IngestedMBInWindow      float64 `json:"ingested_mb_in_window"`
+  IngestedMBPerSec        float64 `json:"ingested_mb_per_sec"`
+  TotalIngestedBytes      int64   `json:"total_ingested_bytes"`
+  TotalIngestedMB         float64 `json:"total_ingested_mb"`
 	TotalInserted           int     `json:"total_inserted"`
 	TotalConsumed           int     `json:"total_consumed"`
 }
@@ -176,24 +181,79 @@ I also designed a cooldown system. When an alert is sent, then there is a coodow
     - worker ID
     - ThroughputRecordsPerSec
     - AvgBatchIngestMS
+    - IngestedMBInWindow
+    - TotalIngestedMB
     - WindowSeconds
     - RecordsInWindow
     - When there is a reason to alert the manager (small throughput and/or small average batch ingest), it first checks it is not in a cooldown period, in which case the alert is skipped. If it is not in a cooldown period, it sends the alert in json format via HTTP.
 
 
 5.
-IMPELMENT mysimbdp-streamingestmonitor  to receive the report from streamingestworker
 
-when the performance is
-below a threshold, e.g., average ingestion time is too low, mysimbdp-streamingestmonitor decides
-to inform mysimbdp-streamingestmanager about the situation. Implement a feature in mysimbdp-
-streamingestmanager to receive information informed by mysimbdp-streamingestmonitor.
-Demonstrate these features.
+The ```mysimbdp-streamingestmonitor``` is implemented in (streamingestmonitor.go)[../code/streamingestmonitor.go].
+There, the function *evaluateThresholds* recieves the worker performance and returns a list of possible alert reasons. If the list is empty, then the workers are under normal parameters. The reasons that can be added to the list are : minimum ingestion throughput not met, exceeded average batch ingest.
+
+As explained in the previous point, the ```mysimbdp-streamingestmonitor``` sends HTTP messages to ```streamingestmanager```.
+
+```Demonstrate these features.```
+All the logs can be further analysed in (code/benchmark_results)[code/benchmark_results].
+Here is an extract from [log_streamingestmanager.txt](../code/benchmark_results/good_test_20260310_135346/log_streamingestmanager.txt)
+
+
+```
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=c1370749f7a9 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=dd578a255fa2 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=4bdc9b2157d4 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=719e254c2696 severity=warning reasons=throughput 4942.16 rps below minimum 1000000.00 rps throughput=4942.16 avg_batch_ms=4.79 window_mb=11.5822 total_mb=18.3187
+```
+
+
+And here is an extract of logs from [log_streamingestmonitor.txt](../code/benchmark_results/good_test_20260310_135346/log_streamingestmonitor.txt).
+```
+streamingestmonitor  | 2026/03/10 11:56:31 report received: tenant=tenant1 worker=c1370749f7a9 throughput=0.00 rps avg_batch_ms=0.00 window=10.0s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 11:56:31 alert forwarded: tenant=tenant1 worker=c1370749f7a9 reasons=throughput 0.00 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 11:56:32 report received: tenant=tenant1 worker=719e254c2696 throughput=0.00 rps avg_batch_ms=0.00 window=10.2s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 11:56:32 alert skipped due to cooldown: tenant=tenant1 worker=719e254c2696
+streamingestmonitor  | 2026/03/10 11:56:32 report received: tenant=tenant1 worker=911abcb03e78 throughput=0.00 rps avg_batch_ms=0.00 window=10.4s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 11:56:32 alert skipped due to cooldown: tenant=tenant1 worker=911abcb03e78
+streamingestmonitor  | 2026/03/10 11:56:34 report received: tenant=tenant1 worker=7e4d8976b59f throughput=2.05 rps avg_batch_ms=2525.51 window=12.2s records=25 window_mb=0.0058 total_mb=0.0058 mbps=0.0005
+streamingestmonitor  | 2026/03/10 11:56:34 alert skipped due to cooldown: tenant=tenant1 worker=7e4d8976b59f
+st
+```
 
 
 ## Part 2
+1. 
+DESIGN 
+bronze to silver data pipelines
+
+DESIGN a schema for a set of constraints for tenant service agreement that mysimbdp will support
+
+2.
+IMPLEMENT an instance of a silver pipeline. Explain design as a tenant.
+tenant-caching-dir: local disk within the platform
+
+3.
+DESIGN AND IMPELMENT mysimbdp-batchmanager, which uses silverpipeline as a blackbox
+
+4.
+
+5.
+
 
 ## Part 3
+
+1. FIGURE of Architecture
+ Explain how a platform provider could know the amount of data ingested/processed and existing errors/performance for individual tenants.
+
+
+2. new architecture for a different data sink
+
+3. new architecture for monitoring quality of data
+
+4. new architecture for multiple silverpipelines
+
+5. improve silverpipeline
 
 
 
@@ -219,13 +279,18 @@ Source: `code/benchmark_results/underprovisioned_20260308_105157/test_config.env
 - Reports received: `21`
 - Alerts forwarded: `11`
 - Alerts seen by manager: `11`
+- Total ingested data size (MB): `N/A in this legacy run folder; available in new runs as total_ingested_mb`
 
 Source: `code/benchmark_results/underprovisioned_20260308_105157/run_summary.env`
 
-### Throughput summary (monitor)
+### Throughput and data-size summary (monitor)
 
 - tenant1: `avg 4366.15 rps`, `min 217.22`, `max 5053.53`, `avg batch 5.42 ms`
 - tenant2: `avg 4393.40 rps`, `min 0.00`, `max 5033.88`, `avg batch 4.26 ms`
+
+With the new monitor metric pipeline, `monitor_throughput_by_tenant.csv` also includes:
+- `avg_ingested_mb_per_report`
+- `total_ingested_mb`
 
 Source: `code/benchmark_results/underprovisioned_20260308_105157/monitor_throughput_by_tenant.csv`
 

@@ -1,6 +1,0 @@
-tenant2-source-1  | 2026/03/08 18:06:00 Waiting for Kafka to be ready...
-tenant2-source-1  | 2026/03/08 18:06:05 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22.csv chunk_dir=/data/tenant2/chunks
-tenant2-source-1  | 2026/03/08 18:06:05 Kafka producer connected to kafka-tenant2:29092
-tenant2-source-1  | 2026/03/08 18:06:05 CHUNK_NUM not set, using tenant default CSV: /data/tenant2/2025-06-01_dht22.csv
-tenant2-source-1  | 2026/03/08 18:06:05 Started reading CSV file: /data/tenant2/2025-06-01_dht22.csv
-tenant2-source-1  | 2026/03/08 18:06:05 Producer error: failed to write messages: [3] Unknown Topic Or Partition: the request is for a topic or partition that does not exist on this broker

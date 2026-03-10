@@ -31,6 +31,11 @@ type workerPerformanceReport struct {
 	BatchesInWindow         int     `json:"batches_in_window"`
 	AvgBatchIngestMS        float64 `json:"avg_batch_ingest_ms"`
 	ThroughputRecordsPerSec float64 `json:"throughput_records_per_sec"`
+	IngestedBytesInWindow   int64   `json:"ingested_bytes_in_window"`
+	IngestedMBInWindow      float64 `json:"ingested_mb_in_window"`
+	IngestedMBPerSec        float64 `json:"ingested_mb_per_sec"`
+	TotalIngestedBytes      int64   `json:"total_ingested_bytes"`
+	TotalIngestedMB         float64 `json:"total_ingested_mb"`
 	TotalInserted           int     `json:"total_inserted"`
 	TotalConsumed           int     `json:"total_consumed"`
 }
@@ -133,14 +138,29 @@ func handleReport(w http.ResponseWriter, r *http.Request, cfg monitorConfig, sta
 		report.WorkerID = "unknown-worker"
 	}
 
+	if report.IngestedMBInWindow <= 0 && report.IngestedBytesInWindow > 0 {
+		report.IngestedMBInWindow = bytesToMB(report.IngestedBytesInWindow)
+	}
+
+	if report.TotalIngestedMB <= 0 && report.TotalIngestedBytes > 0 {
+		report.TotalIngestedMB = bytesToMB(report.TotalIngestedBytes)
+	}
+
+	if report.IngestedMBPerSec <= 0 && report.WindowSeconds > 0 && report.IngestedMBInWindow > 0 {
+		report.IngestedMBPerSec = report.IngestedMBInWindow / report.WindowSeconds
+	}
+
 	log.Printf(
-		"report received: tenant=%s worker=%s throughput=%.2f rps avg_batch_ms=%.2f window=%.1fs records=%d",
+		"report received: tenant=%s worker=%s throughput=%.2f rps avg_batch_ms=%.2f window=%.1fs records=%d window_mb=%.4f total_mb=%.4f mbps=%.4f",
 		report.TenantID,
 		report.WorkerID,
 		report.ThroughputRecordsPerSec,
 		report.AvgBatchIngestMS,
 		report.WindowSeconds,
 		report.RecordsInWindow,
+		report.IngestedMBInWindow,
+		report.TotalIngestedMB,
+		report.IngestedMBPerSec,
 	)
 
 	reasons := evaluateThresholds(report, cfg)
@@ -286,4 +306,12 @@ func parseIntEnv(key string, defaultValue int) int {
 		return defaultValue
 	}
 	return parsed
+}
+
+func bytesToMB(bytes int64) float64 {
+	if bytes <= 0 {
+		return 0
+	}
+
+	return float64(bytes) / (1024.0 * 1024.0)
 }
