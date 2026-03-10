@@ -480,32 +480,34 @@ Notes:
 
 ## Benchmark Addendum (Requested Full Reports)
 
-### Report A: Previous Comparison (`normal_short_120s` vs `underprovisioned_short_120s`)
+### Report A (Scenario 1): Initial Short Under-Provisioned vs Chunked Multi-Source
 
-Source folders:
-- `code/benchmark_results/normal_short_120s`
-- `code/benchmark_results/underprovisioned_short_120s`
+Comparison target:
+- baseline: `code/benchmark_results/underprovisioned_short_120s`
+- chunked multi-source: `code/benchmark_results/validation_10workers_chunked/test_20260310_182912`
 
 Run-level summary (both tenants combined):
 
-| scenario | reports_received | alerts_forwarded | alert_ratio_pct | total_ingested_mb | producer_rows | inserted_rows | processing_pct | total_final_kafka_lag |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| normal_short_120s | 49 | 21 | 42.86 | 398.7280 | 2390000 | 2353517 | 98.47 | 78176 |
-| underprovisioned_short_120s | 43 | 22 | 51.16 | 503.7340 | 5002944 | 2273998 | 45.45 | 2966269 |
+| scenario | reports_received | alerts_forwarded | alert_ratio_pct | total_ingested_mb | producer_rows | inserted_rows | processing_pct | total_final_kafka_lag | insert_exceptions |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| underprovisioned_short_120s | 43 | 22 | 51.16 | 503.7340 | 5002944 | 2273998 | 45.45 | 2966269 | 0 |
+| chunked_10workers_10sources | 198 | 20 | 10.10 | 1079.1914 | 5002944 | 4998748 | 99.92 | 0 | 29 |
 
 Per-tenant details:
 
 | scenario | tenant | avg_throughput_rps | avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | final_kafka_lag | drain_status | insert_exceptions | duplicate_rows |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
-| normal_short_120s | tenant1 | 4574.96 | 1.0723 | 279.1229 | 1270000 | 1224655 | 96.43 | 78176 | timeout | 9 | 3137 |
-| normal_short_120s | tenant2 | 4430.02 | 1.0053 | 119.6051 | 1120000 | 1128862 | 100.79 | 0 | drained | 8 | 840 |
 | underprovisioned_short_120s | tenant1 | 4613.15 | 1.0810 | 237.8819 | 2914834 | 1063048 | 36.47 | 2070359 | timeout | 0 | 3137 |
 | underprovisioned_short_120s | tenant2 | 5568.17 | 1.2641 | 265.8521 | 2088110 | 1210950 | 57.99 | 895910 | timeout | 0 | 840 |
+| chunked_10workers_10sources | tenant1 | 2142.24 | 0.5035 | 635.1482 | 2914834 | 2911563 | 99.89 | 0 | drained | 13 | 3137 |
+| chunked_10workers_10sources | tenant2 | 2710.00 | 0.6160 | 444.0432 | 2088110 | 2087185 | 99.96 | 0 | drained | 16 | 840 |
 
 Observations:
-- Under-provisioned run had much higher offered load (full datasets produced), but a far lower processing fraction and much higher residual Kafka lag.
-- Normal run produced less data (sources were stopped earlier), so it reached near-complete processing for tenant2 and high processing for tenant1.
-- Normal run had startup insert exceptions (tenant1: 9, tenant2: 8); under-provisioned run had 0 insert exceptions.
+- The chunked multi-source run reached full offered load (`5002944` produced rows) while also draining Kafka completely (`final lag = 0` for both tenants).
+- Processing fraction improved from `45.45%` to `99.92%` when each source replica read a different chunk file.
+- `total_ingested_mb` increased from `503.7340` to `1079.1914` in the same 120s benchmark window, indicating much higher effective ingestion completion.
+- Trade-off: insert exceptions increased (`0` -> `29`), so schema/write-path stability still needs hardening even though throughput completion improved.
+- Producer rows for the chunked run were verified from source logs (`log_tenant1-source.txt`, `log_tenant2-source.txt`) because that run's `producer_ingested_rows` CSV field was not yet reflecting multi-source aggregation.
 
 ### Report B: Current Comparison (Cassandra Write-Limit Matrix `5ms` vs `20ms` vs `50ms`)
 

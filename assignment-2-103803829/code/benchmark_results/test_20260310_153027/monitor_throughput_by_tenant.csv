@@ -1,3 +1,0 @@
-tenant,reports,avg_throughput_rps,min_throughput_rps,max_throughput_rps,avg_batch_ingest_ms,avg_ingested_mb_per_report,avg_ingested_mb_per_sec,min_ingested_mb_per_sec,max_ingested_mb_per_sec,total_ingested_mb,inserted_rows_cassandra_count,initial_rows_expected_from_chunks,producer_ingested_rows,duplicate_rows,insert_exception_count
-tenant1,64,4488.13,209.91,5473.88,5.31,10.5598,1.0549,0.0492,1.2824,675.8254,2911688,2914834,2914834,3137,0
-tenant2,37,5560.73,275.00,6511.39,4.15,12.6508,1.2640,0.0624,1.4769,468.0783,2087260,2088110,2088110,840,0

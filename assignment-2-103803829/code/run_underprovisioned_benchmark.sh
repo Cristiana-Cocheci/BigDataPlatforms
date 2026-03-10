@@ -188,11 +188,14 @@ collect_monitor_summary() {
 
   awk '
 /report received:/ {
-  tenant=""; throughput=""; avg_batch=""; window_mb=""; total_mb=""; mbps="";
+    tenant=""; worker=""; throughput=""; avg_batch=""; window_mb=""; total_mb=""; mbps="";
   for (i = 1; i <= NF; i++) {
     if ($i ~ /^tenant=/) {
       split($i, a, "=");
       tenant = a[2];
+      } else if ($i ~ /^worker=/) {
+        split($i, a, "=");
+        worker = a[2];
     } else if ($i ~ /^throughput=/) {
       split($i, a, "=");
       throughput = a[2] + 0;
@@ -229,8 +232,15 @@ collect_monitor_summary() {
     if (!(tenant in max_throughput) || throughput > max_throughput[tenant]) {
       max_throughput[tenant] = throughput;
     }
-    if (!(tenant in max_total_mb) || total_mb > max_total_mb[tenant]) {
-      max_total_mb[tenant] = total_mb;
+
+    if (worker != "") {
+      worker_key = tenant SUBSEP worker;
+      workers_seen[worker_key] = 1;
+      if (!(worker_key in max_total_mb_by_worker) || total_mb > max_total_mb_by_worker[worker_key]) {
+        max_total_mb_by_worker[worker_key] = total_mb;
+      }
+    } else if (!(tenant in max_total_mb_fallback) || total_mb > max_total_mb_fallback[tenant]) {
+      max_total_mb_fallback[tenant] = total_mb;
     }
   }
 }
@@ -240,7 +250,21 @@ END {
   for (tenant in count) {
     avg_window_mb = sum_window_mb[tenant] / count[tenant];
     avg_mbps = sum_mbps[tenant] / count[tenant];
-    tenant_total_mb = (tenant in max_total_mb) ? max_total_mb[tenant] : sum_window_mb[tenant];
+
+    tenant_total_mb = 0;
+    worker_count = 0;
+    for (worker_key in workers_seen) {
+      split(worker_key, worker_parts, SUBSEP);
+      if (worker_parts[1] == tenant) {
+        tenant_total_mb += max_total_mb_by_worker[worker_key];
+        worker_count++;
+      }
+    }
+
+    if (worker_count == 0) {
+      tenant_total_mb = (tenant in max_total_mb_fallback) ? max_total_mb_fallback[tenant] : sum_window_mb[tenant];
+    }
+
     printf "%s,%d,%.2f,%.2f,%.2f,%.2f,%.4f,%.4f,%.4f,%.4f,%.4f\n", tenant, count[tenant], sum_throughput[tenant] / count[tenant], min_throughput[tenant], max_throughput[tenant], sum_batch[tenant] / count[tenant], avg_window_mb, avg_mbps, min_mbps[tenant], max_mbps[tenant], tenant_total_mb;
   }
 }
@@ -379,11 +403,41 @@ collect_producer_rows_by_tenant() {
       source_log="$RUN_DIR/log_$(sanitize_name "$source_service").txt"
 
       if [[ -f "$source_log" ]]; then
-        producer_rows="$(awk -F'Total messages produced: |, Total lines processed:' '/Total messages produced:/ {v = $2} END {if (v != "") print v}' "$source_log" 2>/dev/null || true)"
-      fi
+        producer_rows="$(awk '
+index($0, "Total messages produced:") > 0 {
+  container = $1
+  value = $0
+  sub(/^.*Total messages produced:[[:space:]]*/, "", value)
+  sub(/,.*$/, "", value)
+  val = value + 0
+  if (val > max_total[container]) {
+    max_total[container] = val
+  }
+  seen = 1
+  next
+}
 
-      if [[ -z "$producer_rows" && -f "$source_log" ]]; then
-        producer_rows="$(awk -F'total: |, processed lines:' '/Produced [0-9]+ messages/ {v = $2} END {if (v != "") print v}' "$source_log" 2>/dev/null || true)"
+index($0, "Produced ") > 0 && index($0, "total:") > 0 {
+  container = $1
+  value = $0
+  sub(/^.*total:[[:space:]]*/, "", value)
+  sub(/,.*$/, "", value)
+  val = value + 0
+  if (val > max_total[container]) {
+    max_total[container] = val
+  }
+  seen = 1
+}
+
+END {
+  for (container in max_total) {
+    sum += max_total[container]
+  }
+  if (seen) {
+    print sum + 0
+  }
+}
+' "$source_log" 2>/dev/null || true)"
       fi
 
       if [[ -z "$producer_rows" ]]; then
@@ -634,6 +688,9 @@ require_cmd uniq
 TENANTS="${TENANTS:-tenant1 tenant2}"
 WORKERS="${WORKERS:-1}"
 PARTITIONS="${PARTITIONS:-$WORKERS}"
+SOURCE_REPLICAS="${SOURCE_REPLICAS:-$WORKERS}"
+SOURCE_NUM_CHUNKS="${SOURCE_NUM_CHUNKS:-$SOURCE_REPLICAS}"
+SOURCE_CHUNK_AUTO_ASSIGN="${SOURCE_CHUNK_AUTO_ASSIGN:-true}"
 TEST_DURATION_SECONDS="${TEST_DURATION_SECONDS:-300}"
 PREPARE_CHUNKS="${PREPARE_CHUNKS:-true}"
 RESET_STACK="${RESET_STACK:-true}"
@@ -668,6 +725,16 @@ fi
 
 if ! [[ "$PARTITIONS" =~ ^[0-9]+$ ]] || [[ "$PARTITIONS" -lt 1 ]]; then
   echo "PARTITIONS must be an integer >= 1" >&2
+  exit 1
+fi
+
+if ! [[ "$SOURCE_REPLICAS" =~ ^[0-9]+$ ]] || [[ "$SOURCE_REPLICAS" -lt 1 ]]; then
+  echo "SOURCE_REPLICAS must be an integer >= 1" >&2
+  exit 1
+fi
+
+if ! [[ "$SOURCE_NUM_CHUNKS" =~ ^[0-9]+$ ]] || [[ "$SOURCE_NUM_CHUNKS" -lt 1 ]]; then
+  echo "SOURCE_NUM_CHUNKS must be an integer >= 1" >&2
   exit 1
 fi
 
@@ -708,6 +775,9 @@ STARTED_AT_UTC=$(timestamp_utc)
 TENANTS=$TENANTS
 WORKERS=$WORKERS
 PARTITIONS=$PARTITIONS
+SOURCE_REPLICAS=$SOURCE_REPLICAS
+SOURCE_NUM_CHUNKS=$SOURCE_NUM_CHUNKS
+SOURCE_CHUNK_AUTO_ASSIGN=$SOURCE_CHUNK_AUTO_ASSIGN
 TEST_DURATION_SECONDS=$TEST_DURATION_SECONDS
 PREPARE_CHUNKS=$PREPARE_CHUNKS
 RESET_STACK=$RESET_STACK
@@ -756,8 +826,11 @@ export MONITOR_REPORT_INTERVAL_SECONDS="$REPORT_INTERVAL_SECONDS"
 export CASSANDRA_NUM_CONNS="$CASSANDRA_NUM_CONNS"
 export CASSANDRA_INSERT_BATCH_SIZE="$CASSANDRA_INSERT_BATCH_SIZE"
 export CASSANDRA_WRITE_SLEEP_MS="$CASSANDRA_WRITE_SLEEP_MS"
+export SOURCE_NUM_CHUNKS="$SOURCE_NUM_CHUNKS"
+export SOURCE_CHUNK_AUTO_ASSIGN="$SOURCE_CHUNK_AUTO_ASSIGN"
 
 log "Cassandra write settings: num_conns=${CASSANDRA_NUM_CONNS} batch_size=${CASSANDRA_INSERT_BATCH_SIZE} write_sleep_ms=${CASSANDRA_WRITE_SLEEP_MS}"
+log "Source chunk settings: source_replicas=${SOURCE_REPLICAS} source_num_chunks=${SOURCE_NUM_CHUNKS} auto_assign=${SOURCE_CHUNK_AUTO_ASSIGN}"
 
 log "Starting infrastructure and control services"
 compose up -d cassandra1 cassandra2 cassandra3 zookeeper-tenant1 kafka-tenant1 zookeeper-tenant2 kafka-tenant2 streamingestmanager
@@ -784,8 +857,8 @@ INGEST_START_UTC="$(timestamp_utc)"
 echo "INGEST_START_UTC=$INGEST_START_UTC" >>"$RUN_DIR/test_config.env"
 
 for tenant in "${TENANT_LIST[@]}"; do
-  log "Starting tenant=${tenant} workers=${WORKERS} partitions=${PARTITIONS} with source producer"
-  start_args=(--command start --tenant "$tenant" --workers "$WORKERS" --partitions "$PARTITIONS" --with-source)
+  log "Starting tenant=${tenant} workers=${WORKERS} source_replicas=${SOURCE_REPLICAS} partitions=${PARTITIONS} with source producer"
+  start_args=(--command start --tenant "$tenant" --workers "$WORKERS" --source-replicas "$SOURCE_REPLICAS" --partitions "$PARTITIONS" --with-source)
   if [[ "$PREPARE_CHUNKS" == "true" ]]; then
     start_args+=(--prepare-chunks)
   fi

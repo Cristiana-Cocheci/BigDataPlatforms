@@ -1,0 +1,45 @@
+[18:29:12] Benchmark output directory: benchmark_results/validation_10workers_chunked/test_20260310_182912
+[18:29:12] Resetting compose stack (including volumes)
+[18:29:16] Rebuilding docker images
+[18:29:35] Building manager binary
+[18:29:36] Cassandra write settings: num_conns=4 batch_size=25 write_sleep_ms=0
+[18:29:36] Source chunk settings: source_replicas=10 source_num_chunks=10 auto_assign=true
+[18:29:36] Starting infrastructure and control services
+[18:29:40] Waiting for cassandra1 to be ready
+[18:30:45] Waiting for cassandra2 to be ready
+[18:31:36] Waiting for cassandra3 to be ready
+[18:31:36] Waiting for kafka-tenant1 to be ready
+[18:31:36] Waiting for kafka-tenant2 to be ready
+[18:31:36] Starting tenant=tenant1 workers=10 source_replicas=10 partitions=10 with source producer
+[18:32:01] Starting tenant=tenant2 workers=10 source_replicas=10 partitions=10 with source producer
+[18:32:29] Collecting runtime for 120s
+[18:34:29] Capturing compose status before shutdown
+[18:34:30] Drain-aware shutdown enabled: stopping sources before draining workers
+[18:34:30] Stopping source for tenant=tenant1 before drain
+[18:34:30] Stopping source for tenant=tenant2 before drain
+[18:34:30] Waiting for tenant=tenant1 lag to drain (timeout=120s)
+[18:34:31] Drain check tenant=tenant1 lag=0
+[18:34:33] Waiting for tenant=tenant2 lag to drain (timeout=120s)
+[18:34:34] Drain check tenant=tenant2 lag=0
+[18:34:35] Capturing logs and monitor summary after drain wait
+[18:34:37] Stopping tenant=tenant1 worker after drain
+[18:34:39] Stopping tenant=tenant2 worker after drain
+[18:34:43] Waiting 20s for Cassandra write pressure to settle
+[18:35:03] Collecting Cassandra snapshot for tenant=tenant1 keyspace=mysimbdp_tenant1
+[18:35:44] Collecting Cassandra snapshot for tenant=tenant2 keyspace=mysimbdp_tenant2
+[18:36:17] Computing expected, produced, inserted, duplicate, and exception row metrics by tenant
+[18:36:46] Extracting worker and producer performance lines
+[18:36:47] Benchmark completed. Main outputs:
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/run_summary.env
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/monitor_throughput_by_tenant.csv
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/worker_performance_lines.txt
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/producer_performance_lines.txt
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/cassandra_counts_<tenant>.txt
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/cassandra_samples_<tenant>.txt
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/initial_rows_by_tenant.csv
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/producer_rows_by_tenant.csv
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/cassandra_rows_by_tenant.csv
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/duplicate_rows_by_tenant.csv
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/drain_status_by_tenant.csv
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/worker_insert_exception_counts.csv
+[18:36:47] - benchmark_results/validation_10workers_chunked/test_20260310_182912/worker_insert_exceptions_by_tenant.txt

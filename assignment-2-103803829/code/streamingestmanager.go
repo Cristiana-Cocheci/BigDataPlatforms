@@ -91,6 +91,7 @@ func main() {
 	command := flag.String("command", "status", "Command: start | stop | status")
 	tenantID := flag.String("tenant", "", "Tenant ID (tenant1 or tenant2). Empty with status means all tenants.")
 	workerReplicas := flag.Int("workers", 1, "Number of streamingestworker replicas to run when command=start")
+	sourceReplicas := flag.Int("source-replicas", 1, "Number of source producer replicas to run when command=start and --with-source=true")
 	startSource := flag.Bool("with-source", false, "When command=start, also start tenant source simulator")
 	prepareChunks := flag.Bool("prepare-chunks", false, "When command=start, run auxx/chunk_csv.py with num_chunks=workers using tenant source_csv")
 	pythonBin := flag.String("python-bin", "python3", "Python executable used for --prepare-chunks")
@@ -117,13 +118,16 @@ func main() {
 		if *workerReplicas < 1 {
 			fatalf("workers must be >= 1")
 		}
+		if *sourceReplicas < 1 {
+			fatalf("source-replicas must be >= 1")
+		}
 		if *topicPartitions < 1 {
 			fatalf("partitions must be >= 1")
 		}
-		if err := startTenant(composeFiles, spec, *workerReplicas, *startSource, *topicPartitions, *prepareChunks, *pythonBin, *chunkScript); err != nil {
+		if err := startTenant(composeFiles, spec, *workerReplicas, *sourceReplicas, *startSource, *topicPartitions, *prepareChunks, *pythonBin, *chunkScript); err != nil {
 			fatalf("start failed: %v", err)
 		}
-		fmt.Printf("tenant=%s started: workers=%d with-source=%t prepare-chunks=%t schema=%s\n", spec.TenantID, *workerReplicas, *startSource, *prepareChunks, spec.SchemaProfile)
+		fmt.Printf("tenant=%s started: workers=%d source_replicas=%d with-source=%t prepare-chunks=%t schema=%s\n", spec.TenantID, *workerReplicas, *sourceReplicas, *startSource, *prepareChunks, spec.SchemaProfile)
 
 	case "stop":
 		spec, err := resolveTenant(*tenantID)
@@ -161,9 +165,24 @@ func main() {
 	}
 }
 
-func startTenant(composeFiles []string, spec TenantSpec, workers int, withSource bool, partitions int, prepareChunks bool, pythonBin string, chunkScript string) error {
+func startTenant(composeFiles []string, spec TenantSpec, workers int, sourceReplicas int, withSource bool, partitions int, prepareChunks bool, pythonBin string, chunkScript string) error {
+	if sourceReplicas < 1 {
+		sourceReplicas = 1
+	}
+
+	chunkCount := workers
+	if withSource {
+		chunkCount = sourceReplicas
+	}
+
 	if prepareChunks {
-		if err := prepareTenantChunks(spec, workers, pythonBin, chunkScript); err != nil {
+		if err := prepareTenantChunks(spec, chunkCount, pythonBin, chunkScript); err != nil {
+			return err
+		}
+	}
+
+	if withSource {
+		if err := resetSourceChunkClaims(spec); err != nil {
 			return err
 		}
 	}
@@ -193,7 +212,7 @@ func startTenant(composeFiles []string, spec TenantSpec, workers int, withSource
 	}
 
 	if withSource {
-		if err := composeUpScale(composeFiles, spec.SourceService, 1); err != nil {
+		if err := composeUpScale(composeFiles, spec.SourceService, sourceReplicas); err != nil {
 			return err
 		}
 	}
@@ -390,6 +409,31 @@ func prepareTenantChunks(spec TenantSpec, workers int, pythonBin string, chunkSc
 	fmt.Printf("Preparing chunks: tenant=%s source=%s chunks=%d\n", spec.TenantID, hostCSVPath, workers)
 	if err := run(strings.TrimSpace(pythonBin), scriptPath, hostCSVPath, strconv.Itoa(workers)); err != nil {
 		return fmt.Errorf("chunk preparation failed: %w", err)
+	}
+
+	if err := resetSourceChunkClaims(spec); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func resetSourceChunkClaims(spec TenantSpec) error {
+	tenantConfig, err := loadManagerTenantConfig(spec.TenantID)
+	if err != nil {
+		return err
+	}
+
+	hostChunkDir := mapContainerDataPathToHost(tenantConfig.SourceChunkDir)
+	hostChunkDir = strings.TrimSpace(hostChunkDir)
+	if hostChunkDir == "" {
+		hostCSVPath := mapContainerDataPathToHost(tenantConfig.SourceCSV)
+		hostChunkDir = filepath.Join(filepath.Dir(hostCSVPath), "chunks")
+	}
+
+	claimsDir := filepath.Join(hostChunkDir, ".source_claims")
+	if err := os.RemoveAll(claimsDir); err != nil {
+		return fmt.Errorf("failed to reset source chunk claims at %s: %w", claimsDir, err)
 	}
 
 	return nil

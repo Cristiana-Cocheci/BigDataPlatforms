@@ -120,6 +120,9 @@ services:
       - TENANT_ID=tenant1
       - KAFKA_BROKERS=kafka-tenant1:29092
       - KAFKA_TOPIC=bme280-measurements
+      - SOURCE_NUM_CHUNKS=${SOURCE_NUM_CHUNKS:-1}
+      - SOURCE_CHUNK_AUTO_ASSIGN=${SOURCE_CHUNK_AUTO_ASSIGN:-true}
+      - CHUNK_NUM=${CHUNK_NUM:-}
 
   tenant2-source:
     build:
@@ -142,6 +145,9 @@ services:
       - TENANT_ID=tenant2
       - KAFKA_BROKERS=kafka-tenant2:29092
       - KAFKA_TOPIC=dht22-measurements
+      - SOURCE_NUM_CHUNKS=${SOURCE_NUM_CHUNKS:-1}
+      - SOURCE_CHUNK_AUTO_ASSIGN=${SOURCE_CHUNK_AUTO_ASSIGN:-true}
+      - CHUNK_NUM=${CHUNK_NUM:-}
 
   tenant1-streamingestworker:
     build:

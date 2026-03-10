@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -14,23 +15,138 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+func parseNonNegativeInt(raw string) (int, bool) {
+	parsed, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || parsed < 0 {
+		return 0, false
+	}
+
+	return parsed, true
+}
+
+func sourceIdentity() string {
+	if hostname := strings.TrimSpace(os.Getenv("HOSTNAME")); hostname != "" {
+		return hostname
+	}
+
+	return fmt.Sprintf("pid-%d", os.Getpid())
+}
+
+func chunkPathForIndex(chunkDir string, index int) string {
+	return fmt.Sprintf("%s/chunk_%d.csv", chunkDir, index)
+}
+
+func claimChunk(claimDir string, chunkIndex int, identity string) (bool, error) {
+	claimPath := filepath.Join(claimDir, fmt.Sprintf("chunk_%d.claim", chunkIndex))
+	f, err := os.OpenFile(claimPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	if err != nil {
+		if os.IsExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+	defer f.Close()
+
+	if _, err := fmt.Fprintln(f, identity); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func findClaimedChunk(claimDir string, chunkCount int, identity string) int {
+	for i := 0; i < chunkCount; i++ {
+		claimPath := filepath.Join(claimDir, fmt.Sprintf("chunk_%d.claim", i))
+		content, err := os.ReadFile(claimPath)
+		if err != nil {
+			continue
+		}
+
+		if strings.TrimSpace(string(content)) == identity {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func autoAssignChunkFilePath(config TenantConfig) string {
+	rawChunkCount := strings.TrimSpace(os.Getenv("SOURCE_NUM_CHUNKS"))
+	if rawChunkCount == "" {
+		return ""
+	}
+
+	chunkCount, ok := parseNonNegativeInt(rawChunkCount)
+	if !ok || chunkCount < 1 {
+		log.Printf("Invalid SOURCE_NUM_CHUNKS=%q, chunk auto-assignment disabled", rawChunkCount)
+		return ""
+	}
+
+	chunkDir := strings.TrimRight(config.SourceChunkDir, "/")
+	if chunkDir == "" {
+		log.Printf("source_chunk_dir is empty for tenant=%s, chunk auto-assignment disabled", config.TenantID)
+		return ""
+	}
+
+	claimDir := filepath.Join(chunkDir, ".source_claims")
+	if err := os.MkdirAll(claimDir, 0o755); err != nil {
+		log.Printf("Failed to create chunk claim directory=%s: %v", claimDir, err)
+		return ""
+	}
+
+	identity := sourceIdentity()
+	if chunkIndex := findClaimedChunk(claimDir, chunkCount, identity); chunkIndex >= 0 {
+		chunkPath := chunkPathForIndex(chunkDir, chunkIndex)
+		if _, err := os.Stat(chunkPath); err == nil {
+			log.Printf("Producer identity=%s reusing claimed chunk %d from %s", identity, chunkIndex, chunkPath)
+			return chunkPath
+		}
+	}
+
+	for chunkIndex := 0; chunkIndex < chunkCount; chunkIndex++ {
+		chunkPath := chunkPathForIndex(chunkDir, chunkIndex)
+		if _, err := os.Stat(chunkPath); err != nil {
+			continue
+		}
+
+		claimed, err := claimChunk(claimDir, chunkIndex, identity)
+		if err != nil {
+			log.Printf("Failed to claim chunk %d for identity=%s: %v", chunkIndex, identity, err)
+			continue
+		}
+
+		if claimed {
+			log.Printf("Producer identity=%s auto-assigned chunk %d: %s", identity, chunkIndex, chunkPath)
+			return chunkPath
+		}
+	}
+
+	log.Printf("No unclaimed chunk available for identity=%s with SOURCE_NUM_CHUNKS=%d", identity, chunkCount)
+	return ""
+}
+
 func getChunkFilePath(config TenantConfig) string {
 	replicaStr := os.Getenv("CHUNK_NUM")
 	defaultCSV := config.SourceCSV
 
-	if replicaStr == "" {
-		log.Printf("CHUNK_NUM not set, using tenant default CSV: %s", defaultCSV)
+	if strings.TrimSpace(replicaStr) == "" {
+		if autoChunkPath := autoAssignChunkFilePath(config); autoChunkPath != "" {
+			return autoChunkPath
+		}
+
+		log.Printf("CHUNK_NUM not set (or no chunk claim available), using tenant default CSV: %s", defaultCSV)
 		return defaultCSV
 	}
 
-	replica, err := strconv.Atoi(replicaStr)
-	if err != nil {
+	replica, ok := parseNonNegativeInt(replicaStr)
+	if !ok {
 		log.Printf("Invalid CHUNK_NUM=%s, using tenant default CSV: %s", replicaStr, defaultCSV)
 		return defaultCSV
 	}
 
 	chunkDir := strings.TrimRight(config.SourceChunkDir, "/")
-	chunkPath := fmt.Sprintf("%s/chunk_%d.csv", chunkDir, replica)
+	chunkPath := chunkPathForIndex(chunkDir, replica)
 
 	if _, err := os.Stat(chunkPath); os.IsNotExist(err) {
 		log.Printf("Chunk not found: %s, using tenant default CSV: %s", chunkPath, defaultCSV)

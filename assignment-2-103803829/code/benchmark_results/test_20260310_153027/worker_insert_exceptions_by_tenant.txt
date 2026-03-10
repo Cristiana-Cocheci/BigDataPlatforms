@@ -1,6 +1,0 @@
-=== tenant=tenant1 service=tenant1-streamingestworker ===
-no insert exceptions found
-
-=== tenant=tenant2 service=tenant2-streamingestworker ===
-no insert exceptions found
-

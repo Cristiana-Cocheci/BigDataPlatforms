@@ -1,3 +1,0 @@
-=== tenant=tenant1 service=tenant1-streamingestworker ===
-323:tenant1-streamingestworker-2  | 2026/03/10 10:18:00 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: Operation timed out - received only 1 responses. (retrying in 500ms)
-

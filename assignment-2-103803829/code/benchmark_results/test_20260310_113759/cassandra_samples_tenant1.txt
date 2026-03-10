@@ -1,8 +1,0 @@
-=== mysimbdp_tenant1.sensor_measurements_bme280_bronze (LIMIT 5) ===
-
- day | hour | sensor_id | timestamp | altitude | humidity | lat | location | lon | pressure | pressure_sealevel | sensor_type | temperature
------+------+-----------+-----------+----------+----------+-----+----------+-----+----------+-------------------+-------------+-------------
-
-
-(0 rows)
-

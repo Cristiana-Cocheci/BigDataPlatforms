@@ -662,6 +662,11 @@ func isRetryableInsertError(err error) bool {
 		"timeout",
 		"unavailable",
 		"overloaded",
+		"does not exist",
+		"unconfigured table",
+		"incompatible_schema",
+		"incompatible schema",
+		"unknown cf",
 	}
 
 	for _, token := range retryableTokens {

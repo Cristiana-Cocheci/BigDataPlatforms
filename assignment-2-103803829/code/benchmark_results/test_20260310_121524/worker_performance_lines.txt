@@ -1,4 +1,0 @@
-tenant1-streamingestworker-2  | 2026/03/10 10:18:08 Throughput: 3506.75 records/s over 10.0s (total inserted: 35075)
-tenant1-streamingestworker-3  | 2026/03/10 10:18:09 Throughput: 4498.41 records/s over 10.0s (total inserted: 45000)
-tenant1-streamingestworker-1  | 2026/03/10 10:18:09 Throughput: 4516.30 records/s over 10.0s (total inserted: 45175)
-tenant1-streamingestworker-2  | 2026/03/10 10:18:18 Throughput: 4431.47 records/s over 10.0s (total inserted: 79400)
