@@ -188,7 +188,7 @@ collect_monitor_summary() {
 
   awk '
 /report received:/ {
-  tenant=""; throughput=""; avg_batch=""; window_mb=""; total_mb="";
+  tenant=""; throughput=""; avg_batch=""; window_mb=""; total_mb=""; mbps="";
   for (i = 1; i <= NF; i++) {
     if ($i ~ /^tenant=/) {
       split($i, a, "=");
@@ -205,6 +205,9 @@ collect_monitor_summary() {
     } else if ($i ~ /^total_mb=/) {
       split($i, a, "=");
       total_mb = a[2] + 0;
+    } else if ($i ~ /^mbps=/) {
+      split($i, a, "=");
+      mbps = a[2] + 0;
     }
   }
 
@@ -213,6 +216,13 @@ collect_monitor_summary() {
     sum_throughput[tenant] += throughput;
     sum_batch[tenant] += avg_batch;
     sum_window_mb[tenant] += window_mb;
+    sum_mbps[tenant] += mbps;
+    if (!(tenant in min_mbps) || mbps < min_mbps[tenant]) {
+      min_mbps[tenant] = mbps;
+    }
+    if (!(tenant in max_mbps) || mbps > max_mbps[tenant]) {
+      max_mbps[tenant] = mbps;
+    }
     if (!(tenant in min_throughput) || throughput < min_throughput[tenant]) {
       min_throughput[tenant] = throughput;
     }
@@ -226,16 +236,34 @@ collect_monitor_summary() {
 }
 
 END {
-  print "tenant,reports,avg_throughput_rps,min_throughput_rps,max_throughput_rps,avg_batch_ingest_ms,avg_ingested_mb_per_report,total_ingested_mb";
+  print "tenant,reports,avg_throughput_rps,min_throughput_rps,max_throughput_rps,avg_batch_ingest_ms,avg_ingested_mb_per_report,avg_ingested_mb_per_sec,min_ingested_mb_per_sec,max_ingested_mb_per_sec,total_ingested_mb";
   for (tenant in count) {
     avg_window_mb = sum_window_mb[tenant] / count[tenant];
+    avg_mbps = sum_mbps[tenant] / count[tenant];
     tenant_total_mb = (tenant in max_total_mb) ? max_total_mb[tenant] : sum_window_mb[tenant];
-    printf "%s,%d,%.2f,%.2f,%.2f,%.2f,%.4f,%.4f\n", tenant, count[tenant], sum_throughput[tenant] / count[tenant], min_throughput[tenant], max_throughput[tenant], sum_batch[tenant] / count[tenant], avg_window_mb, tenant_total_mb;
+    printf "%s,%d,%.2f,%.2f,%.2f,%.2f,%.4f,%.4f,%.4f,%.4f,%.4f\n", tenant, count[tenant], sum_throughput[tenant] / count[tenant], min_throughput[tenant], max_throughput[tenant], sum_batch[tenant] / count[tenant], avg_window_mb, avg_mbps, min_mbps[tenant], max_mbps[tenant], tenant_total_mb;
   }
 }
 ' "$monitor_log" >"$RUN_DIR/monitor_throughput_by_tenant.csv"
 
-  total_ingested_mb="$(awk -F, 'FNR > 1 {sum += $8} END {printf "%.4f", sum + 0}' "$RUN_DIR/monitor_throughput_by_tenant.csv" 2>/dev/null || echo "0.0000")"
+  total_ingested_mb="$(awk -F, '
+FNR == 1 {
+  total_col = 0;
+  for (i = 1; i <= NF; i++) {
+    if ($i == "total_ingested_mb") {
+      total_col = i;
+      break;
+    }
+  }
+  next;
+}
+FNR > 1 && total_col > 0 {
+  sum += ($total_col + 0);
+}
+END {
+  printf "%.4f", sum + 0;
+}
+' "$RUN_DIR/monitor_throughput_by_tenant.csv" 2>/dev/null || echo "0.0000")"
 
   {
     echo "reports_received=$reports"
@@ -622,6 +650,9 @@ REPORT_INTERVAL_SECONDS="${REPORT_INTERVAL_SECONDS:-10}"
 CQLSH_REQUEST_TIMEOUT_SECONDS="${CQLSH_REQUEST_TIMEOUT_SECONDS:-180}"
 POST_STOP_SETTLE_SECONDS="${POST_STOP_SETTLE_SECONDS:-15}"
 CASSANDRA_COUNT_DAY="${CASSANDRA_COUNT_DAY:-2025-06-01}"
+CASSANDRA_NUM_CONNS="${CASSANDRA_NUM_CONNS:-4}"
+CASSANDRA_INSERT_BATCH_SIZE="${CASSANDRA_INSERT_BATCH_SIZE:-25}"
+CASSANDRA_WRITE_SLEEP_MS="${CASSANDRA_WRITE_SLEEP_MS:-0}"
 TENANT_CONFIG_DIR="${TENANT_CONFIG_DIR:-./tenant_configs}"
 
 RESULTS_ROOT="${RESULTS_ROOT:-benchmark_results}"
@@ -637,6 +668,21 @@ fi
 
 if ! [[ "$PARTITIONS" =~ ^[0-9]+$ ]] || [[ "$PARTITIONS" -lt 1 ]]; then
   echo "PARTITIONS must be an integer >= 1" >&2
+  exit 1
+fi
+
+if ! [[ "$CASSANDRA_NUM_CONNS" =~ ^[0-9]+$ ]] || [[ "$CASSANDRA_NUM_CONNS" -lt 1 ]]; then
+  echo "CASSANDRA_NUM_CONNS must be an integer >= 1" >&2
+  exit 1
+fi
+
+if ! [[ "$CASSANDRA_INSERT_BATCH_SIZE" =~ ^[0-9]+$ ]] || [[ "$CASSANDRA_INSERT_BATCH_SIZE" -lt 1 ]]; then
+  echo "CASSANDRA_INSERT_BATCH_SIZE must be an integer >= 1" >&2
+  exit 1
+fi
+
+if ! [[ "$CASSANDRA_WRITE_SLEEP_MS" =~ ^[0-9]+$ ]]; then
+  echo "CASSANDRA_WRITE_SLEEP_MS must be an integer >= 0" >&2
   exit 1
 fi
 
@@ -677,6 +723,9 @@ REPORT_INTERVAL_SECONDS=$REPORT_INTERVAL_SECONDS
 CQLSH_REQUEST_TIMEOUT_SECONDS=$CQLSH_REQUEST_TIMEOUT_SECONDS
 POST_STOP_SETTLE_SECONDS=$POST_STOP_SETTLE_SECONDS
 CASSANDRA_COUNT_DAY=$CASSANDRA_COUNT_DAY
+CASSANDRA_NUM_CONNS=$CASSANDRA_NUM_CONNS
+CASSANDRA_INSERT_BATCH_SIZE=$CASSANDRA_INSERT_BATCH_SIZE
+CASSANDRA_WRITE_SLEEP_MS=$CASSANDRA_WRITE_SLEEP_MS
 EOF
 
 log "Benchmark output directory: $RUN_DIR"
@@ -704,6 +753,11 @@ export MONITOR_MIN_THROUGHPUT_RPS="$MIN_THROUGHPUT_RPS"
 export MONITOR_MAX_AVG_BATCH_INGEST_MS="$MAX_AVG_BATCH_INGEST_MS"
 export MONITOR_ALERT_COOLDOWN_SECONDS="$ALERT_COOLDOWN_SECONDS"
 export MONITOR_REPORT_INTERVAL_SECONDS="$REPORT_INTERVAL_SECONDS"
+export CASSANDRA_NUM_CONNS="$CASSANDRA_NUM_CONNS"
+export CASSANDRA_INSERT_BATCH_SIZE="$CASSANDRA_INSERT_BATCH_SIZE"
+export CASSANDRA_WRITE_SLEEP_MS="$CASSANDRA_WRITE_SLEEP_MS"
+
+log "Cassandra write settings: num_conns=${CASSANDRA_NUM_CONNS} batch_size=${CASSANDRA_INSERT_BATCH_SIZE} write_sleep_ms=${CASSANDRA_WRITE_SLEEP_MS}"
 
 log "Starting infrastructure and control services"
 compose up -d cassandra1 cassandra2 cassandra3 zookeeper-tenant1 kafka-tenant1 zookeeper-tenant2 kafka-tenant2 streamingestmanager

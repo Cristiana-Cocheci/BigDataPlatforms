@@ -1,0 +1,7 @@
+sleep_ms,tenant,avg_throughput_rps,avg_ingested_mb_per_sec,total_ingested_mb,producer_rows,inserted_rows,processing_pct,duplicate_rows,insert_exceptions,final_kafka_lag,drain_status,reports_received,alerts_forwarded,alert_ratio_pct,run_dir
+5,tenant1,1574.76,0.3689,88.6252,2914834,392325,13.46,3137,0,2603184,timeout,46,23,50.00,benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743
+5,tenant2,1820.39,0.4129,90.8896,2088110,415540,19.90,840,0,1679334,timeout,46,23,50.00,benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743
+20,tenant1,790.02,0.1851,44.4771,2914834,192119,6.59,3137,0,2765284,timeout,46,23,50.00,benchmark_results/write_limit_20ms_20260310_163743/test_20260310_164641
+20,tenant2,862.24,0.1956,43.1329,2088110,192462,9.22,840,0,1898435,timeout,46,23,50.00,benchmark_results/write_limit_20ms_20260310_163743/test_20260310_164641
+50,tenant1,385.14,0.0902,21.7181,2914834,94369,3.24,3137,0,2841509,timeout,46,23,50.00,benchmark_results/write_limit_50ms_20260310_163743_retry/test_20260310_170348
+50,tenant2,404.22,0.0917,20.2192,2088110,90559,4.34,840,0,1998685,timeout,46,23,50.00,benchmark_results/write_limit_50ms_20260310_163743_retry/test_20260310_170348

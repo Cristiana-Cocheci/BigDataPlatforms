@@ -1,0 +1,49 @@
+[15:50:01] Benchmark output directory: benchmark_results/test_20260310_155001
+[15:50:01] Resetting compose stack (including volumes)
+[15:50:04] Rebuilding docker images
+[15:50:19] Building manager binary
+[15:50:20] Starting infrastructure and control services
+[15:50:22] Waiting for cassandra1 to be ready
+[15:51:28] Waiting for cassandra2 to be ready
+[15:52:18] Waiting for cassandra3 to be ready
+[15:52:18] Waiting for kafka-tenant1 to be ready
+[15:52:19] Waiting for kafka-tenant2 to be ready
+[15:52:19] Starting tenant=tenant1 workers=1 partitions=1 with source producer
+[15:52:40] Starting tenant=tenant2 workers=1 partitions=1 with source producer
+[15:52:55] Collecting runtime for 120s
+[15:54:55] Capturing compose status before shutdown
+[15:54:55] Drain-aware shutdown enabled: stopping sources before draining workers
+[15:54:55] Stopping source for tenant=tenant1 before drain
+[15:54:55] Stopping source for tenant=tenant2 before drain
+[15:54:56] Waiting for tenant=tenant1 lag to drain (timeout=30s)
+[15:54:57] Drain check tenant=tenant1 lag=2280759
+[15:55:08] Drain check tenant=tenant1 lag=2230209
+[15:55:19] Drain check tenant=tenant1 lag=2172109
+[15:55:31] Drain check tenant=tenant1 lag=2119759
+[15:55:42] Waiting for tenant=tenant2 lag to drain (timeout=30s)
+[15:55:43] Drain check tenant=tenant2 lag=1139510
+[15:55:55] Drain check tenant=tenant2 lag=1071735
+[15:56:06] Drain check tenant=tenant2 lag=1012128
+[15:56:18] Drain check tenant=tenant2 lag=954910
+[15:56:29] Capturing logs and monitor summary after drain wait
+[15:56:30] Stopping tenant=tenant1 worker after drain
+[15:56:31] Stopping tenant=tenant2 worker after drain
+[15:56:31] Waiting 20s for Cassandra write pressure to settle
+[15:56:52] Collecting Cassandra snapshot for tenant=tenant1 keyspace=mysimbdp_tenant1
+[15:57:14] Collecting Cassandra snapshot for tenant=tenant2 keyspace=mysimbdp_tenant2
+[15:57:37] Computing expected, produced, inserted, duplicate, and exception row metrics by tenant
+[15:58:04] Extracting worker and producer performance lines
+[15:58:04] Benchmark completed. Main outputs:
+[15:58:04] - benchmark_results/test_20260310_155001/run_summary.env
+[15:58:04] - benchmark_results/test_20260310_155001/monitor_throughput_by_tenant.csv
+[15:58:04] - benchmark_results/test_20260310_155001/worker_performance_lines.txt
+[15:58:04] - benchmark_results/test_20260310_155001/producer_performance_lines.txt
+[15:58:04] - benchmark_results/test_20260310_155001/cassandra_counts_<tenant>.txt
+[15:58:04] - benchmark_results/test_20260310_155001/cassandra_samples_<tenant>.txt
+[15:58:04] - benchmark_results/test_20260310_155001/initial_rows_by_tenant.csv
+[15:58:04] - benchmark_results/test_20260310_155001/producer_rows_by_tenant.csv
+[15:58:04] - benchmark_results/test_20260310_155001/cassandra_rows_by_tenant.csv
+[15:58:04] - benchmark_results/test_20260310_155001/duplicate_rows_by_tenant.csv
+[15:58:04] - benchmark_results/test_20260310_155001/drain_status_by_tenant.csv
+[15:58:04] - benchmark_results/test_20260310_155001/worker_insert_exception_counts.csv
+[15:58:04] - benchmark_results/test_20260310_155001/worker_insert_exceptions_by_tenant.txt

@@ -43,42 +43,56 @@ chmod +x run_underprovisioned_benchmark.sh
 
 ## Quick runs
 
-Single-tenant smoke benchmark:
 
-```sh
-TENANTS="tenant1" \
-WORKERS=1 \
-TEST_DURATION_SECONDS=120 \
-MIN_THROUGHPUT_RPS=1000000 \
-./run_underprovisioned_benchmark.sh
-```
 
-Two-tenant heavier benchmark:
+underprovisioned test:
 
 ```sh
 TENANTS="tenant1 tenant2" \
 WORKERS=1 \
-TEST_DURATION_SECONDS=300 \
-PREPARE_CHUNKS=false \
+PARTITIONS=1 \
+TEST_DURATION_SECONDS=120 \
+PREPARE_CHUNKS=true \
 RESET_STACK=true \
+DRAIN_BEFORE_STOP=true \
+DRAIN_TIMEOUT_SECONDS=30 \
+POST_STOP_SETTLE_SECONDS=20 \
 MIN_THROUGHPUT_RPS=1000000 \
+MAX_AVG_BATCH_INGEST_MS=250 \
+REPORT_INTERVAL_SECONDS=10 \
+CASSANDRA_COUNT_DAY=2025-06-01 \
+FORCE_REBUILD_IMAGES=true \
 ./run_underprovisioned_benchmark.sh
 ```
 
 Custom efficient benchmark:
 ```sh
 TENANTS="tenant1 tenant2" \
-WORKERS=10 \
-PARTITIONS=10 \
-TEST_DURATION_SECONDS=700 \
+WORKERS=5 \
+PARTITIONS=5 \
+TEST_DURATION_SECONDS=120 \
 PREPARE_CHUNKS=true \
 RESET_STACK=true \
 DRAIN_BEFORE_STOP=true \
 DRAIN_TIMEOUT_SECONDS=100 \
 MIN_THROUGHPUT_RPS=1000000 \
 CASSANDRA_COUNT_DAY=2025-06-01 \
-FORCE_REBUILD_IMAGES=true \
+FORCE_REBUILD_IMAGES=false \
 ./run_underprovisioned_benchmark.sh
+```
+
+Cassandra write-limited matrix (3 tests: `5ms`, `20ms`, `50ms` sleep per batch write):
+
+```sh
+chmod +x run_cassandra_write_limit_tests.sh
+
+TENANTS="tenant1 tenant2" \
+WORKERS=1 \
+PARTITIONS=1 \
+TEST_DURATION_SECONDS=120 \
+FORCE_REBUILD_IMAGES=true \
+WRITE_SLEEP_SET="5 20 50" \
+./run_cassandra_write_limit_tests.sh
 ```
 
 ## Main parameters
@@ -100,6 +114,9 @@ All parameters are environment variables. If omitted, defaults are used.
 - `CQLSH_REQUEST_TIMEOUT_SECONDS` default: `180`
 - `POST_STOP_SETTLE_SECONDS` default: `15`
 - `CASSANDRA_COUNT_DAY` default: `2025-06-01`
+- `CASSANDRA_NUM_CONNS` default: `4`
+- `CASSANDRA_INSERT_BATCH_SIZE` default: `25`
+- `CASSANDRA_WRITE_SLEEP_MS` default: `0`
 - `RESULTS_ROOT` default: `benchmark_results`
 
 ## Recommended tuning

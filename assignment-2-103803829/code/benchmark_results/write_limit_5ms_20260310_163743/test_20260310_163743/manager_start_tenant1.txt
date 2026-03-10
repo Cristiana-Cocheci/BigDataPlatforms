@@ -1,0 +1,48 @@
+Preparing chunks: tenant=tenant1 source=../data/tenant1/2025-06-01_bme280.csv chunks=1
+Total rows: 2914834
+Number of chunks: 1
+Rows per chunk: 2914834
+Creating chunks in: ../data/tenant1/chunks
+
+Created chunk_0.csv: rows 0-2914833 (2914834 records)
+
+Chunking complete! Files ready in: ../data/tenant1/chunks
+ Container zookeeper-tenant1  Running
+ Container streamingestmanager  Running
+ Container kafka-tenant1  Running
+ Container cassandra1  Running
+ Container streamingestmonitor  Running
+ Container cassandra2  Running
+ Container cassandra3  Running
+Created topic bme280-measurements.
+ Container streamingestmanager  Running
+ Container zookeeper-tenant1  Running
+ Container cassandra1  Running
+ Container kafka-tenant1  Running
+ Container streamingestmonitor  Running
+ Container cassandra3  Running
+ Container cassandra2  Running
+ Container code-tenant1-streamingestworker-1  Creating
+ Container code-tenant1-streamingestworker-1  Created
+ Container kafka-tenant1  Waiting
+ Container cassandra1  Waiting
+ Container cassandra2  Waiting
+ Container cassandra3  Waiting
+ Container cassandra2  Healthy
+ Container kafka-tenant1  Healthy
+ Container cassandra3  Healthy
+ Container cassandra1  Healthy
+ Container code-tenant1-streamingestworker-1  Starting
+ Container code-tenant1-streamingestworker-1  Started
+ Container zookeeper-tenant1  Running
+ Container cassandra1  Running
+ Container kafka-tenant1  Running
+ Container code-tenant1-source-1  Creating
+ Container code-tenant1-source-1  Created
+ Container cassandra1  Waiting
+ Container kafka-tenant1  Waiting
+ Container kafka-tenant1  Healthy
+ Container cassandra1  Healthy
+ Container code-tenant1-source-1  Starting
+ Container code-tenant1-source-1  Started
+tenant=tenant1 started: workers=1 with-source=true prepare-chunks=true schema=bme280

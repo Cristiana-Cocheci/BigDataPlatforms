@@ -1,0 +1,92 @@
+streamingestmonitor  | 2026/03/10 14:49:36 report received: tenant=tenant1 worker=35b0bfa4536c throughput=0.00 rps avg_batch_ms=0.00 window=10.0s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 14:49:36 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 0.00 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:49:46 report received: tenant=tenant1 worker=35b0bfa4536c throughput=652.39 rps avg_batch_ms=15.77 window=10.0s records=6525 window_mb=1.5287 total_mb=1.5287 mbps=0.1528
+streamingestmonitor  | 2026/03/10 14:49:46 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:49:56 report received: tenant=tenant1 worker=35b0bfa4536c throughput=754.06 rps avg_batch_ms=10.76 window=10.0s records=7550 window_mb=1.7685 total_mb=3.2972 mbps=0.1766
+streamingestmonitor  | 2026/03/10 14:49:56 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 754.06 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:49:57 report received: tenant=tenant2 worker=8611c3d929f8 throughput=79.85 rps avg_batch_ms=7.98 window=10.0s records=800 window_mb=0.1815 total_mb=0.1815 mbps=0.0181
+streamingestmonitor  | 2026/03/10 14:49:57 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 79.85 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:50:06 report received: tenant=tenant1 worker=35b0bfa4536c throughput=783.39 rps avg_batch_ms=9.54 window=10.0s records=7850 window_mb=1.8392 total_mb=5.1364 mbps=0.1835
+streamingestmonitor  | 2026/03/10 14:50:06 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:50:07 report received: tenant=tenant2 worker=8611c3d929f8 throughput=859.86 rps avg_batch_ms=6.68 window=10.0s records=8600 window_mb=1.9503 total_mb=2.1318 mbps=0.1950
+streamingestmonitor  | 2026/03/10 14:50:07 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:50:16 report received: tenant=tenant1 worker=35b0bfa4536c throughput=851.06 rps avg_batch_ms=7.33 window=10.0s records=8525 window_mb=1.9973 total_mb=7.1337 mbps=0.1994
+streamingestmonitor  | 2026/03/10 14:50:16 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 851.06 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:50:17 report received: tenant=tenant2 worker=8611c3d929f8 throughput=916.48 rps avg_batch_ms=5.30 window=10.0s records=9175 window_mb=2.0809 total_mb=4.2127 mbps=0.2079
+streamingestmonitor  | 2026/03/10 14:50:17 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 916.48 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:50:26 report received: tenant=tenant1 worker=35b0bfa4536c throughput=841.36 rps avg_batch_ms=7.49 window=10.0s records=8425 window_mb=1.9737 total_mb=9.1075 mbps=0.1971
+streamingestmonitor  | 2026/03/10 14:50:26 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:50:27 report received: tenant=tenant2 worker=8611c3d929f8 throughput=899.12 rps avg_batch_ms=5.64 window=10.0s records=9000 window_mb=2.0410 total_mb=6.2538 mbps=0.2039
+streamingestmonitor  | 2026/03/10 14:50:27 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:50:36 report received: tenant=tenant1 worker=35b0bfa4536c throughput=834.35 rps avg_batch_ms=7.55 window=10.0s records=8350 window_mb=1.9564 total_mb=11.0639 mbps=0.1955
+streamingestmonitor  | 2026/03/10 14:50:36 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 834.35 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:50:37 report received: tenant=tenant2 worker=8611c3d929f8 throughput=917.74 rps avg_batch_ms=5.07 window=10.0s records=9200 window_mb=2.0865 total_mb=8.3403 mbps=0.2081
+streamingestmonitor  | 2026/03/10 14:50:37 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 917.74 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:50:46 report received: tenant=tenant1 worker=35b0bfa4536c throughput=846.51 rps avg_batch_ms=7.22 window=10.0s records=8475 window_mb=1.9857 total_mb=13.0496 mbps=0.1983
+streamingestmonitor  | 2026/03/10 14:50:46 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:50:47 report received: tenant=tenant2 worker=8611c3d929f8 throughput=893.23 rps avg_batch_ms=5.82 window=10.0s records=8950 window_mb=2.0300 total_mb=10.3702 mbps=0.2026
+streamingestmonitor  | 2026/03/10 14:50:47 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:50:56 report received: tenant=tenant1 worker=35b0bfa4536c throughput=813.70 rps avg_batch_ms=7.80 window=10.0s records=8150 window_mb=1.9092 total_mb=14.9588 mbps=0.1906
+streamingestmonitor  | 2026/03/10 14:50:56 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 813.70 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:50:57 report received: tenant=tenant2 worker=8611c3d929f8 throughput=895.94 rps avg_batch_ms=5.46 window=10.0s records=8975 window_mb=2.0354 total_mb=12.4056 mbps=0.2032
+streamingestmonitor  | 2026/03/10 14:50:57 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 895.94 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:51:06 report received: tenant=tenant1 worker=35b0bfa4536c throughput=845.74 rps avg_batch_ms=7.17 window=10.0s records=8475 window_mb=1.9858 total_mb=16.9446 mbps=0.1982
+streamingestmonitor  | 2026/03/10 14:51:06 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:51:07 report received: tenant=tenant2 worker=8611c3d929f8 throughput=906.93 rps avg_batch_ms=5.43 window=10.0s records=9075 window_mb=2.0581 total_mb=14.4637 mbps=0.2057
+streamingestmonitor  | 2026/03/10 14:51:07 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:51:16 report received: tenant=tenant1 worker=35b0bfa4536c throughput=864.02 rps avg_batch_ms=6.77 window=10.0s records=8650 window_mb=2.0266 total_mb=18.9712 mbps=0.2024
+streamingestmonitor  | 2026/03/10 14:51:16 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 864.02 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:51:17 report received: tenant=tenant2 worker=8611c3d929f8 throughput=936.43 rps avg_batch_ms=4.87 window=10.0s records=9375 window_mb=2.1265 total_mb=16.5902 mbps=0.2124
+streamingestmonitor  | 2026/03/10 14:51:17 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 936.43 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:51:26 report received: tenant=tenant1 worker=35b0bfa4536c throughput=864.45 rps avg_batch_ms=6.67 window=10.0s records=8650 window_mb=2.0265 total_mb=20.9978 mbps=0.2025
+streamingestmonitor  | 2026/03/10 14:51:26 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:51:27 report received: tenant=tenant2 worker=8611c3d929f8 throughput=927.13 rps avg_batch_ms=4.97 window=10.0s records=9275 window_mb=2.1037 total_mb=18.6939 mbps=0.2103
+streamingestmonitor  | 2026/03/10 14:51:27 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:51:36 report received: tenant=tenant1 worker=35b0bfa4536c throughput=814.77 rps avg_batch_ms=8.07 window=10.0s records=8150 window_mb=1.9093 total_mb=22.9071 mbps=0.1909
+streamingestmonitor  | 2026/03/10 14:51:36 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 814.77 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:51:37 report received: tenant=tenant2 worker=8611c3d929f8 throughput=858.89 rps avg_batch_ms=6.58 window=10.0s records=8600 window_mb=1.9504 total_mb=20.6443 mbps=0.1948
+streamingestmonitor  | 2026/03/10 14:51:37 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 858.89 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:51:46 report received: tenant=tenant1 worker=35b0bfa4536c throughput=856.94 rps avg_batch_ms=6.86 window=10.0s records=8575 window_mb=2.0091 total_mb=24.9162 mbps=0.2008
+streamingestmonitor  | 2026/03/10 14:51:46 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:51:47 report received: tenant=tenant2 worker=8611c3d929f8 throughput=920.67 rps avg_batch_ms=5.04 window=10.0s records=9225 window_mb=2.0923 total_mb=22.7366 mbps=0.2088
+streamingestmonitor  | 2026/03/10 14:51:47 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:51:56 report received: tenant=tenant1 worker=35b0bfa4536c throughput=831.77 rps avg_batch_ms=7.56 window=10.0s records=8325 window_mb=1.9502 total_mb=26.8665 mbps=0.1949
+streamingestmonitor  | 2026/03/10 14:51:56 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 831.77 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:51:57 report received: tenant=tenant2 worker=8611c3d929f8 throughput=884.55 rps avg_batch_ms=6.02 window=10.0s records=8850 window_mb=2.0073 total_mb=24.7439 mbps=0.2006
+streamingestmonitor  | 2026/03/10 14:51:57 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 884.55 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:52:06 report received: tenant=tenant1 worker=35b0bfa4536c throughput=824.58 rps avg_batch_ms=7.91 window=10.0s records=8250 window_mb=1.9326 total_mb=28.7991 mbps=0.1932
+streamingestmonitor  | 2026/03/10 14:52:06 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:52:07 report received: tenant=tenant2 worker=8611c3d929f8 throughput=884.01 rps avg_batch_ms=5.70 window=10.0s records=8850 window_mb=2.0072 total_mb=26.7512 mbps=0.2005
+streamingestmonitor  | 2026/03/10 14:52:07 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:52:16 report received: tenant=tenant1 worker=35b0bfa4536c throughput=852.91 rps avg_batch_ms=6.77 window=10.0s records=8550 window_mb=2.0031 total_mb=30.8022 mbps=0.1998
+streamingestmonitor  | 2026/03/10 14:52:16 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 852.91 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:52:17 report received: tenant=tenant2 worker=8611c3d929f8 throughput=913.94 rps avg_batch_ms=5.13 window=10.0s records=9150 window_mb=2.0755 total_mb=28.8267 mbps=0.2073
+streamingestmonitor  | 2026/03/10 14:52:17 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 913.94 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:52:26 report received: tenant=tenant1 worker=35b0bfa4536c throughput=858.26 rps avg_batch_ms=6.81 window=10.0s records=8600 window_mb=2.0146 total_mb=32.8168 mbps=0.2011
+streamingestmonitor  | 2026/03/10 14:52:26 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:52:27 report received: tenant=tenant2 worker=8611c3d929f8 throughput=917.20 rps avg_batch_ms=5.08 window=10.0s records=9175 window_mb=2.0811 total_mb=30.9078 mbps=0.2080
+streamingestmonitor  | 2026/03/10 14:52:27 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:52:36 report received: tenant=tenant1 worker=35b0bfa4536c throughput=871.11 rps avg_batch_ms=6.66 window=10.0s records=8725 window_mb=2.0442 total_mb=34.8610 mbps=0.2041
+streamingestmonitor  | 2026/03/10 14:52:36 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 871.11 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:52:37 report received: tenant=tenant2 worker=8611c3d929f8 throughput=930.94 rps avg_batch_ms=4.71 window=10.0s records=9325 window_mb=2.1149 total_mb=33.0228 mbps=0.2111
+streamingestmonitor  | 2026/03/10 14:52:37 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 930.94 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:52:46 report received: tenant=tenant1 worker=35b0bfa4536c throughput=802.73 rps avg_batch_ms=8.76 window=10.0s records=8050 window_mb=1.8857 total_mb=36.7467 mbps=0.1880
+streamingestmonitor  | 2026/03/10 14:52:46 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:52:47 report received: tenant=tenant2 worker=8611c3d929f8 throughput=867.72 rps avg_batch_ms=6.37 window=10.0s records=8700 window_mb=1.9733 total_mb=34.9961 mbps=0.1968
+streamingestmonitor  | 2026/03/10 14:52:47 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:52:56 report received: tenant=tenant1 worker=35b0bfa4536c throughput=836.69 rps avg_batch_ms=7.54 window=10.0s records=8375 window_mb=1.9620 total_mb=38.7087 mbps=0.1960
+streamingestmonitor  | 2026/03/10 14:52:56 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 836.69 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:52:57 report received: tenant=tenant2 worker=8611c3d929f8 throughput=912.12 rps avg_batch_ms=5.07 window=10.0s records=9125 window_mb=2.0697 total_mb=37.0657 mbps=0.2069
+streamingestmonitor  | 2026/03/10 14:52:57 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 912.12 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:53:06 report received: tenant=tenant1 worker=35b0bfa4536c throughput=844.69 rps avg_batch_ms=7.14 window=10.0s records=8450 window_mb=1.9795 total_mb=40.6882 mbps=0.1979
+streamingestmonitor  | 2026/03/10 14:53:06 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:53:07 report received: tenant=tenant2 worker=8611c3d929f8 throughput=902.93 rps avg_batch_ms=5.25 window=10.0s records=9050 window_mb=2.0526 total_mb=39.1184 mbps=0.2048
+streamingestmonitor  | 2026/03/10 14:53:07 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8
+streamingestmonitor  | 2026/03/10 14:53:16 report received: tenant=tenant1 worker=35b0bfa4536c throughput=824.39 rps avg_batch_ms=7.91 window=10.0s records=8250 window_mb=1.9328 total_mb=42.6210 mbps=0.1931
+streamingestmonitor  | 2026/03/10 14:53:16 alert forwarded: tenant=tenant1 worker=35b0bfa4536c reasons=throughput 824.39 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:53:17 report received: tenant=tenant2 worker=8611c3d929f8 throughput=859.78 rps avg_batch_ms=6.86 window=10.3s records=8850 window_mb=2.0073 total_mb=41.1257 mbps=0.1950
+streamingestmonitor  | 2026/03/10 14:53:17 alert forwarded: tenant=tenant2 worker=8611c3d929f8 reasons=throughput 859.78 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 14:53:26 report received: tenant=tenant1 worker=35b0bfa4536c throughput=790.60 rps avg_batch_ms=9.22 window=10.0s records=7925 window_mb=1.8561 total_mb=44.4771 mbps=0.1852
+streamingestmonitor  | 2026/03/10 14:53:26 alert skipped due to cooldown: tenant=tenant1 worker=35b0bfa4536c
+streamingestmonitor  | 2026/03/10 14:53:27 report received: tenant=tenant2 worker=8611c3d929f8 throughput=883.80 rps avg_batch_ms=5.98 window=10.0s records=8850 window_mb=2.0073 total_mb=43.1329 mbps=0.2005
+streamingestmonitor  | 2026/03/10 14:53:27 alert skipped due to cooldown: tenant=tenant2 worker=8611c3d929f8

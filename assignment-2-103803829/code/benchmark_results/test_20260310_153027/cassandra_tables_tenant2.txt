@@ -1,0 +1,7 @@
+
+ table_name
+----------------------------------
+ sensor_observations_dht22_bronze
+           tenant_schema_registry
+
+(2 rows)

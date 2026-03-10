@@ -780,8 +780,19 @@ func consumeMessages(session *gocql.Session) error {
 		insertRetryMaxDelay = insertRetryBaseDelay
 	}
 
+	insertBatchSize := parsePositiveIntEnv("CASSANDRA_INSERT_BATCH_SIZE", batchSize)
+	if insertBatchSize < 1 {
+		log.Printf("Invalid CASSANDRA_INSERT_BATCH_SIZE=%d, using default=%d", insertBatchSize, batchSize)
+		insertBatchSize = batchSize
+	}
+
+	writeSleepMillis := parsePositiveIntEnv("CASSANDRA_WRITE_SLEEP_MS", 0)
+	writeSleepDuration := time.Duration(writeSleepMillis) * time.Millisecond
+
 	log.Printf(
-		"Cassandra insert retry policy: max_retries=%d base_backoff=%s max_backoff=%s",
+		"Cassandra write policy: batch_size=%d write_sleep=%s max_retries=%d base_backoff=%s max_backoff=%s",
+		insertBatchSize,
+		writeSleepDuration,
 		insertMaxRetries,
 		insertRetryBaseDelay,
 		insertRetryMaxDelay,
@@ -834,7 +845,7 @@ func consumeMessages(session *gocql.Session) error {
 	tableName = createdTableName
 
 	// Start consuming with the first message already read
-	batch := make([]map[string]any, 0, batchSize)
+	batch := make([]map[string]any, 0, insertBatchSize)
 	batchBytes := int64(0)
 	messageCount := 1
 	insertCount := 0
@@ -866,7 +877,7 @@ func consumeMessages(session *gocql.Session) error {
 		batchBytes += int64(len(msg.Value))
 
 		// Insert batch when size reached
-		if len(batch) >= batchSize {
+		if len(batch) >= insertBatchSize {
 			batchStart := time.Now()
 			if err := insertBatchWithRetry(session, schema, tableName, batch, insertMaxRetries, insertRetryBaseDelay, insertRetryMaxDelay); err != nil {
 				return fmt.Errorf("failed to insert batch: %w", err)
@@ -876,7 +887,10 @@ func consumeMessages(session *gocql.Session) error {
 			insertCount += len(batch)
 			insertedBytesCount += batchBytes
 			log.Printf("Inserted %d records (total: %d, consumed messages: %d)", len(batch), insertCount, messageCount)
-			batch = make([]map[string]any, 0, batchSize)
+			if writeSleepDuration > 0 {
+				time.Sleep(writeSleepDuration)
+			}
+			batch = make([]map[string]any, 0, insertBatchSize)
 			batchBytes = 0
 		}
 
@@ -948,6 +962,9 @@ func consumeMessages(session *gocql.Session) error {
 		windowBatchCount++
 		insertCount += len(batch)
 		insertedBytesCount += batchBytes
+		if writeSleepDuration > 0 {
+			time.Sleep(writeSleepDuration)
+		}
 		batchBytes = 0
 		log.Printf("Inserted %d records (total: %d, consumed messages: %d, time_since_start %.2fs)", len(batch), insertCount, messageCount, time.Since(startTime).Seconds())
 	}
@@ -1066,8 +1083,12 @@ func main() {
 	// cluster.Consistency = gocql.One
 	//cluster.Consistency = gocql.All
 	cluster.Timeout = 120 * time.Second
-	// Increase connection pool for better throughput
-	cluster.NumConns = 4
+	clusterNumConns := parsePositiveIntEnv("CASSANDRA_NUM_CONNS", 4)
+	if clusterNumConns < 1 {
+		log.Printf("Invalid CASSANDRA_NUM_CONNS=%d, using default=4", clusterNumConns)
+		clusterNumConns = 4
+	}
+	cluster.NumConns = clusterNumConns
 	// Disable initial host lookup to speed up connection
 	cluster.DisableInitialHostLookup = true
 

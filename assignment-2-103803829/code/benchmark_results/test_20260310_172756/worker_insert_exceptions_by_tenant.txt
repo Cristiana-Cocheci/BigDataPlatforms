@@ -1,0 +1,10 @@
+=== tenant=tenant1 service=tenant1-streamingestworker ===
+340:tenant1-streamingestworker-4  | 2026/03/10 15:30:58 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist
+536:tenant1-streamingestworker-1  | 2026/03/10 15:30:58 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist
+541:tenant1-streamingestworker-5  | 2026/03/10 15:30:58 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist
+
+=== tenant=tenant2 service=tenant2-streamingestworker ===
+69:tenant2-streamingestworker-4  | 2026/03/10 15:31:26 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF 328cb3b0-1c96-11f1-b339-354c132aeec8
+105:tenant2-streamingestworker-2  | 2026/03/10 15:31:24 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: table sensor_observations_dht22_bronze does not exist
+150:tenant2-streamingestworker-1  | 2026/03/10 15:31:26 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF 328cb3b0-1c96-11f1-b339-354c132aeec8
+

@@ -1,0 +1,50 @@
+[16:37:43] Benchmark output directory: benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743
+[16:37:43] Resetting compose stack (including volumes)
+[16:37:47] Rebuilding docker images
+[16:38:10] Building manager binary
+[16:38:10] Cassandra write settings: num_conns=4 batch_size=25 write_sleep_ms=5
+[16:38:10] Starting infrastructure and control services
+[16:38:16] Waiting for cassandra1 to be ready
+[16:39:27] Waiting for cassandra2 to be ready
+[16:40:22] Waiting for cassandra3 to be ready
+[16:40:22] Waiting for kafka-tenant1 to be ready
+[16:40:22] Waiting for kafka-tenant2 to be ready
+[16:40:22] Starting tenant=tenant1 workers=1 partitions=1 with source producer
+[16:40:50] Starting tenant=tenant2 workers=1 partitions=1 with source producer
+[16:41:13] Collecting runtime for 120s
+[16:43:13] Capturing compose status before shutdown
+[16:43:13] Drain-aware shutdown enabled: stopping sources before draining workers
+[16:43:13] Stopping source for tenant=tenant1 before drain
+[16:43:13] Stopping source for tenant=tenant2 before drain
+[16:43:14] Waiting for tenant=tenant1 lag to drain (timeout=30s)
+[16:43:15] Drain check tenant=tenant1 lag=2683359
+[16:43:28] Drain check tenant=tenant1 lag=2660484
+[16:43:40] Drain check tenant=tenant1 lag=2640383
+[16:43:52] Drain check tenant=tenant1 lag=2620734
+[16:44:05] Waiting for tenant=tenant2 lag to drain (timeout=30s)
+[16:44:07] Drain check tenant=tenant2 lag=1762935
+[16:44:20] Drain check tenant=tenant2 lag=1741585
+[16:44:32] Drain check tenant=tenant2 lag=1720185
+[16:44:44] Drain check tenant=tenant2 lag=1699610
+[16:44:56] Capturing logs and monitor summary after drain wait
+[16:44:58] Stopping tenant=tenant1 worker after drain
+[16:44:59] Stopping tenant=tenant2 worker after drain
+[16:44:59] Waiting 20s for Cassandra write pressure to settle
+[16:45:20] Collecting Cassandra snapshot for tenant=tenant1 keyspace=mysimbdp_tenant1
+[16:45:44] Collecting Cassandra snapshot for tenant=tenant2 keyspace=mysimbdp_tenant2
+[16:46:06] Computing expected, produced, inserted, duplicate, and exception row metrics by tenant
+[16:46:41] Extracting worker and producer performance lines
+[16:46:41] Benchmark completed. Main outputs:
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/run_summary.env
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/monitor_throughput_by_tenant.csv
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/worker_performance_lines.txt
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/producer_performance_lines.txt
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/cassandra_counts_<tenant>.txt
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/cassandra_samples_<tenant>.txt
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/initial_rows_by_tenant.csv
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/producer_rows_by_tenant.csv
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/cassandra_rows_by_tenant.csv
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/duplicate_rows_by_tenant.csv
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/drain_status_by_tenant.csv
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/worker_insert_exception_counts.csv
+[16:46:41] - benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743/worker_insert_exceptions_by_tenant.txt

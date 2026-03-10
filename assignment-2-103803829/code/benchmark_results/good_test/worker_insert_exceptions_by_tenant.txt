@@ -1,0 +1,13 @@
+=== tenant=tenant1 service=tenant1-streamingestworker ===
+7527:tenant1-streamingestworker-1   | 2026/03/10 12:42:36 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: Operation failed - received 1 responses and 2 failures: INCOMPATIBLE_SCHEMA from /172.19.0.8:7000, INCOMPATIBLE_SCHEMA from /172.19.0.5:7000
+8810:tenant1-streamingestworker-9   | 2026/03/10 12:42:36 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: Operation failed - received 1 responses and 2 failures: INCOMPATIBLE_SCHEMA from /172.19.0.8:7000, INCOMPATIBLE_SCHEMA from /172.19.0.5:7000
+
+=== tenant=tenant2 service=tenant2-streamingestworker ===
+29:tenant2-streamingestworker-9  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+55:tenant2-streamingestworker-2  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+56:tenant2-streamingestworker-3  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+60:tenant2-streamingestworker-6  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+111:tenant2-streamingestworker-7  | 2026/03/10 12:42:54 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a18250-1c7e-11f1-ac27-7577600549d1
+121:tenant2-streamingestworker-10  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+196:tenant2-streamingestworker-5   | 2026/03/10 12:42:54 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a18250-1c7e-11f1-ac27-7577600549d1
+

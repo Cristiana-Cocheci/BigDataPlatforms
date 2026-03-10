@@ -1,0 +1,43 @@
+[14:39:48] Benchmark output directory: benchmark_results/test_20260310_143948
+[14:39:48] Resetting compose stack (including volumes)
+[14:39:51] Rebuilding docker images
+[14:40:05] Building manager binary
+[14:40:05] Starting infrastructure and control services
+[14:40:08] Waiting for cassandra1 to be ready
+[14:41:14] Waiting for cassandra2 to be ready
+[14:42:04] Waiting for cassandra3 to be ready
+[14:42:04] Waiting for kafka-tenant1 to be ready
+[14:42:04] Waiting for kafka-tenant2 to be ready
+[14:42:04] Starting tenant=tenant1 workers=10 partitions=10 with source producer
+[14:42:29] Starting tenant=tenant2 workers=10 partitions=10 with source producer
+[14:42:47] Collecting runtime for 700s
+[14:54:27] Capturing compose status before shutdown
+[14:54:27] Drain-aware shutdown enabled: stopping sources before draining workers
+[14:54:27] Stopping source for tenant=tenant1 before drain
+[14:54:27] Stopping source for tenant=tenant2 before drain
+[14:54:28] Waiting for tenant=tenant1 lag to drain (timeout=100s)
+[14:54:29] Drain check tenant=tenant1 lag=0
+[14:54:30] Waiting for tenant=tenant2 lag to drain (timeout=100s)
+[14:54:31] Drain check tenant=tenant2 lag=0
+[14:54:32] Capturing logs and monitor summary after drain wait
+[14:54:34] Stopping tenant=tenant1 worker after drain
+[14:54:35] Stopping tenant=tenant2 worker after drain
+[14:54:35] Waiting 15s for Cassandra write pressure to settle
+[14:54:51] Collecting Cassandra snapshot for tenant=tenant1 keyspace=mysimbdp_tenant1
+[14:55:33] Collecting Cassandra snapshot for tenant=tenant2 keyspace=mysimbdp_tenant2
+[14:56:05] Computing expected, produced, inserted, duplicate, and exception row metrics by tenant
+[14:56:33] Extracting worker and producer performance lines
+[14:56:34] Benchmark completed. Main outputs:
+[14:56:34] - benchmark_results/test_20260310_143948/run_summary.env
+[14:56:34] - benchmark_results/test_20260310_143948/monitor_throughput_by_tenant.csv
+[14:56:34] - benchmark_results/test_20260310_143948/worker_performance_lines.txt
+[14:56:34] - benchmark_results/test_20260310_143948/producer_performance_lines.txt
+[14:56:34] - benchmark_results/test_20260310_143948/cassandra_counts_<tenant>.txt
+[14:56:34] - benchmark_results/test_20260310_143948/cassandra_samples_<tenant>.txt
+[14:56:34] - benchmark_results/test_20260310_143948/initial_rows_by_tenant.csv
+[14:56:34] - benchmark_results/test_20260310_143948/producer_rows_by_tenant.csv
+[14:56:34] - benchmark_results/test_20260310_143948/cassandra_rows_by_tenant.csv
+[14:56:34] - benchmark_results/test_20260310_143948/duplicate_rows_by_tenant.csv
+[14:56:34] - benchmark_results/test_20260310_143948/drain_status_by_tenant.csv
+[14:56:34] - benchmark_results/test_20260310_143948/worker_insert_exception_counts.csv
+[14:56:34] - benchmark_results/test_20260310_143948/worker_insert_exceptions_by_tenant.txt

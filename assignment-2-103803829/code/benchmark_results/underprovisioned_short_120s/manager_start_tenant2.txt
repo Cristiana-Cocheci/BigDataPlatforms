@@ -1,0 +1,42 @@
+Preparing chunks: tenant=tenant2 source=../data/tenant2/2025-06-01_dht22.csv chunks=1
+Total rows: 2088110
+Number of chunks: 1
+Rows per chunk: 2088110
+Creating chunks in: ../data/tenant2/chunks
+
+Created chunk_0.csv: rows 0-2088109 (2088110 records)
+
+Chunking complete! Files ready in: ../data/tenant2/chunks
+ Container streamingestmanager  Running
+ Container zookeeper-tenant2  Running
+ Container cassandra1  Running
+ Container streamingestmonitor  Running
+ Container kafka-tenant2  Running
+ Container cassandra3  Running
+ Container cassandra2  Running
+Created topic dht22-measurements.
+ Container streamingestmanager  Running
+ Container zookeeper-tenant2  Running
+ Container cassandra1  Running
+ Container streamingestmonitor  Running
+ Container kafka-tenant2  Running
+ Container code-tenant2-streamingestworker-1  Creating
+ Container code-tenant2-streamingestworker-1  Created
+ Container cassandra1  Waiting
+ Container kafka-tenant2  Waiting
+ Container cassandra1  Healthy
+ Container kafka-tenant2  Healthy
+ Container code-tenant2-streamingestworker-1  Starting
+ Container code-tenant2-streamingestworker-1  Started
+ Container cassandra1  Running
+ Container zookeeper-tenant2  Running
+ Container kafka-tenant2  Running
+ Container code-tenant2-source-1  Creating
+ Container code-tenant2-source-1  Created
+ Container cassandra1  Waiting
+ Container kafka-tenant2  Waiting
+ Container kafka-tenant2  Healthy
+ Container cassandra1  Healthy
+ Container code-tenant2-source-1  Starting
+ Container code-tenant2-source-1  Started
+tenant=tenant2 started: workers=1 with-source=true prepare-chunks=true schema=dht22

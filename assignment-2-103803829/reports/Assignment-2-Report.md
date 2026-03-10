@@ -197,30 +197,79 @@ As explained in the previous point, the ```mysimbdp-streamingestmonitor``` sends
 
 ```Demonstrate these features.```
 All the logs can be further analysed in (code/benchmark_results)[code/benchmark_results].
-Here is an extract from [log_streamingestmanager.txt](../code/benchmark_results/good_test_20260310_135346/log_streamingestmanager.txt)
+Here is an extract from [log_streamingestmanager.txt](../code/benchmark_results/good_test/log_streamingestmanager.txt). What we can observe is that in the beginning 0 throughput is reported, because the ingestion didn't fully have time to start yet.
 
 
-```
-streamingestmanager  | monitor alert received: tenant=tenant1 worker=c1370749f7a9 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
-streamingestmanager  | monitor alert received: tenant=tenant2 worker=dd578a255fa2 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
-streamingestmanager  | monitor alert received: tenant=tenant2 worker=4bdc9b2157d4 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
-streamingestmanager  | monitor alert received: tenant=tenant1 worker=719e254c2696 severity=warning reasons=throughput 4942.16 rps below minimum 1000000.00 rps throughput=4942.16 avg_batch_ms=4.79 window_mb=11.5822 total_mb=18.3187
-```
-
-
-And here is an extract of logs from [log_streamingestmonitor.txt](../code/benchmark_results/good_test_20260310_135346/log_streamingestmonitor.txt).
-```
-streamingestmonitor  | 2026/03/10 11:56:31 report received: tenant=tenant1 worker=c1370749f7a9 throughput=0.00 rps avg_batch_ms=0.00 window=10.0s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
-streamingestmonitor  | 2026/03/10 11:56:31 alert forwarded: tenant=tenant1 worker=c1370749f7a9 reasons=throughput 0.00 rps below minimum 1000000.00 rps
-streamingestmonitor  | 2026/03/10 11:56:32 report received: tenant=tenant1 worker=719e254c2696 throughput=0.00 rps avg_batch_ms=0.00 window=10.2s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
-streamingestmonitor  | 2026/03/10 11:56:32 alert skipped due to cooldown: tenant=tenant1 worker=719e254c2696
-streamingestmonitor  | 2026/03/10 11:56:32 report received: tenant=tenant1 worker=911abcb03e78 throughput=0.00 rps avg_batch_ms=0.00 window=10.4s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
-streamingestmonitor  | 2026/03/10 11:56:32 alert skipped due to cooldown: tenant=tenant1 worker=911abcb03e78
-streamingestmonitor  | 2026/03/10 11:56:34 report received: tenant=tenant1 worker=7e4d8976b59f throughput=2.05 rps avg_batch_ms=2525.51 window=12.2s records=25 window_mb=0.0058 total_mb=0.0058 mbps=0.0005
-streamingestmonitor  | 2026/03/10 11:56:34 alert skipped due to cooldown: tenant=tenant1 worker=7e4d8976b59f
-st
+```sh
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=75a23c80f655 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=97111007d5e8 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=08c6673c5656 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=bda42625c2f8 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=6bddf94b63d7 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=63c34b5a4948 severity=warning reasons=throughput 889.06 rps below minimum 1000000.00 rps throughput=889.06 avg_batch_ms=5.81 window_mb=2.1471 total_mb=4.9553
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=97111007d5e8 severity=warning reasons=throughput 1933.15 rps below minimum 1000000.00 rps throughput=1933.15 avg_batch_ms=5.67 window_mb=4.6833 total_mb=10.8362
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=75a23c80f655 severity=warning reasons=throughput 940.30 rps below minimum 1000000.00 rps throughput=940.30 avg_batch_ms=5.79 window_mb=2.2819 total_mb=5.3147
+streamingestmanager  | monitor alert received: tenant=tenant1 worker=08c6673c5656 severity=warning reasons=throughput 891.47 rps below minimum 1000000.00 rps throughput=891.47 avg_batch_ms=5.85 window_mb=2.1601 total_mb=5.0169
+streamingestmanager  | monitor alert received: tenant=tenant2 worker=2ff91db36b9c severity=warning reasons=throughput 2759.26 rps below minimum 1000000.00 rps throughput=2759.26 avg_batch_ms=3.46 window_mb=6.2830 total_mb=13.9587
 ```
 
+
+And here is an extract of logs from [log_streamingestmonitor.txt](../code/benchmark_results/good_test/log_streamingestmonitor.txt). Again, we observe in the beginning the startup process, no records had time to be inserted yet and the monitor reports 0 records inserted.
+```sh
+streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=08c6673c5656 throughput=0.00 rps avg_batch_ms=0.00 window=10.5s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=75a23c80f655 throughput=0.00 rps avg_batch_ms=0.00 window=10.7s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=97111007d5e8 throughput=0.00 rps avg_batch_ms=0.00 window=10.4s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 12:42:37 alert forwarded: tenant=tenant1 worker=75a23c80f655 reasons=throughput 0.00 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 12:42:37 alert forwarded: tenant=tenant1 worker=97111007d5e8 reasons=throughput 0.00 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 12:42:37 alert forwarded: tenant=tenant1 worker=08c6673c5656 reasons=throughput 0.00 rps below minimum 1000000.00 rps
+streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=63c34b5a4948 throughput=2.49 rps avg_batch_ms=33.00 window=10.0s records=25 window_mb=0.0058 total_mb=0.0058 mbps=0.0006
+streamingestmonitor  | 2026/03/10 12:42:37 alert skipped due to cooldown: tenant=tenant1 worker=63c34b5a4948
+streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=234820a34f1c throughput=0.00 rps avg_batch_ms=0.00 window=10.5s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 12:42:37 alert skipped due to cooldown: tenant=tenant1 worker=234820a34f1c
+streamingestmonitor  | 2026/03/10 12:42:38 report received: tenant=tenant1 worker=135350cbe6fc throughput=0.00 rps avg_batch_ms=0.00 window=10.3s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 12:42:38 alert skipped due to cooldown: tenant=tenant1 worker=135350cbe6fc
+streamingestmonitor  | 2026/03/10 12:42:38 report received: tenant=tenant1 worker=332a28b8806f throughput=0.00 rps avg_batch_ms=0.00 window=10.2s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+streamingestmonitor  | 2026/03/10 12:42:38 alert skipped due to cooldown: tenant=tenant1 worker=332a28b8806f
+streamingestmonitor  | 2026/03/10 12:42:47 report received: tenant=tenant1 worker=08c6673c5656 throughput=1219.81 rps avg_batch_ms=8.53 window=10.0s records=12200 window_mb=2.8568 total_mb=2.8568 mbps=0.2856
+streamingestmonitor  | 2026/03/10 12:42:47 alert skipped due to cooldown: tenant=tenant1 worker=08c6673c5656
+streamingestmonitor  | 2026/03/10 12:42:47 report received: tenant=tenant1 worker=97111007d5e8 throughput=2627.05 rps avg_batch_ms=7.36 window=10.0s records=26275 window_mb=6.1529 total_mb=6.1529 mbps=0.6152
+s
+```
+
+Then we can also take a look at the errors, which are all gathered in [worker_insert_exceptions_by_tenant.txt](../code/benchmark_results/good_test/worker_insert_exceptions_by_tenant.txt)
+```sh
+=== tenant=tenant1 service=tenant1-streamingestworker ===
+7527:tenant1-streamingestworker-1   | 2026/03/10 12:42:36 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: Operation failed - received 1 responses and 2 failures: INCOMPATIBLE_SCHEMA from /172.19.0.8:7000, INCOMPATIBLE_SCHEMA from /172.19.0.5:7000
+8810:tenant1-streamingestworker-9   | 2026/03/10 12:42:36 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: Operation failed - received 1 responses and 2 failures: INCOMPATIBLE_SCHEMA from /172.19.0.8:7000, INCOMPATIBLE_SCHEMA from /172.19.0.5:7000
+
+=== tenant=tenant2 service=tenant2-streamingestworker ===
+29:tenant2-streamingestworker-9  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+55:tenant2-streamingestworker-2  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+56:tenant2-streamingestworker-3  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+60:tenant2-streamingestworker-6  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+111:tenant2-streamingestworker-7  | 2026/03/10 12:42:54 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a18250-1c7e-11f1-ac27-7577600549d1
+121:tenant2-streamingestworker-10  | 2026/03/10 12:42:55 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a1a960-1c7e-11f1-909f-9bf7b9d39022
+196:tenant2-streamingestworker-5   | 2026/03/10 12:42:54 Consumer error: failed to insert batch: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: java.lang.IllegalArgumentException: Unknown CF a8a18250-1c7e-11f1-ac27-7577600549d1
+```
+
+After taking a look at the first exception, i checked the full stream-ingest worker logs for the first tenant and found that the table did not have time to be created yet, which fixes itself immediatelly, as seen in the extract below: 
+```sh
+tenant1-streamingestworker-4  | 2026/03/10 12:42:26 managed worker init: tenant=tenant1 topic=bme280-measurements group=tenant1-ingest-group keyspace=mysimbdp_tenant1 brokers=kafka-tenant1:29092
+tenant1-streamingestworker-4  | 2026/03/10 12:42:26 Connected to Cassandra cluster with tier policy: tenant=tenant1 tier=gold consistency=QUORUM
+tenant1-streamingestworker-4  | 2026/03/10 12:42:26 Tenant schema selected: tenant=tenant1 tier=gold consistency=QUORUM profile=bme280 format=bme280_full table_prefix=sensor_measurements columns=13
+tenant1-streamingestworker-4  | 2026/03/10 12:42:26 Cassandra insert retry policy: max_retries=60 base_backoff=500ms max_backoff=10s
+tenant1-streamingestworker-4  | 2026/03/10 12:42:26 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=75a23c80f655
+tenant1-streamingestworker-4  | 2026/03/10 12:42:26 Kafka consumer connected, consuming from topic: bme280-measurements
+tenant1-streamingestworker-4  | 2026/03/10 12:42:36 Detected table_suffix_field=sensor_type value=BME280, creating table with profile=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-4  | 2026/03/10 12:42:37 Created table using schema=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-4  | 2026/03/10 12:42:37 Inserted 25 records (total: 25, consumed messages: 25)
+tenant1-streamingestworker-4  | 2026/03/10 12:42:37 Inserted 25 records (total: 50, consumed messages: 50)
+tenant1-streamingestworker-4  | 2026/03/10 12:42:37 Inserted 25 records (total: 75, consumed messages: 75)
+```
+
+A simmiliar exception type happens in tenant2 stream ingest worker logs: a certain worker is not available yet, so the monitor catches and alerts the exceptions, but after startup settles, the exception does not appear anymore.
+
+Overall, the data ingestion system functions without any significant errors and failures. 
 
 ## Part 2
 1. 
@@ -228,6 +277,107 @@ DESIGN
 bronze to silver data pipelines
 
 DESIGN a schema for a set of constraints for tenant service agreement that mysimbdp will support
+
+```First type of tenant```
+The data input frequency for my platformed is assumed to be once per day, with a file size of approximately 3GB. It is assumed that the silverpipeline would take around 5-15 minutes with a moderate compute.
+
+Because of these assumptions, a reasonable pipeline design would have the following features:
+- **Compute**: there is only one pipeline per day with moderate compute necessities
+  - max_cpu_cores: 4
+  - max_memory_gb: 8
+  - max_parallel_jobs: 1
+
+- **Throughput**: Considering testing data used so far, I estimate 3 million rows. So a max throughput of 10000 rows/second would give 5 minutes of runtime, which is reasonable.
+  - max_records_per_second: 10000
+  - max_mb_per_second: 50
+
+- **Scheduling**: ingestion runs once per day, so a maximum runtime of 30 minutes would suffice per tenant. The pipeline is batch type, all daily data is done at once. Interval between batches can be large, so 24 hours.
+  - pipeline_type: batch
+  - min_batch_interval_sec: 86400
+  - max_pipeline_runtime_sec: 1800 
+
+- **Storage**: let's say 3GB of data is allowed per day, with a retention of 30 days, so:
+  - max_silver_storage_gb : 100GB
+  - silver_retention_days: 30 
+
+- **Latency**: since it is daily analytics, latency can be large, so we can allow 2 hours:
+  - max_processing_delay_sec: 7200
+
+So an example YAML constraints file for this type of data would be:
+
+```YAML
+tenant_id: tenant1 (weather_sensors)
+
+pipeline_constraints:
+
+  compute:
+    max_cpu_cores: 4
+    max_memory_gb: 8
+    max_parallel_jobs: 1
+
+  throughput:
+    max_records_per_second: 10000
+    max_mb_per_second: 50
+
+  scheduling:
+    pipeline_type: batch
+    min_batch_interval_sec: 86400
+    max_pipeline_runtime_sec: 1800
+
+  storage:
+    max_silver_storage_gb: 100
+    silver_retention_days: 30
+
+  reliability:
+    max_retries: 3
+    checkpoint_interval_sec: 300
+
+  latency:
+    max_processing_delay_sec: 7200
+```
+
+```Second type of tenant```
+Let's now assume that we don't get daily data, but instead we are streamed continuos weather sensor data. 
+
+What changes from the previous data type:
+- Compute can have 3 parallel jobs, since more data can come at once, online.
+- The scheduling is now streaming, because of the streaming nature of the data.
+- The scheduling min_batch_interval_sec is now extremely short, 10 seconds, because we have to constantly run it.
+- The storage doesn't change, assuming in the end it's the same kind of data.
+- For reliability, we would like to have more retries and more frequent, to adjust for the constantly incoming data.
+- The latency has to be very small, so 10 seconds is reasonable.
+
+
+```YAML
+tenant_id: tenant_iot
+
+pipeline_constraints:
+
+  compute:
+    max_cpu_cores: 4
+    max_memory_gb: 8
+    max_parallel_jobs: 3
+
+  throughput:
+    max_records_per_second: 50000
+    max_mb_per_second: 100
+
+  scheduling:
+    pipeline_type: streaming
+    min_batch_interval_sec: 10
+    max_pipeline_runtime_sec: 3600
+
+  storage:
+    max_silver_storage_gb: 100
+    silver_retention_days: 30
+
+  reliability:
+    max_retries: 5
+    checkpoint_interval_sec: 60
+
+  latency:
+    max_processing_delay_sec: 15
+```
 
 2.
 IMPLEMENT an instance of a silver pipeline. Explain design as a tenant.
@@ -327,3 +477,69 @@ Notes:
 - `Total rows: 2914834`
 - `Number of chunks: 1`
 - `Rows per chunk: 2914834`
+
+## Benchmark Addendum (Requested Full Reports)
+
+### Report A: Previous Comparison (`normal_short_120s` vs `underprovisioned_short_120s`)
+
+Source folders:
+- `code/benchmark_results/normal_short_120s`
+- `code/benchmark_results/underprovisioned_short_120s`
+
+Run-level summary (both tenants combined):
+
+| scenario | reports_received | alerts_forwarded | alert_ratio_pct | total_ingested_mb | producer_rows | inserted_rows | processing_pct | total_final_kafka_lag |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| normal_short_120s | 49 | 21 | 42.86 | 398.7280 | 2390000 | 2353517 | 98.47 | 78176 |
+| underprovisioned_short_120s | 43 | 22 | 51.16 | 503.7340 | 5002944 | 2273998 | 45.45 | 2966269 |
+
+Per-tenant details:
+
+| scenario | tenant | avg_throughput_rps | avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | final_kafka_lag | drain_status | insert_exceptions | duplicate_rows |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| normal_short_120s | tenant1 | 4574.96 | 1.0723 | 279.1229 | 1270000 | 1224655 | 96.43 | 78176 | timeout | 9 | 3137 |
+| normal_short_120s | tenant2 | 4430.02 | 1.0053 | 119.6051 | 1120000 | 1128862 | 100.79 | 0 | drained | 8 | 840 |
+| underprovisioned_short_120s | tenant1 | 4613.15 | 1.0810 | 237.8819 | 2914834 | 1063048 | 36.47 | 2070359 | timeout | 0 | 3137 |
+| underprovisioned_short_120s | tenant2 | 5568.17 | 1.2641 | 265.8521 | 2088110 | 1210950 | 57.99 | 895910 | timeout | 0 | 840 |
+
+Observations:
+- Under-provisioned run had much higher offered load (full datasets produced), but a far lower processing fraction and much higher residual Kafka lag.
+- Normal run produced less data (sources were stopped earlier), so it reached near-complete processing for tenant2 and high processing for tenant1.
+- Normal run had startup insert exceptions (tenant1: 9, tenant2: 8); under-provisioned run had 0 insert exceptions.
+
+### Report B: Current Comparison (Cassandra Write-Limit Matrix `5ms` vs `20ms` vs `50ms`)
+
+The experiment simulates an intensive ingestion workload where the incoming data rate significantly exceeds the processing capability of the ingestion pipeline. By artificially introducing Cassandra write latency (CASSANDRA_WRITE_SLEEP_MS), the effective throughput of streamingestworker becomes constrained. As the write latency increases from 5 ms to 50 ms, the ingestion throughput decreases almost proportionally while Kafka backlog increases, demonstrating the effect of limited processing capability under heavy load.
+
+Source folders:
+- `code/benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743`
+- `code/benchmark_results/write_limit_20ms_20260310_163743/test_20260310_164641`
+- `code/benchmark_results/write_limit_50ms_20260310_163743/test_20260310_170348`
+
+
+Combined summary (both tenants):
+
+| sleep_ms | reports_received | alerts_forwarded | alert_ratio_pct | total_avg_throughput_rps | total_avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | total_final_kafka_lag |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5 | 46 | 23 | 50.00 | 3395.15 | 0.7818 | 179.5148 | 5002944 | 807865 | 16.15 | 4282518 |
+| 20 | 46 | 23 | 50.00 | 1652.26 | 0.3807 | 87.6100 | 5002944 | 384581 | 7.69 | 4663719 |
+| 50 | 46 | 23 | 50.00 | 789.36 | 0.1819 | 41.9373 | 5002944 | 184928 | 3.70 | 4840194 |
+
+Per-tenant details:
+
+| sleep_ms | tenant | avg_throughput_rps | avg_ingested_mb_per_sec | total_ingested_mb | producer_rows | inserted_rows | processing_pct | final_kafka_lag | drain_status | insert_exceptions | duplicate_rows |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|
+| 5 | tenant1 | 1574.76 | 0.3689 | 88.6252 | 2914834 | 392325 | 13.46 | 2603184 | timeout | 0 | 3137 |
+| 5 | tenant2 | 1820.39 | 0.4129 | 90.8896 | 2088110 | 415540 | 19.90 | 1679334 | timeout | 0 | 840 |
+| 20 | tenant1 | 790.02 | 0.1851 | 44.4771 | 2914834 | 192119 | 6.59 | 2765284 | timeout | 0 | 3137 |
+| 20 | tenant2 | 862.24 | 0.1956 | 43.1329 | 2088110 | 192462 | 9.22 | 1898435 | timeout | 0 | 840 |
+| 50 | tenant1 | 385.14 | 0.0902 | 21.7181 | 2914834 | 94369 | 3.24 | 2841509 | timeout | 0 | 3137 |
+| 50 | tenant2 | 404.22 | 0.0917 | 20.2192 | 2088110 | 90559 | 4.34 | 1998685 | timeout | 0 | 840 |
+
+Observations:
+- Increasing `CASSANDRA_WRITE_SLEEP_MS` from `5` to `20` to `50` reduced throughput and processed fraction almost proportionally.
+- Residual Kafka lag increased monotonically with larger write sleep.
+- Insert exceptions stayed at `0` in all three runs.
+- All three runs timed out during drain due to intentionally high offered load and short runtime.
+
+The results demonstrate that under a heavy ingestion workload, the effective processing capacity of streamingestworker becomes limited by the downstream Cassandra write latency, resulting in reduced throughput, increasing Kafka backlog, and a low fraction of processed records.

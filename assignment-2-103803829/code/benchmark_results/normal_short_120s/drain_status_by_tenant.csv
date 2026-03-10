@@ -1,0 +1,3 @@
+tenant,drain_status,final_kafka_lag
+tenant1,timeout,78176
+tenant2,drained,0
