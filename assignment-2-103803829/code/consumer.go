@@ -600,6 +600,132 @@ func insertBatch(session *gocql.Session, schema tenantSchemaProfile, tableName s
 	return nil
 }
 
+func parsePositiveIntEnv(key string, defaultValue int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return defaultValue
+	}
+
+	parsed, err := strconv.Atoi(raw)
+	if err != nil || parsed < 0 {
+		log.Printf("Invalid %s=%q, using default=%d", key, raw, defaultValue)
+		return defaultValue
+	}
+
+	return parsed
+}
+
+func parsePositiveDurationMillisEnv(key string, defaultValue time.Duration) time.Duration {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return defaultValue
+	}
+
+	parsed, err := strconv.Atoi(raw)
+	if err != nil || parsed <= 0 {
+		log.Printf("Invalid %s=%q, using default=%s", key, raw, defaultValue)
+		return defaultValue
+	}
+
+	return time.Duration(parsed) * time.Millisecond
+}
+
+func isRetryableInsertError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errText := strings.ToLower(err.Error())
+	nonRetryableTokens := []string{
+		"failed to bind values",
+		"missing required primary key",
+		"cannot convert",
+		"failed to unmarshal",
+	}
+
+	for _, token := range nonRetryableTokens {
+		if strings.Contains(errText, token) {
+			return false
+		}
+	}
+
+	retryableTokens := []string{
+		"cannot achieve consistency level",
+		"no hosts available",
+		"connection refused",
+		"timed out",
+		"timeout",
+		"unavailable",
+		"overloaded",
+	}
+
+	for _, token := range retryableTokens {
+		if strings.Contains(errText, token) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func exponentialBackoff(attempt int, baseDelay, maxDelay time.Duration) time.Duration {
+	if baseDelay <= 0 {
+		baseDelay = 500 * time.Millisecond
+	}
+
+	if maxDelay < baseDelay {
+		maxDelay = baseDelay
+	}
+
+	delay := baseDelay
+	for i := 0; i < attempt; i++ {
+		if delay >= maxDelay/2 {
+			return maxDelay
+		}
+		delay *= 2
+	}
+
+	if delay > maxDelay {
+		return maxDelay
+	}
+
+	return delay
+}
+
+func insertBatchWithRetry(session *gocql.Session, schema tenantSchemaProfile, tableName string, records []map[string]any, maxRetries int, baseDelay, maxDelay time.Duration) error {
+	if len(records) == 0 {
+		return nil
+	}
+
+	attempt := 0
+	for {
+		err := insertBatch(session, schema, tableName, records)
+		if err == nil {
+			return nil
+		}
+
+		if !isRetryableInsertError(err) || attempt >= maxRetries {
+			if attempt > 0 {
+				return fmt.Errorf("failed to insert batch into %s after %d retries: %w", tableName, attempt, err)
+			}
+			return err
+		}
+
+		delay := exponentialBackoff(attempt, baseDelay, maxDelay)
+		log.Printf(
+			"Transient Cassandra insert failure table=%s attempt=%d/%d: %v (retrying in %s)",
+			tableName,
+			attempt+1,
+			maxRetries+1,
+			err,
+			delay,
+		)
+
+		time.Sleep(delay)
+		attempt++
+	}
+}
+
 func consumeMessages(session *gocql.Session) error {
 	startTime := time.Now()
 	tenantID := activeTenantID()
@@ -641,6 +767,20 @@ func consumeMessages(session *gocql.Session) error {
 			reportInterval = time.Duration(secs) * time.Second
 		}
 	}
+
+	insertMaxRetries := parsePositiveIntEnv("CASSANDRA_INSERT_MAX_RETRIES", 60)
+	insertRetryBaseDelay := parsePositiveDurationMillisEnv("CASSANDRA_INSERT_RETRY_BASE_MS", 500*time.Millisecond)
+	insertRetryMaxDelay := parsePositiveDurationMillisEnv("CASSANDRA_INSERT_RETRY_MAX_MS", 10*time.Second)
+	if insertRetryMaxDelay < insertRetryBaseDelay {
+		insertRetryMaxDelay = insertRetryBaseDelay
+	}
+
+	log.Printf(
+		"Cassandra insert retry policy: max_retries=%d base_backoff=%s max_backoff=%s",
+		insertMaxRetries,
+		insertRetryBaseDelay,
+		insertRetryMaxDelay,
+	)
 
 	reportClient := &http.Client{Timeout: 5 * time.Second}
 	lastReportTime := time.Now()
@@ -718,7 +858,7 @@ func consumeMessages(session *gocql.Session) error {
 		// Insert batch when size reached
 		if len(batch) >= batchSize {
 			batchStart := time.Now()
-			if err := insertBatch(session, schema, tableName, batch); err != nil {
+			if err := insertBatchWithRetry(session, schema, tableName, batch, insertMaxRetries, insertRetryBaseDelay, insertRetryMaxDelay); err != nil {
 				return fmt.Errorf("failed to insert batch: %w", err)
 			}
 			windowBatchLatencyMS += time.Since(batchStart).Seconds() * 1000
@@ -775,7 +915,7 @@ func consumeMessages(session *gocql.Session) error {
 	// Insert remaining records
 	if len(batch) > 0 {
 		batchStart := time.Now()
-		if err := insertBatch(session, schema, tableName, batch); err != nil {
+		if err := insertBatchWithRetry(session, schema, tableName, batch, insertMaxRetries, insertRetryBaseDelay, insertRetryMaxDelay); err != nil {
 			return fmt.Errorf("failed to insert final batch: %w", err)
 		}
 		windowBatchLatencyMS += time.Since(batchStart).Seconds() * 1000

@@ -1,0 +1,14 @@
+NAME                                IMAGE                             COMMAND                  SERVICE                      CREATED         STATUS                   PORTS
+cassandra1                          cassandra:latest                  "docker-entrypoint.s…"   cassandra1                   2 minutes ago   Up 2 minutes (healthy)   0.0.0.0:9042->9042/tcp, [::]:9042->9042/tcp
+cassandra2                          cassandra:latest                  "docker-entrypoint.s…"   cassandra2                   2 minutes ago   Up 2 minutes (healthy)   7000-7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp
+cassandra3                          cassandra:latest                  "docker-entrypoint.s…"   cassandra3                   2 minutes ago   Up 2 minutes (healthy)   7000-7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp
+code-tenant1-source-1               code-tenant1-source               "./producer"             tenant1-source               1 second ago    Up Less than a second    
+code-tenant1-streamingestworker-1   code-tenant1-streamingestworker   "./consumer"             tenant1-streamingestworker   2 seconds ago   Up 1 second              
+code-tenant1-streamingestworker-2   code-tenant1-streamingestworker   "./consumer"             tenant1-streamingestworker   2 seconds ago   Up 1 second              
+code-tenant1-streamingestworker-3   code-tenant1-streamingestworker   "./consumer"             tenant1-streamingestworker   2 seconds ago   Up 1 second              
+kafka-tenant1                       confluentinc/cp-kafka:7.5.0       "/etc/confluent/dock…"   kafka-tenant1                2 minutes ago   Up 2 minutes (healthy)   0.0.0.0:9093->9092/tcp, [::]:9093->9092/tcp
+kafka-tenant2                       confluentinc/cp-kafka:7.5.0       "/etc/confluent/dock…"   kafka-tenant2                2 minutes ago   Up 2 minutes (healthy)   0.0.0.0:9094->9092/tcp, [::]:9094->9092/tcp
+streamingestmanager                 code-streamingestmanager          "./streamingestmanag…"   streamingestmanager          2 minutes ago   Up 2 minutes             0.0.0.0:8082->8082/tcp, [::]:8082->8082/tcp
+streamingestmonitor                 code-streamingestmonitor          "./streamingestmonit…"   streamingestmonitor          2 minutes ago   Up 2 minutes             0.0.0.0:8081->8081/tcp, [::]:8081->8081/tcp
+zookeeper-tenant1                   confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…"   zookeeper-tenant1            2 minutes ago   Up 2 minutes             0.0.0.0:2182->2181/tcp, [::]:2182->2181/tcp
+zookeeper-tenant2                   confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…"   zookeeper-tenant2            2 minutes ago   Up 2 minutes             0.0.0.0:2183->2181/tcp, [::]:2183->2181/tcp

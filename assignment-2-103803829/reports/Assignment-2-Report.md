@@ -50,6 +50,45 @@ mysimbdp-streamingestmanager
 
 explain what tenant has to do to develop streamingestworker
 
+```mysimbdp-streamingestmanager``` : it is a control plane that orchestrates Docker Compose services for multiple tenants. It can start/stop tenant specific *streamingestworker*s. It does not do any ingesting itself.
+
+The tenant topology is hardcoded in a tenant registry map:
+
+```json
+"tenant1": {
+		TenantID:          "tenant1",
+		Zookeeper:         "zookeeper-tenant1",
+		Kafka:             "kafka-tenant1",
+		WorkerService:     "tenant1-streamingestworker",
+		SourceService:     "tenant1-source",
+		KafkaTopic:        "bme280-measurements",
+		CassandraKeyspace: "mysimbdp_tenant1",
+		SchemaProfile:     "bme280",
+	},
+```
+
+The manager parses flags and executes the following commands:
+- start:
+    - resolves tenant(s) 
+    - number of workers
+    - number of kafka partitions
+    - prepares chunks from the original data (splitting for efficient producer reads according to the number of workers chosen)
+    - creates tenant keyspace if not already available
+    - ensures kafka topic is available
+    - creates kafka topic partitions 
+- stop:
+    - stops and removes worker containers (kafka consumers)
+    - if stop-source=true also stops and removes source (kafka producers)
+    - if stop-broker=true also stops and removes kafka broker 
+    - it does not drop keyspaces or data from the Cassandra cluster, it only handles ingestion workers
+- status:
+    - can specify which tenant status by --tenant flag
+    - shows tenant's stack, magager, monitor
+- listen-alerts:
+    - runs a HTTP server that recieves alerts from ```streamingestmonitor```
+
+The manager only runs compose commands, the tenant specific details are a blackbox for it. They are handled as environment variables, which are fetched from the tenant configuration files.
+
 What does the tenant have to do for *streamingestworker*:
  - A tenant provides a configuration JSON file, that will be used by the default Kafka producer and consumer internal for mysimpbdp.
 
@@ -102,6 +141,46 @@ average ingestion time, total ingestion data size, and number of records
 
 components, flows and the mechanism for reporting
 
+```mysimbdp-streamingestmonitor```: is a HTTP service that recieves worker performanec reports and forwards alerts to ```streamingestmanager``` when necessary.
+
+A report format would look like this:
+```go
+type workerPerformanceReport struct {
+	TenantID                string  `json:"tenant_id"`
+	WorkerID                string  `json:"worker_id"`
+	KafkaTopic              string  `json:"kafka_topic"`
+	ReportedAt              string  `json:"reported_at"`
+	WindowSeconds           float64 `json:"window_seconds"`
+	RecordsInWindow         int     `json:"records_in_window"`
+	BatchesInWindow         int     `json:"batches_in_window"`
+	AvgBatchIngestMS        float64 `json:"avg_batch_ingest_ms"`
+	ThroughputRecordsPerSec float64 `json:"throughput_records_per_sec"`
+	TotalInserted           int     `json:"total_inserted"`
+	TotalConsumed           int     `json:"total_consumed"`
+}
+```
+
+I also designed a cooldown system. When an alert is sent, then there is a coodown period before any other alert is sent to the manager, to prevent useless spamming.
+
+```mysimbdp-streamingestmonitor``` has the following configuration:
+- MONITOR_LISTEN_ADDR - default 8081
+- MANAGER_ALERT_URL - default http://streamingestmanager:8082/alerts
+- MONITOR_MIN_THROUGHPUT_RPS - default 300
+- MONITOR_MAX_AVG_BATCH_INGEST_MS - default 250
+- MONITOR_ALERT_COOLDOWN_SECONDS - default 30
+
+```mysimbdp-streamingestmonitor``` has the following endpoints:
+- GET /healthz : returns 200 ok for health checks
+- POST /reports: reports worker performance:
+    - tenant ID
+    - worker ID
+    - ThroughputRecordsPerSec
+    - AvgBatchIngestMS
+    - WindowSeconds
+    - RecordsInWindow
+    - When there is a reason to alert the manager (small throughput and/or small average batch ingest), it first checks it is not in a cooldown period, in which case the alert is skipped. If it is not in a cooldown period, it sends the alert in json format via HTTP.
+
+
 5.
 IMPELMENT mysimbdp-streamingestmonitor  to receive the report from streamingestworker
 
@@ -110,6 +189,7 @@ below a threshold, e.g., average ingestion time is too low, mysimbdp-streaminges
 to inform mysimbdp-streamingestmanager about the situation. Implement a feature in mysimbdp-
 streamingestmanager to receive information informed by mysimbdp-streamingestmonitor.
 Demonstrate these features.
+
 
 ## Part 2
 

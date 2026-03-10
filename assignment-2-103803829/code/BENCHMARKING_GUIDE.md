@@ -69,12 +69,15 @@ Custom efficient benchmark:
 ```sh
 TENANTS="tenant1 tenant2" \
 WORKERS=10 \
-TEST_DURATION_SECONDS=500 \
+PARTITIONS=10 \
+TEST_DURATION_SECONDS=700 \
 PREPARE_CHUNKS=true \
 RESET_STACK=true \
 DRAIN_BEFORE_STOP=true \
+DRAIN_TIMEOUT_SECONDS=100 \
 MIN_THROUGHPUT_RPS=1000000 \
 CASSANDRA_COUNT_DAY=2025-06-01 \
+FORCE_REBUILD_IMAGES=true \
 ./run_underprovisioned_benchmark.sh
 ```
 
@@ -84,6 +87,7 @@ All parameters are environment variables. If omitted, defaults are used.
 
 - `TENANTS` default: `tenant1 tenant2`
 - `WORKERS` default: `1`
+- `PARTITIONS` default: `WORKERS`
 - `TEST_DURATION_SECONDS` default: `300`
 - `PREPARE_CHUNKS` default: `true`
 - `RESET_STACK` default: `false`

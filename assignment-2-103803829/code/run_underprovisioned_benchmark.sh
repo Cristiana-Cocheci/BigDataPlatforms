@@ -590,6 +590,7 @@ require_cmd uniq
 
 TENANTS="${TENANTS:-tenant1 tenant2}"
 WORKERS="${WORKERS:-1}"
+PARTITIONS="${PARTITIONS:-$WORKERS}"
 TEST_DURATION_SECONDS="${TEST_DURATION_SECONDS:-300}"
 PREPARE_CHUNKS="${PREPARE_CHUNKS:-true}"
 RESET_STACK="${RESET_STACK:-true}"
@@ -619,6 +620,11 @@ if [[ "${#TENANT_LIST[@]}" -eq 0 ]]; then
   exit 1
 fi
 
+if ! [[ "$PARTITIONS" =~ ^[0-9]+$ ]] || [[ "$PARTITIONS" -lt 1 ]]; then
+  echo "PARTITIONS must be an integer >= 1" >&2
+  exit 1
+fi
+
 for tenant in "${TENANT_LIST[@]}"; do
   worker_service_for_tenant "$tenant" >/dev/null
   source_service_for_tenant "$tenant" >/dev/null
@@ -640,6 +646,7 @@ RUN_ID=$RUN_ID
 STARTED_AT_UTC=$(timestamp_utc)
 TENANTS=$TENANTS
 WORKERS=$WORKERS
+PARTITIONS=$PARTITIONS
 TEST_DURATION_SECONDS=$TEST_DURATION_SECONDS
 PREPARE_CHUNKS=$PREPARE_CHUNKS
 RESET_STACK=$RESET_STACK
@@ -687,11 +694,13 @@ log "Starting infrastructure and control services"
 compose up -d cassandra1 cassandra2 cassandra3 zookeeper-tenant1 kafka-tenant1 zookeeper-tenant2 kafka-tenant2 streamingestmanager
 compose up -d --force-recreate streamingestmonitor
 
-log "Waiting for cassandra1 to be ready"
-if ! wait_for_container_ready cassandra1 360; then
-  log "cassandra1 did not become ready within timeout"
-  exit 1
-fi
+for cassandra_node in cassandra1 cassandra2 cassandra3; do
+  log "Waiting for ${cassandra_node} to be ready"
+  if ! wait_for_container_ready "$cassandra_node" 360; then
+    log "${cassandra_node} did not become ready within timeout"
+    exit 1
+  fi
+done
 
 for tenant in "${TENANT_LIST[@]}"; do
   kafka_container="$(kafka_container_for_tenant "$tenant")"
@@ -706,8 +715,8 @@ INGEST_START_UTC="$(timestamp_utc)"
 echo "INGEST_START_UTC=$INGEST_START_UTC" >>"$RUN_DIR/test_config.env"
 
 for tenant in "${TENANT_LIST[@]}"; do
-  log "Starting tenant=${tenant} workers=${WORKERS} with source producer"
-  start_args=(--command start --tenant "$tenant" --workers "$WORKERS" --with-source)
+  log "Starting tenant=${tenant} workers=${WORKERS} partitions=${PARTITIONS} with source producer"
+  start_args=(--command start --tenant "$tenant" --workers "$WORKERS" --partitions "$PARTITIONS" --with-source)
   if [[ "$PREPARE_CHUNKS" == "true" ]]; then
     start_args+=(--prepare-chunks)
   fi

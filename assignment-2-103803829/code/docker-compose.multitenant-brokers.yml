@@ -154,6 +154,10 @@ services:
         condition: service_healthy
       cassandra1:
         condition: service_healthy
+      cassandra2:
+        condition: service_healthy
+      cassandra3:
+        condition: service_healthy
       streamingestmonitor:
         condition: service_started
     networks:

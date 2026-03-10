@@ -1,0 +1,2 @@
+tenant,reports,avg_throughput_rps,min_throughput_rps,max_throughput_rps,avg_batch_ingest_ms,inserted_rows_cassandra_count,initial_rows_expected_from_chunks,producer_ingested_rows,duplicate_rows,insert_exception_count
+tenant1,7,2422.73,0.00,4517.15,3.15,249429,2914834,240000,3137,1
