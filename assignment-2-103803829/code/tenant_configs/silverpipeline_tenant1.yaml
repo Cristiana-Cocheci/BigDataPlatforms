@@ -26,3 +26,33 @@ pipeline_constraints:
 
   latency:
     max_processing_delay_sec: 7200
+
+pipeline:
+  storage_backend: local
+  cache_dir: ./tenant_caching_dir/tenant1
+
+  logging:
+    dir: ./logs/silverpipeline/tenant1
+    run_file: run_status.jsonl
+    task_file: task_status.jsonl
+
+  extract_page_size: 1000
+  extract_day: "2025-06-01"
+
+  gcs:
+    bucket: caching-silverpipeline-bucket
+    prefix: tenant1/silverpipeline-cache
+    credentials_file: ./silverpipelinecmd/css-cristianacocheci-2025-6126fecb6879.json
+
+  batchmanager:
+    input_glob: "*_bronze_extract.csv"
+    state_file: .batchmanager_state.json
+
+  transformation:
+    drop_rows_with_missing_entries: true
+    metric_fields:
+      - pressure
+      - altitude
+      - pressure_sealevel
+      - temperature
+      - humidity

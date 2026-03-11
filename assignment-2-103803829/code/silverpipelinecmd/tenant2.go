@@ -31,8 +31,9 @@ const (
 	defaultTenantTier                 = "gold"
 	tenantTierGold                    = "gold"
 	tenantTierSilver                  = "silver"
-	supportedSilverPipelineTenant     = "tenant2"
-	defaultSilverPipelineTenant       = "tenant2"
+	tenantIDTenant1                   = "tenant1"
+	tenantIDTenant2                   = "tenant2"
+	defaultSilverPipelineTenant       = tenantIDTenant2
 	defaultSilverPipelinePageSize     = 1000
 	defaultSilverPipelineRuntime      = 30 * time.Minute
 	defaultSilverPipelineMaxRetries   = 3
@@ -62,30 +63,15 @@ const (
 	silverPipelineModeTransform       = "transform-cache"
 	silverPipelineStorageLocal        = "local"
 	silverPipelineStorageGCS          = "gcs"
-	hardcodedTenant2ID                = "tenant2"
-	hardcodedTenant2TablePrefix       = "sensor_observations"
-	hardcodedTenant2TableSuffix       = "dht22"
-	hardcodedTenant2BronzeTable       = "sensor_observations_dht22_bronze"
-	hardcodedTenant2SilverTable       = "sensor_observations_dht22_silver"
-	hardcodedTenant2TableSuffixField  = "sensor_type"
 )
 
 var (
-	cassandraKeyspace       = defaultCassandraKeyspace
-	cassandraHosts          = parseCSVList(getEnv("CASSANDRA_HOSTS", defaultCassandraHosts))
-	hardcodedTenant2Columns = []TenantSchemaColumnConfig{
-		{Name: "sensor_id", Type: "int", Field: "sensor_id"},
-		{Name: "sensor_type", Type: "text", Field: "sensor_type"},
-		{Name: "location", Type: "float", Field: "location"},
-		{Name: "lat", Type: "float", Field: "lat"},
-		{Name: "lon", Type: "float", Field: "lon"},
-		{Name: "day", Type: "text", Field: "day"},
-		{Name: "hour", Type: "int", Field: "hour"},
-		{Name: "timestamp", Type: "text", Field: "timestamp"},
-		{Name: "temperature", Type: "float", Field: "temperature"},
-		{Name: "humidity", Type: "float", Field: "humidity"},
+	cassandraKeyspace = getEnv("CASSANDRA_KEYSPACE", defaultCassandraKeyspace)
+	cassandraHosts    = parseCSVList(getEnv("CASSANDRA_HOSTS", defaultCassandraHosts))
+	supportedTenants  = map[string]struct{}{
+		tenantIDTenant1: {},
+		tenantIDTenant2: {},
 	}
-	hardcodedTenant2MetricFields = []string{"temperature", "humidity"}
 )
 
 type TenantConfig struct {
@@ -220,7 +206,76 @@ type silverPipelineFileLogger struct {
 	taskLogFile    *os.File
 }
 
+type silverPipelineDataStats struct {
+	CassandraReadRows      int
+	CassandraReadBytes     int64
+	CacheRows              int
+	CacheBytes             int64
+	SilverRows             int
+	SilverBytes            int64
+	CassandraInsertedRows  int
+	CassandraInsertedBytes int64
+}
+
 var activeSilverPipelineLogger *silverPipelineFileLogger
+
+func (stats *silverPipelineDataStats) add(other silverPipelineDataStats) {
+	stats.CassandraReadRows += other.CassandraReadRows
+	stats.CassandraReadBytes += other.CassandraReadBytes
+	stats.CacheRows += other.CacheRows
+	stats.CacheBytes += other.CacheBytes
+	stats.SilverRows += other.SilverRows
+	stats.SilverBytes += other.SilverBytes
+	stats.CassandraInsertedRows += other.CassandraInsertedRows
+	stats.CassandraInsertedBytes += other.CassandraInsertedBytes
+}
+
+func (stats silverPipelineDataStats) logFields() map[string]any {
+	return map[string]any{
+		"cassandra_read_rows":      stats.CassandraReadRows,
+		"cassandra_read_bytes":     stats.CassandraReadBytes,
+		"cache_rows":               stats.CacheRows,
+		"cache_bytes":              stats.CacheBytes,
+		"silver_rows":              stats.SilverRows,
+		"silver_bytes":             stats.SilverBytes,
+		"cassandra_inserted_rows":  stats.CassandraInsertedRows,
+		"cassandra_inserted_bytes": stats.CassandraInsertedBytes,
+	}
+}
+
+func addStatsToDetails(details map[string]any, stats silverPipelineDataStats) {
+	if details == nil {
+		return
+	}
+	for key, value := range stats.logFields() {
+		details[key] = value
+	}
+}
+
+func logSilverPipelineDataSummary(scope string, stats silverPipelineDataStats) {
+	log.Printf(
+		"Silver pipeline data summary scope=%s cassandra_read_rows=%d cassandra_read_bytes=%d cache_rows=%d cache_bytes=%d silver_rows=%d silver_bytes=%d cassandra_inserted_rows=%d cassandra_inserted_bytes=%d",
+		scope,
+		stats.CassandraReadRows,
+		stats.CassandraReadBytes,
+		stats.CacheRows,
+		stats.CacheBytes,
+		stats.SilverRows,
+		stats.SilverBytes,
+		stats.CassandraInsertedRows,
+		stats.CassandraInsertedBytes,
+	)
+}
+
+func estimateRowBytes(totalBytes int64, selectedRows int, totalRows int) int64 {
+	if totalBytes <= 0 || selectedRows <= 0 || totalRows <= 0 {
+		return 0
+	}
+	if selectedRows >= totalRows {
+		return totalBytes
+	}
+	return (totalBytes * int64(selectedRows)) / int64(totalRows)
+}
 
 func getEnv(key string, defaultValue string) string {
 	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
@@ -247,25 +302,54 @@ func parseCSVList(value string) []string {
 func loadTenantConfig(tenantID string) (TenantConfig, error) {
 	normalizedTenantID := strings.ToLower(strings.TrimSpace(tenantID))
 	if normalizedTenantID == "" {
-		normalizedTenantID = hardcodedTenant2ID
-	}
-	if normalizedTenantID != hardcodedTenant2ID {
-		return TenantConfig{}, fmt.Errorf("tenant2 pipeline only supports tenant=%s", hardcodedTenant2ID)
+		normalizedTenantID = defaultSilverPipelineTenant
 	}
 
-	return TenantConfig{
-		TenantID:    hardcodedTenant2ID,
-		Tier:        tenantTierSilver,
-		TablePrefix: hardcodedTenant2TablePrefix,
-		Schema: TenantSchemaConfig{
-			Columns:          hardcodedTenant2Columns,
-			TableSuffixField: hardcodedTenant2TableSuffixField,
-			PrimaryKey: TenantPrimaryKeyConfig{
-				Partition:  []string{"day", "hour"},
-				Clustering: []string{"sensor_id", "timestamp"},
-			},
-		},
-	}, nil
+	if err := ensureSupportedSilverTenant(normalizedTenantID); err != nil {
+		return TenantConfig{}, err
+	}
+
+	configDir := getEnv("TENANT_CONFIG_DIR", defaultTenantConfigDir)
+	configPath := filepath.Join(configDir, normalizedTenantID+".json")
+
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return TenantConfig{}, fmt.Errorf("failed to read tenant config %s: %w", configPath, err)
+	}
+
+	var config TenantConfig
+	if err := json.Unmarshal(content, &config); err != nil {
+		return TenantConfig{}, fmt.Errorf("failed to parse tenant config %s: %w", configPath, err)
+	}
+
+	config.applyDefaults(normalizedTenantID)
+	if config.TenantID != normalizedTenantID {
+		return TenantConfig{}, fmt.Errorf("tenant config mismatch: expected=%s got=%s", normalizedTenantID, config.TenantID)
+	}
+
+	if strings.TrimSpace(config.TablePrefix) == "" {
+		return TenantConfig{}, fmt.Errorf("tenant config %s missing table_prefix", configPath)
+	}
+
+	if len(config.Schema.Columns) == 0 {
+		return TenantConfig{}, fmt.Errorf("tenant config %s missing schema.columns", configPath)
+	}
+
+	return config, nil
+}
+
+func (config *TenantConfig) applyDefaults(tenantID string) {
+	if strings.TrimSpace(config.TenantID) == "" {
+		config.TenantID = tenantID
+	} else {
+		config.TenantID = strings.ToLower(strings.TrimSpace(config.TenantID))
+	}
+
+	config.Tier = normalizeTenantTier(config.Tier)
+
+	if strings.TrimSpace(config.Schema.TableSuffixField) == "" {
+		config.Schema.TableSuffixField = "sensor_type"
+	}
 }
 
 func normalizeTenantTier(tier string) string {
@@ -288,10 +372,18 @@ func activeSilverTenantID() string {
 }
 
 func ensureSupportedSilverTenant(tenantID string) error {
-	if strings.ToLower(strings.TrimSpace(tenantID)) != supportedSilverPipelineTenant {
-		return fmt.Errorf("silverpipeline currently supports only tenant=%s", supportedSilverPipelineTenant)
+	normalizedTenantID := strings.ToLower(strings.TrimSpace(tenantID))
+	if _, exists := supportedTenants[normalizedTenantID]; exists {
+		return nil
 	}
-	return nil
+
+	supported := make([]string, 0, len(supportedTenants))
+	for currentTenantID := range supportedTenants {
+		supported = append(supported, currentTenantID)
+	}
+	sort.Strings(supported)
+
+	return fmt.Errorf("silverpipeline currently supports tenants=%s", strings.Join(supported, ", "))
 }
 
 func silverPipelineMode() string {
@@ -332,7 +424,7 @@ func defaultSilverPipelineLogDir(tenantID string) string {
 	return filepath.Join(defaultSilverPipelineLogRoot, tenantID)
 }
 
-func loadSilverPipelineConfig(tenantID string) (silverPipelineConfig, error) {
+func loadSilverPipelineConfig(tenantID string, tenantConfig TenantConfig) (silverPipelineConfig, error) {
 	configPath := strings.TrimSpace(os.Getenv("SILVER_PIPELINE_CONFIG"))
 	if configPath == "" {
 		configPath = silverPipelineConfigPath(tenantID)
@@ -354,7 +446,14 @@ func loadSilverPipelineConfig(tenantID string) (silverPipelineConfig, error) {
 		return silverPipelineConfig{}, fmt.Errorf("silver pipeline config tenant mismatch: expected=%s got=%s", tenantID, config.TenantID)
 	}
 
-	config.Pipeline.Transformation.MetricFields = append([]string(nil), hardcodedTenant2MetricFields...)
+	config.Pipeline.Transformation.MetricFields = normalizeMetricFields(config.Pipeline.Transformation.MetricFields)
+	if len(config.Pipeline.Transformation.MetricFields) == 0 {
+		config.Pipeline.Transformation.MetricFields = defaultMetricFields(tenantConfig)
+	}
+
+	if len(config.Pipeline.Transformation.MetricFields) == 0 {
+		return silverPipelineConfig{}, fmt.Errorf("silver pipeline metric fields are empty for tenant=%s", tenantID)
+	}
 
 	return config, nil
 }
@@ -419,14 +518,92 @@ func (config *silverPipelineConfig) applyDefaults(tenantID string) {
 		config.Pipeline.ExtractDay = envExtractDay
 	}
 
-	config.Pipeline.Transformation.MetricFields = append([]string(nil), hardcodedTenant2MetricFields...)
-
 	if strings.TrimSpace(config.Pipeline.BatchManager.InputGlob) == "" {
 		config.Pipeline.BatchManager.InputGlob = defaultBatchmanagerInputGlob
 	}
 
 	if strings.TrimSpace(config.Pipeline.BatchManager.StateFile) == "" {
 		config.Pipeline.BatchManager.StateFile = defaultBatchmanagerStateFile
+	}
+}
+
+func normalizeMetricFields(metricFields []string) []string {
+	normalized := make([]string, 0, len(metricFields))
+	seen := make(map[string]struct{}, len(metricFields))
+
+	for _, rawField := range metricFields {
+		field := normalizeSchemaToken(rawField)
+		if field == "" {
+			continue
+		}
+		if _, exists := seen[field]; exists {
+			continue
+		}
+		normalized = append(normalized, field)
+		seen[field] = struct{}{}
+	}
+
+	return normalized
+}
+
+func defaultMetricFields(tenantConfig TenantConfig) []string {
+	excludedFields := map[string]struct{}{
+		"sensor_id":   {},
+		"sensor_type": {},
+		"location":    {},
+		"lat":         {},
+		"lon":         {},
+		"day":         {},
+		"hour":        {},
+		"timestamp":   {},
+	}
+
+	for _, key := range tenantConfig.Schema.PrimaryKey.Partition {
+		excludedFields[normalizeSchemaToken(key)] = struct{}{}
+	}
+
+	for _, key := range tenantConfig.Schema.PrimaryKey.Clustering {
+		excludedFields[normalizeSchemaToken(key)] = struct{}{}
+	}
+
+	if tableSuffixField := normalizeSchemaToken(tenantConfig.Schema.TableSuffixField); tableSuffixField != "" {
+		excludedFields[tableSuffixField] = struct{}{}
+	}
+
+	metricFields := make([]string, 0, len(tenantConfig.Schema.Columns))
+	seen := make(map[string]struct{}, len(tenantConfig.Schema.Columns))
+	for _, column := range tenantConfig.Schema.Columns {
+		if !isNumericCQLType(column.Type) {
+			continue
+		}
+
+		field := normalizeSchemaToken(column.Field)
+		if field == "" {
+			field = normalizeSchemaToken(column.Name)
+		}
+		if field == "" {
+			continue
+		}
+		if _, excluded := excludedFields[field]; excluded {
+			continue
+		}
+		if _, exists := seen[field]; exists {
+			continue
+		}
+
+		metricFields = append(metricFields, field)
+		seen[field] = struct{}{}
+	}
+
+	return metricFields
+}
+
+func isNumericCQLType(columnType string) bool {
+	switch strings.ToLower(strings.TrimSpace(columnType)) {
+	case "tinyint", "smallint", "int", "bigint", "varint", "counter", "float", "double", "decimal":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -755,19 +932,69 @@ func sanitizeIdentifierPart(input string, fallback string) string {
 	return output
 }
 
-func listBronzeTables() ([]string, error) {
-	return []string{hardcodedTenant2BronzeTable}, nil
-}
-
-func bronzeTableSuffix(tableName string) (string, error) {
-	if tableName != hardcodedTenant2BronzeTable {
-		return "", fmt.Errorf("unexpected bronze table: got=%s want=%s", tableName, hardcodedTenant2BronzeTable)
+func listBronzeTables(ctx context.Context, session *gocql.Session, tablePrefix string) ([]string, error) {
+	normalizedPrefix := sanitizeIdentifierPart(tablePrefix, "")
+	if normalizedPrefix == "" {
+		return nil, fmt.Errorf("table prefix cannot be empty")
 	}
-	return hardcodedTenant2TableSuffix, nil
+
+	iter := session.Query(
+		"SELECT table_name FROM system_schema.tables WHERE keyspace_name = ?",
+		cassandraKeyspace,
+	).WithContext(ctx).Iter()
+
+	bronzeTables := make([]string, 0)
+	prefixWithSeparator := normalizedPrefix + "_"
+	var tableName string
+	for iter.Scan(&tableName) {
+		if !strings.HasPrefix(tableName, prefixWithSeparator) || !strings.HasSuffix(tableName, "_bronze") {
+			continue
+		}
+
+		tableSuffix := strings.TrimSuffix(strings.TrimPrefix(tableName, prefixWithSeparator), "_bronze")
+		if strings.TrimSpace(tableSuffix) == "" {
+			continue
+		}
+
+		bronzeTables = append(bronzeTables, tableName)
+	}
+
+	if err := iter.Close(); err != nil {
+		return nil, fmt.Errorf("failed to list bronze tables in keyspace=%s: %w", cassandraKeyspace, err)
+	}
+
+	sort.Strings(bronzeTables)
+	if len(bronzeTables) == 0 {
+		return nil, fmt.Errorf("no bronze tables found for prefix=%s in keyspace=%s", normalizedPrefix, cassandraKeyspace)
+	}
+
+	return bronzeTables, nil
 }
 
-func silverTableName() string {
-	return fmt.Sprintf("%s.%s", cassandraKeyspace, hardcodedTenant2SilverTable)
+func bronzeTableSuffix(tablePrefix string, tableName string) (string, error) {
+	normalizedPrefix := sanitizeIdentifierPart(tablePrefix, "")
+	if normalizedPrefix == "" {
+		return "", fmt.Errorf("table prefix cannot be empty")
+	}
+
+	prefixWithSeparator := normalizedPrefix + "_"
+	if !strings.HasPrefix(tableName, prefixWithSeparator) || !strings.HasSuffix(tableName, "_bronze") {
+		return "", fmt.Errorf("table=%s does not match expected bronze naming for prefix=%s", tableName, normalizedPrefix)
+	}
+
+	parsedSuffix := strings.TrimSuffix(strings.TrimPrefix(tableName, prefixWithSeparator), "_bronze")
+	safeSuffix := sanitizeIdentifierPart(parsedSuffix, "")
+	if safeSuffix == "" {
+		return "", fmt.Errorf("failed to parse bronze table suffix from table=%s", tableName)
+	}
+
+	return safeSuffix, nil
+}
+
+func silverTableName(tablePrefix string, tableSuffix string) string {
+	safeTablePrefix := sanitizeIdentifierPart(tablePrefix, "sensor_measurements")
+	safeTableSuffix := sanitizeIdentifierPart(tableSuffix, "default")
+	return fmt.Sprintf("%s.%s_%s_silver", cassandraKeyspace, safeTablePrefix, safeTableSuffix)
 }
 
 func bronzeExtractCachePath(cacheDir string, tableName string, runID string) string {
@@ -1756,27 +1983,28 @@ func enforceStorageSizeLimitWithTaskLog(ctx context.Context, pipelineConfig silv
 	return nil
 }
 
-func extractBronzeTablesToCache(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client) ([]string, error) {
+func extractBronzeTablesToCache(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client) ([]string, silverPipelineDataStats, error) {
 	if pipelineConfig.Pipeline.StorageBackend == silverPipelineStorageLocal {
 		if err := os.MkdirAll(pipelineConfig.Pipeline.CacheDir, 0o755); err != nil {
-			return nil, fmt.Errorf("failed to create tenant cache directory %s: %w", pipelineConfig.Pipeline.CacheDir, err)
+			return nil, silverPipelineDataStats{}, fmt.Errorf("failed to create tenant cache directory %s: %w", pipelineConfig.Pipeline.CacheDir, err)
 		}
 	} else if pipelineConfig.Pipeline.StorageBackend == silverPipelineStorageGCS && gcsClient == nil {
-		return nil, fmt.Errorf("gcs storage backend requires initialized client")
+		return nil, silverPipelineDataStats{}, fmt.Errorf("gcs storage backend requires initialized client")
 	}
 
 	extractDay, err := normalizeExtractDay(pipelineConfig.Pipeline.ExtractDay)
 	if err != nil {
-		return nil, err
+		return nil, silverPipelineDataStats{}, err
 	}
 
-	bronzeTables, err := listBronzeTables()
+	bronzeTables, err := listBronzeTables(ctx, session, tenantConfig.TablePrefix)
 	if err != nil {
-		return nil, err
+		return nil, silverPipelineDataStats{}, err
 	}
 
 	runID := time.Now().UTC().Format("20060102_150405")
 	extractedFiles := make([]string, 0, len(bronzeTables))
+	totalStats := silverPipelineDataStats{}
 	for _, bronzeTable := range bronzeTables {
 		taskStartedAt := time.Now()
 		taskDetails := map[string]any{
@@ -1797,35 +2025,52 @@ func extractBronzeTablesToCache(ctx context.Context, session *gocql.Session, ten
 			rawRows, err = extractBronzeTableToGCS(ctx, gcsClient, bucket, bronzeObjectPath, session, tenantConfig, bronzeTable, extractDay, pipelineConfig.Pipeline.ExtractPageSize)
 			bronzeCachePath = gcsURI(bucket, bronzeObjectPath)
 		default:
-			return nil, fmt.Errorf("unsupported storage backend %q", pipelineConfig.Pipeline.StorageBackend)
+			return nil, silverPipelineDataStats{}, fmt.Errorf("unsupported storage backend %q", pipelineConfig.Pipeline.StorageBackend)
 		}
 
 		if err != nil {
 			logSilverPipelineTask("extract_bronze_table", "failed", taskStartedAt, taskDetails, err)
-			return nil, err
+			return nil, silverPipelineDataStats{}, err
 		}
 
 		taskDetails["cache_csv"] = bronzeCachePath
 		taskDetails["raw_rows"] = rawRows
 
+		cacheBytes := int64(0)
 		sizeBytes, sizeErr := storageAssetSize(ctx, gcsClient, bronzeCachePath)
 		if sizeErr != nil {
 			taskDetails["cache_size_bytes"] = -1
 			taskDetails["cache_size_error"] = sizeErr.Error()
 		} else {
 			taskDetails["cache_size_bytes"] = sizeBytes
+			cacheBytes = sizeBytes
 		}
+		taskDetails["cassandra_read_rows"] = rawRows
+		taskDetails["cassandra_read_bytes"] = cacheBytes
+		taskDetails["cache_rows"] = rawRows
+		taskDetails["cache_bytes"] = cacheBytes
 
 		if err := enforceStorageSizeLimitWithTaskLog(ctx, pipelineConfig, gcsClient, "post-extract:"+bronzeTable); err != nil {
 			logSilverPipelineTask("extract_bronze_table", "failed", taskStartedAt, taskDetails, err)
-			return nil, err
+			return nil, silverPipelineDataStats{}, err
 		}
 
+		fileStats := silverPipelineDataStats{
+			CassandraReadRows:  rawRows,
+			CassandraReadBytes: cacheBytes,
+			CacheRows:          rawRows,
+			CacheBytes:         cacheBytes,
+		}
+		totalStats.add(fileStats)
+
 		log.Printf(
-			"Silver pipeline extracted bronze_table=%s day=%s raw_rows=%d cache_csv=%s",
+			"Silver pipeline extracted bronze_table=%s day=%s cassandra_read_rows=%d cassandra_read_bytes=%d cache_rows=%d cache_bytes=%d cache_csv=%s",
 			bronzeTable,
 			extractDay,
 			rawRows,
+			cacheBytes,
+			rawRows,
+			cacheBytes,
 			bronzeCachePath,
 		)
 		logSilverPipelineTask("extract_bronze_table", "success", taskStartedAt, taskDetails, nil)
@@ -1833,27 +2078,29 @@ func extractBronzeTablesToCache(ctx context.Context, session *gocql.Session, ten
 		extractedFiles = append(extractedFiles, bronzeCachePath)
 	}
 
-	return extractedFiles, nil
+	return extractedFiles, totalStats, nil
 }
 
-func processCachedBronzeFile(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client, cacheFile string) error {
+func processCachedBronzeFile(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client, cacheFile string) (silverPipelineDataStats, error) {
 	transformStartedAt := time.Now()
 	transformDetails := map[string]any{"cache_file": cacheFile}
+	fileStats := silverPipelineDataStats{}
 
 	bronzeTable, err := bronzeTableNameFromCacheFile(cacheFile)
 	if err != nil {
 		logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, transformDetails, err)
-		return err
+		return fileStats, err
 	}
 	transformDetails["bronze_table"] = bronzeTable
 
-	tableSuffix, err := bronzeTableSuffix(bronzeTable)
+	tableSuffix, err := bronzeTableSuffix(tenantConfig.TablePrefix, bronzeTable)
 	if err != nil {
 		logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, transformDetails, err)
-		return err
+		return fileStats, err
 	}
 	transformDetails["table_suffix"] = tableSuffix
 
+	inputSizeBytes := int64(0)
 	inputSizeBytes, inputSizeErr := storageAssetSize(ctx, gcsClient, cacheFile)
 	if inputSizeErr != nil {
 		transformDetails["input_size_bytes"] = -1
@@ -1876,7 +2123,7 @@ func processCachedBronzeFile(ctx context.Context, session *gocql.Session, tenant
 		)
 	case silverPipelineStorageGCS:
 		if gcsClient == nil {
-			return fmt.Errorf("gcs storage backend requires initialized client")
+			return fileStats, fmt.Errorf("gcs storage backend requires initialized client")
 		}
 		aggregates, droppedRows, keptRows, err = aggregateHourlyGCSObject(
 			ctx,
@@ -1892,28 +2139,33 @@ func processCachedBronzeFile(ctx context.Context, session *gocql.Session, tenant
 	if err != nil {
 		logSilverPipelineTask("aggregate_bronze_cache", "failed", aggregateStartedAt, transformDetails, err)
 		logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, transformDetails, err)
-		return err
+		return fileStats, err
 	}
 
 	rawRows := keptRows + droppedRows
 	aggregateDetails := cloneLogFields(transformDetails)
 	aggregateDetails["raw_rows"] = rawRows
+	aggregateDetails["cache_rows"] = rawRows
 	aggregateDetails["kept_rows"] = keptRows
 	aggregateDetails["dropped_rows"] = droppedRows
 	aggregateDetails["aggregate_rows"] = len(aggregates)
+	aggregateDetails["cache_bytes"] = inputSizeBytes
 	logSilverPipelineTask("aggregate_bronze_cache", "success", aggregateStartedAt, aggregateDetails, nil)
+	fileStats.CacheRows = rawRows
+	fileStats.CacheBytes = inputSizeBytes
 
 	if len(aggregates) == 0 {
 		log.Printf(
-			"Silver pipeline skipped cache_file=%s because no complete rows remained after cleaning (raw=%d dropped=%d)",
+			"Silver pipeline skipped cache_file=%s because no complete rows remained after cleaning (cache_rows=%d cache_bytes=%d dropped_rows=%d)",
 			cacheFile,
 			rawRows,
+			inputSizeBytes,
 			droppedRows,
 		)
 		skippedDetails := cloneLogFields(aggregateDetails)
 		skippedDetails["result"] = "skipped_no_complete_rows"
 		logSilverPipelineTask("transform_cache_file", "success", transformStartedAt, skippedDetails, nil)
-		return nil
+		return fileStats, nil
 	}
 
 	silverSummaryPath := ""
@@ -1924,31 +2176,33 @@ func processCachedBronzeFile(ctx context.Context, session *gocql.Session, tenant
 		if err := writeSilverSummaryCSV(silverSummaryPath, aggregates, pipelineConfig.Pipeline.Transformation.MetricFields); err != nil {
 			logSilverPipelineTask("write_silver_summary", "failed", summaryStartedAt, aggregateDetails, err)
 			logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, aggregateDetails, err)
-			return err
+			return fileStats, err
 		}
 	case silverPipelineStorageGCS:
 		if gcsClient == nil {
 			err := fmt.Errorf("gcs storage backend requires initialized client")
 			logSilverPipelineTask("write_silver_summary", "failed", summaryStartedAt, aggregateDetails, err)
 			logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, aggregateDetails, err)
-			return err
+			return fileStats, err
 		}
 		silverSummaryPath, err = writeSilverSummaryGCSObject(ctx, gcsClient, cacheFile, aggregates, pipelineConfig.Pipeline.Transformation.MetricFields)
 		if err != nil {
 			logSilverPipelineTask("write_silver_summary", "failed", summaryStartedAt, aggregateDetails, err)
 			logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, aggregateDetails, err)
-			return err
+			return fileStats, err
 		}
 	default:
 		err := fmt.Errorf("unsupported storage backend %q", pipelineConfig.Pipeline.StorageBackend)
 		logSilverPipelineTask("write_silver_summary", "failed", summaryStartedAt, aggregateDetails, err)
 		logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, aggregateDetails, err)
-		return err
+		return fileStats, err
 	}
 
 	summaryDetails := cloneLogFields(aggregateDetails)
 	summaryDetails["summary_csv"] = silverSummaryPath
 	summaryDetails["summary_rows"] = len(aggregates)
+	summaryDetails["silver_rows"] = len(aggregates)
+	summarySizeBytes := int64(0)
 	summarySizeBytes, summarySizeErr := storageAssetSize(ctx, gcsClient, silverSummaryPath)
 	if summarySizeErr != nil {
 		summaryDetails["summary_size_bytes"] = -1
@@ -1956,108 +2210,146 @@ func processCachedBronzeFile(ctx context.Context, session *gocql.Session, tenant
 	} else {
 		summaryDetails["summary_size_bytes"] = summarySizeBytes
 	}
+	summaryDetails["silver_bytes"] = summarySizeBytes
 	logSilverPipelineTask("write_silver_summary", "success", summaryStartedAt, summaryDetails, nil)
+	fileStats.SilverRows = len(aggregates)
+	fileStats.SilverBytes = summarySizeBytes
 
 	if err := enforceStorageSizeLimitWithTaskLog(ctx, pipelineConfig, gcsClient, "post-summary:"+bronzeTable); err != nil {
 		logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, summaryDetails, err)
-		return err
+		return fileStats, err
 	}
 
-	silverTable := silverTableName()
+	silverTable := silverTableName(tenantConfig.TablePrefix, tableSuffix)
 	tableStartedAt := time.Now()
 	tableDetails := cloneLogFields(summaryDetails)
 	tableDetails["silver_table"] = silverTable
 	if err := createSilverTableIfNotExists(ctx, session, silverTable, pipelineConfig.Pipeline.Transformation.MetricFields, pipelineConfig.maxRetries()); err != nil {
 		logSilverPipelineTask("ensure_silver_table", "failed", tableStartedAt, tableDetails, err)
 		logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, tableDetails, err)
-		return err
+		return fileStats, err
 	}
 	logSilverPipelineTask("ensure_silver_table", "success", tableStartedAt, tableDetails, nil)
 
 	insertStartedAt := time.Now()
 	insertedRows, err := insertSilverAggregates(ctx, session, silverTable, aggregates, pipelineConfig.Pipeline.Transformation.MetricFields, pipelineConfig.maxRetries())
+	insertedBytes := estimateRowBytes(summarySizeBytes, insertedRows, len(aggregates))
 	if err != nil {
 		insertDetails := cloneLogFields(tableDetails)
 		insertDetails["attempted_rows"] = len(aggregates)
 		insertDetails["inserted_rows"] = insertedRows
+		insertDetails["cassandra_inserted_rows"] = insertedRows
+		insertDetails["cassandra_inserted_bytes"] = insertedBytes
 		logSilverPipelineTask("insert_silver_aggregates", "failed", insertStartedAt, insertDetails, err)
 		logSilverPipelineTask("transform_cache_file", "failed", transformStartedAt, insertDetails, err)
-		return err
+		return fileStats, err
 	}
 
 	insertDetails := cloneLogFields(tableDetails)
 	insertDetails["attempted_rows"] = len(aggregates)
 	insertDetails["inserted_rows"] = insertedRows
+	insertDetails["cassandra_inserted_rows"] = insertedRows
+	insertDetails["cassandra_inserted_bytes"] = insertedBytes
 	logSilverPipelineTask("insert_silver_aggregates", "success", insertStartedAt, insertDetails, nil)
+	fileStats.CassandraInsertedRows = insertedRows
+	fileStats.CassandraInsertedBytes = insertedBytes
 
 	log.Printf(
-		"Silver pipeline completed cache_file=%s bronze_table=%s silver_table=%s raw_rows=%d kept_rows=%d dropped_rows=%d silver_rows=%d summary_csv=%s metrics=%s",
+		"Silver pipeline completed cache_file=%s bronze_table=%s silver_table=%s cache_rows=%d cache_bytes=%d kept_rows=%d dropped_rows=%d silver_rows=%d silver_bytes=%d cassandra_inserted_rows=%d cassandra_inserted_bytes=%d summary_csv=%s metrics=%s",
 		cacheFile,
 		bronzeTable,
 		silverTable,
 		rawRows,
+		inputSizeBytes,
 		keptRows,
 		droppedRows,
 		insertedRows,
+		summarySizeBytes,
+		insertedRows,
+		insertedBytes,
 		silverSummaryPath,
 		strings.Join(pipelineConfig.Pipeline.Transformation.MetricFields, ","),
 	)
 
 	completedDetails := cloneLogFields(insertDetails)
 	completedDetails["raw_rows"] = rawRows
+	completedDetails["cache_rows"] = rawRows
+	completedDetails["cache_bytes"] = inputSizeBytes
 	completedDetails["kept_rows"] = keptRows
 	completedDetails["dropped_rows"] = droppedRows
 	completedDetails["summary_csv"] = silverSummaryPath
+	completedDetails["silver_rows"] = len(aggregates)
+	completedDetails["silver_bytes"] = summarySizeBytes
+	completedDetails["cassandra_inserted_rows"] = insertedRows
+	completedDetails["cassandra_inserted_bytes"] = insertedBytes
 	completedDetails["metric_fields"] = strings.Join(pipelineConfig.Pipeline.Transformation.MetricFields, ",")
 	logSilverPipelineTask("transform_cache_file", "success", transformStartedAt, completedDetails, nil)
 
-	return nil
+	return fileStats, nil
 }
 
-func runSilverPipelineFromCache(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client, cacheFiles []string) error {
+func runSilverPipelineFromCache(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client, cacheFiles []string) (silverPipelineDataStats, error) {
 	startedAt := time.Now()
 	details := map[string]any{"cache_files": len(cacheFiles)}
+	totalStats := silverPipelineDataStats{}
 
 	for _, cacheFile := range cacheFiles {
-		if err := processCachedBronzeFile(ctx, session, tenantConfig, pipelineConfig, gcsClient, cacheFile); err != nil {
+		fileStats, err := processCachedBronzeFile(ctx, session, tenantConfig, pipelineConfig, gcsClient, cacheFile)
+		if err != nil {
 			details["failed_cache_file"] = cacheFile
+			addStatsToDetails(details, totalStats)
 			logSilverPipelineTask("run_transform_from_cache", "failed", startedAt, details, err)
-			return err
+			return totalStats, err
 		}
+		totalStats.add(fileStats)
 	}
 
+	addStatsToDetails(details, totalStats)
 	logSilverPipelineTask("run_transform_from_cache", "success", startedAt, details, nil)
+	logSilverPipelineDataSummary("transform-cache", totalStats)
 
-	return nil
+	return totalStats, nil
 }
 
-func runSilverPipeline(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client) error {
+func runSilverPipeline(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client) (silverPipelineDataStats, error) {
 	startedAt := time.Now()
 	details := map[string]any{}
 
-	extractedFiles, err := extractBronzeTablesToCache(ctx, session, tenantConfig, pipelineConfig, gcsClient)
+	extractedFiles, extractStats, err := extractBronzeTablesToCache(ctx, session, tenantConfig, pipelineConfig, gcsClient)
 	if err != nil {
 		logSilverPipelineTask("run_full_pipeline", "failed", startedAt, details, err)
-		return err
+		return silverPipelineDataStats{}, err
 	}
 	details["extracted_files"] = len(extractedFiles)
+	addStatsToDetails(details, extractStats)
 
-	err = runSilverPipelineFromCache(ctx, session, tenantConfig, pipelineConfig, gcsClient, extractedFiles)
+	transformStats, err := runSilverPipelineFromCache(ctx, session, tenantConfig, pipelineConfig, gcsClient, extractedFiles)
 	if err != nil {
+		addStatsToDetails(details, transformStats)
 		logSilverPipelineTask("run_full_pipeline", "failed", startedAt, details, err)
-		return err
+		return silverPipelineDataStats{}, err
 	}
 
+	totalStats := extractStats
+	totalStats.SilverRows = transformStats.SilverRows
+	totalStats.SilverBytes = transformStats.SilverBytes
+	totalStats.CassandraInsertedRows = transformStats.CassandraInsertedRows
+	totalStats.CassandraInsertedBytes = transformStats.CassandraInsertedBytes
 	details["transformed_files"] = len(extractedFiles)
+	addStatsToDetails(details, totalStats)
 	logSilverPipelineTask("run_full_pipeline", "success", startedAt, details, nil)
+	logSilverPipelineDataSummary("full", totalStats)
 
-	return nil
+	return totalStats, nil
 }
 
 func main() {
 	tenantID := activeSilverTenantID()
 	if err := ensureSupportedSilverTenant(tenantID); err != nil {
 		log.Fatalf("%v", err)
+	}
+	if strings.TrimSpace(os.Getenv("CASSANDRA_KEYSPACE")) == "" {
+		cassandraKeyspace = fmt.Sprintf("mysimbdp_%s", tenantID)
 	}
 
 	tenantConfig, err := loadTenantConfig(tenantID)
@@ -2068,7 +2360,7 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 
-	pipelineConfig, err := loadSilverPipelineConfig(tenantID)
+	pipelineConfig, err := loadSilverPipelineConfig(tenantID, tenantConfig)
 	if err != nil {
 		log.Fatalf("failed to load silver pipeline config for tenant=%s: %v", tenantID, err)
 	}
@@ -2158,16 +2450,20 @@ func main() {
 
 	switch mode {
 	case silverPipelineModeFull:
-		if err := runSilverPipeline(ctx, session, tenantConfig, pipelineConfig, gcsClient); err != nil {
+		if fullStats, err := runSilverPipeline(ctx, session, tenantConfig, pipelineConfig, gcsClient); err != nil {
 			runErr = fmt.Errorf("silver pipeline failed: %w", err)
+		} else {
+			addStatsToDetails(runDetails, fullStats)
 		}
 	case silverPipelineModeExtract:
-		extractedFiles, err := extractBronzeTablesToCache(ctx, session, tenantConfig, pipelineConfig, gcsClient)
+		extractedFiles, extractStats, err := extractBronzeTablesToCache(ctx, session, tenantConfig, pipelineConfig, gcsClient)
 		if err != nil {
 			runErr = fmt.Errorf("silver pipeline extract failed: %w", err)
 			break
 		}
+		addStatsToDetails(runDetails, extractStats)
 		log.Printf("Silver pipeline extract completed: files=%d", len(extractedFiles))
+		logSilverPipelineDataSummary("extract-cache", extractStats)
 	case silverPipelineModeTransform:
 		resolveStartedAt := time.Now()
 		cacheFiles, err := resolveTransformInputFiles(ctx, pipelineConfig, gcsClient)
@@ -2181,8 +2477,10 @@ func main() {
 
 		if len(cacheFiles) == 0 {
 			log.Printf("Silver pipeline transform-cache found no matching input files in %s", storageTargetForLog(pipelineConfig))
-		} else if err := runSilverPipelineFromCache(ctx, session, tenantConfig, pipelineConfig, gcsClient, cacheFiles); err != nil {
+		} else if transformStats, err := runSilverPipelineFromCache(ctx, session, tenantConfig, pipelineConfig, gcsClient, cacheFiles); err != nil {
 			runErr = fmt.Errorf("silver pipeline transform-cache failed: %w", err)
+		} else {
+			addStatsToDetails(runDetails, transformStats)
 		}
 	}
 

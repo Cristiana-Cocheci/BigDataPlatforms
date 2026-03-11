@@ -1,0 +1,14 @@
+{
+  "files": {
+    "sensor_measurements_bme280_bronze_20260311_135935_bronze_extract.csv": {
+      "size": 269042612,
+      "mod_time_unix": 1773237609,
+      "processed_at": "2026-03-11T14:04:34Z"
+    },
+    "sensor_measurements_bme280_bronze_20260311_135935_silver_hourly.csv": {
+      "size": 3927,
+      "mod_time_unix": 1773237874,
+      "processed_at": "2026-03-11T14:04:34Z"
+    }
+  }
+}

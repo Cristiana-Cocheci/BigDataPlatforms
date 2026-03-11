@@ -301,8 +301,8 @@ func listenForMonitorAlerts(listenAddr string) error {
 			severity = "warning"
 		}
 
-		reasons := strings.Join(alert.Reasons, " | ")
-		if strings.TrimSpace(reasons) == "" {
+		reasons := strings.TrimSpace(strings.Join(alert.Reasons, " | "))
+		if reasons == "" {
 			reasons = "unspecified"
 		}
 
@@ -471,11 +471,10 @@ func loadManagerTenantConfig(tenantID string) (ManagerTenantConfig, error) {
 
 func mapContainerDataPathToHost(path string) string {
 	trimmedPath := strings.TrimSpace(path)
-	if strings.HasPrefix(trimmedPath, "/data/") {
-		relativePath := strings.TrimPrefix(trimmedPath, "/data/")
-		return filepath.Join("..", "data", relativePath)
+	if !strings.HasPrefix(trimmedPath, "/data/") {
+		return trimmedPath
 	}
-	return trimmedPath
+	return filepath.Join("..", "data", strings.TrimPrefix(trimmedPath, "/data/"))
 }
 
 func envOrDefault(key string, defaultValue string) string {

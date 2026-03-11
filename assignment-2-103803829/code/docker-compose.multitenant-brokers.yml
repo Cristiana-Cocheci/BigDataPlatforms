@@ -217,6 +217,41 @@ services:
       - MONITOR_REPORT_URL=${MONITOR_REPORT_URL:-http://streamingestmonitor:8081/reports}
       - MONITOR_REPORT_INTERVAL_SECONDS=${MONITOR_REPORT_INTERVAL_SECONDS:-15}
 
+  tenant1-silverpipeline:
+    build:
+      context: .
+      dockerfile: dockerfile
+    profiles:
+      - silver
+    depends_on:
+      cassandra1:
+        condition: service_healthy
+      cassandra2:
+        condition: service_healthy
+      cassandra3:
+        condition: service_healthy
+    networks:
+      - cassandra_net
+    volumes:
+      - ./tenant_configs:/app/tenant_configs:ro
+      - ./tenant_caching_dir:/app/tenant_caching_dir
+      - ./logs:/app/logs
+    command: ./silverpipeline
+    environment:
+      - TENANT_ID=tenant1
+      - CASSANDRA_KEYSPACE=mysimbdp_tenant1
+      - CASSANDRA_HOSTS=cassandra1,cassandra2,cassandra3
+      - CASSANDRA_NUM_CONNS=${CASSANDRA_NUM_CONNS:-2}
+      - SILVER_PIPELINE_CONFIG=./tenant_configs/silverpipeline_tenant1.yaml
+      - SILVER_PIPELINE_STORAGE_BACKEND=${SILVER_PIPELINE_STORAGE_BACKEND:-local}
+      - SILVER_PIPELINE_GCS_BUCKET=${SILVER_PIPELINE_GCS_BUCKET:-}
+      - SILVER_PIPELINE_GCS_PREFIX=${SILVER_PIPELINE_GCS_PREFIX:-}
+      - SILVER_PIPELINE_GCS_CREDENTIALS_FILE=${SILVER_PIPELINE_GCS_CREDENTIALS_FILE:-}
+      - SILVER_PIPELINE_LOG_DIR=${SILVER_PIPELINE_LOG_DIR:-./logs/silverpipeline/tenant1}
+      - SILVER_PIPELINE_RUN_LOG_FILE=${SILVER_PIPELINE_RUN_LOG_FILE:-run_status.jsonl}
+      - SILVER_PIPELINE_TASK_LOG_FILE=${SILVER_PIPELINE_TASK_LOG_FILE:-task_status.jsonl}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+
   tenant2-silverpipeline:
     build:
       context: .

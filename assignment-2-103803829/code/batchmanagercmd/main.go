@@ -17,8 +17,7 @@ import (
 
 const (
 	defaultTenantConfigDir        = "./tenant_configs"
-	supportedBatchmanagerTenant   = "tenant2"
-	tenant2SilverService          = "tenant2-silverpipeline"
+	defaultBatchmanagerTenant     = "tenant2"
 	defaultBatchmanagerInputGlob  = "*_bronze_extract.csv"
 	defaultBatchmanagerSilverGlob = "*_silver_hourly.csv"
 	defaultBatchmanagerStateFile  = ".batchmanager_state.json"
@@ -29,6 +28,11 @@ const (
 	silverPipelineModeTransform   = "transform-cache"
 	silverPipelineStorageLocal    = "local"
 )
+
+var supportedBatchmanagerTenants = map[string]struct{}{
+	"tenant1": {},
+	"tenant2": {},
+}
 
 type silverPipelineConfig struct {
 	TenantID string                `yaml:"tenant_id"`
@@ -65,7 +69,7 @@ type cacheFileRecord struct {
 
 func main() {
 	command := flag.String("command", "run", "Command: status | run | extract-cache | cleanup-processed")
-	tenantID := flag.String("tenant", supportedBatchmanagerTenant, "Tenant ID supported by this batchmanager")
+	tenantID := flag.String("tenant", defaultBatchmanagerTenant, "Tenant ID supported by this batchmanager")
 	force := flag.Bool("force", false, "Reprocess all matching cache files regardless of batchmanager state")
 	build := flag.Bool("build", false, "Build the tenant silverpipeline image before invoking it")
 	extractDay := flag.String("day", "", "Required for extract-cache: day partition to extract from bronze data (YYYY-MM-DD)")
@@ -73,8 +77,9 @@ func main() {
 
 	flag.Parse()
 
-	if strings.ToLower(strings.TrimSpace(*tenantID)) != supportedBatchmanagerTenant {
-		fatalf("mysimbdp-batchmanager currently supports only tenant=%s", supportedBatchmanagerTenant)
+	resolvedTenantID, err := normalizeBatchmanagerTenant(*tenantID)
+	if err != nil {
+		fatalf("%v", err)
 	}
 
 	composeFiles := parseList(*composeFilesRaw)
@@ -82,7 +87,7 @@ func main() {
 		fatalf("compose-files cannot be empty")
 	}
 
-	pipelineConfig, err := loadSilverPipelineConfig(*tenantID)
+	pipelineConfig, err := loadSilverPipelineConfig(resolvedTenantID)
 	if err != nil {
 		fatalf("failed to load silver pipeline config: %v", err)
 	}
@@ -96,7 +101,7 @@ func main() {
 
 	switch *command {
 	case "status":
-		if err := showBatchStatus(hostCacheDir, pipelineConfig.Pipeline.BatchManager.InputGlob, stateFilePath); err != nil {
+		if err := showBatchStatus(resolvedTenantID, hostCacheDir, pipelineConfig.Pipeline.BatchManager.InputGlob, stateFilePath); err != nil {
 			fatalf("status failed: %v", err)
 		}
 	case "extract-cache":
@@ -105,16 +110,16 @@ func main() {
 			fatalf("extract-cache failed: %v", err)
 		}
 
-		if err := invokeSilverPipeline(composeFiles, *build, silverPipelineModeExtract, nil, resolvedExtractDay); err != nil {
+		if err := invokeSilverPipeline(composeFiles, *build, silverPipelineModeExtract, nil, resolvedExtractDay, silverServiceNameForTenant(resolvedTenantID)); err != nil {
 			fatalf("extract-cache failed: %v", err)
 		}
-		fmt.Printf("tenant=%s cache refresh completed day=%s\n", supportedBatchmanagerTenant, resolvedExtractDay)
+		fmt.Printf("tenant=%s cache refresh completed day=%s\n", resolvedTenantID, resolvedExtractDay)
 	case "run":
-		if err := runBatch(hostCacheDir, pipelineConfig.Pipeline.BatchManager.InputGlob, stateFilePath, composeFiles, *build, *force); err != nil {
+		if err := runBatch(resolvedTenantID, hostCacheDir, pipelineConfig.Pipeline.BatchManager.InputGlob, stateFilePath, composeFiles, *build, *force); err != nil {
 			fatalf("run failed: %v", err)
 		}
 	case "cleanup-processed":
-		if err := cleanupProcessedCacheFiles(hostCacheDir, pipelineConfig.Pipeline.BatchManager.InputGlob, stateFilePath); err != nil {
+		if err := cleanupProcessedCacheFiles(resolvedTenantID, hostCacheDir, pipelineConfig.Pipeline.BatchManager.InputGlob, stateFilePath); err != nil {
 			fatalf("cleanup-processed failed: %v", err)
 		}
 	default:
@@ -122,7 +127,7 @@ func main() {
 	}
 }
 
-func runBatch(cacheDir string, inputGlob string, stateFilePath string, composeFiles []string, build bool, force bool) error {
+func runBatch(tenantID string, cacheDir string, inputGlob string, stateFilePath string, composeFiles []string, build bool, force bool) error {
 	matchedFiles, err := discoverCacheFiles(cacheDir, inputGlob)
 	if err != nil {
 		return err
@@ -147,7 +152,7 @@ func runBatch(cacheDir string, inputGlob string, stateFilePath string, composeFi
 			}
 		}
 
-		fmt.Printf("tenant=%s no pending cache files in %s\n", supportedBatchmanagerTenant, cacheDir)
+		fmt.Printf("tenant=%s no pending cache files in %s\n", tenantID, cacheDir)
 		return nil
 	}
 
@@ -156,7 +161,7 @@ func runBatch(cacheDir string, inputGlob string, stateFilePath string, composeFi
 		inputNames = append(inputNames, file.Name)
 	}
 
-	if err := invokeSilverPipeline(composeFiles, build, silverPipelineModeTransform, inputNames, ""); err != nil {
+	if err := invokeSilverPipeline(composeFiles, build, silverPipelineModeTransform, inputNames, "", silverServiceNameForTenant(tenantID)); err != nil {
 		return err
 	}
 
@@ -172,11 +177,11 @@ func runBatch(cacheDir string, inputGlob string, stateFilePath string, composeFi
 		return err
 	}
 
-	fmt.Printf("tenant=%s processed_files=%d state_file=%s\n", supportedBatchmanagerTenant, len(pendingFiles), stateFilePath)
+	fmt.Printf("tenant=%s processed_files=%d state_file=%s\n", tenantID, len(pendingFiles), stateFilePath)
 	return nil
 }
 
-func showBatchStatus(cacheDir string, inputGlob string, stateFilePath string) error {
+func showBatchStatus(tenantID string, cacheDir string, inputGlob string, stateFilePath string) error {
 	matchedFiles, err := discoverCacheFiles(cacheDir, inputGlob)
 	if err != nil {
 		return err
@@ -193,7 +198,7 @@ func showBatchStatus(cacheDir string, inputGlob string, stateFilePath string) er
 		pendingSet[file.Name] = struct{}{}
 	}
 
-	fmt.Printf("tenant=%s cache_dir=%s matched=%d pending=%d state_file=%s\n", supportedBatchmanagerTenant, cacheDir, len(matchedFiles), len(pendingFiles), stateFilePath)
+	fmt.Printf("tenant=%s cache_dir=%s matched=%d pending=%d state_file=%s\n", tenantID, cacheDir, len(matchedFiles), len(pendingFiles), stateFilePath)
 	for _, file := range matchedFiles {
 		status := "processed"
 		if _, isPending := pendingSet[file.Name]; isPending {
@@ -211,7 +216,7 @@ func showBatchStatus(cacheDir string, inputGlob string, stateFilePath string) er
 	return nil
 }
 
-func cleanupProcessedCacheFiles(cacheDir string, inputGlob string, stateFilePath string) error {
+func cleanupProcessedCacheFiles(tenantID string, cacheDir string, inputGlob string, stateFilePath string) error {
 	matchedFiles, err := discoverManagedCacheFiles(cacheDir, inputGlob)
 	if err != nil {
 		return err
@@ -249,7 +254,7 @@ func cleanupProcessedCacheFiles(cacheDir string, inputGlob string, stateFilePath
 		}
 	}
 
-	fmt.Printf("tenant=%s cleanup-processed completed cache_dir=%s matched=%d deleted=%d state_file=%s\n", supportedBatchmanagerTenant, cacheDir, len(matchedFiles), deletedFiles, stateFilePath)
+	fmt.Printf("tenant=%s cleanup-processed completed cache_dir=%s matched=%d deleted=%d state_file=%s\n", tenantID, cacheDir, len(matchedFiles), deletedFiles, stateFilePath)
 	return nil
 }
 
@@ -295,11 +300,11 @@ func loadSilverPipelineConfig(tenantID string) (silverPipelineConfig, error) {
 	}
 
 	if strings.TrimSpace(config.TenantID) == "" {
-		config.TenantID = supportedBatchmanagerTenant
+		config.TenantID = tenantID
 	}
 
 	if strings.TrimSpace(config.Pipeline.CacheDir) == "" {
-		config.Pipeline.CacheDir = filepath.Join("./tenant_caching_dir", supportedBatchmanagerTenant)
+		config.Pipeline.CacheDir = filepath.Join("./tenant_caching_dir", tenantID)
 	}
 
 	if strings.TrimSpace(config.Pipeline.BatchManager.InputGlob) == "" {
@@ -310,8 +315,8 @@ func loadSilverPipelineConfig(tenantID string) (silverPipelineConfig, error) {
 		config.Pipeline.BatchManager.StateFile = defaultBatchmanagerStateFile
 	}
 
-	if strings.ToLower(strings.TrimSpace(config.TenantID)) != supportedBatchmanagerTenant {
-		return silverPipelineConfig{}, fmt.Errorf("batchmanager currently supports only tenant=%s", supportedBatchmanagerTenant)
+	if strings.ToLower(strings.TrimSpace(config.TenantID)) != tenantID {
+		return silverPipelineConfig{}, fmt.Errorf("batchmanager tenant mismatch: expected=%s got=%s", tenantID, config.TenantID)
 	}
 
 	return config, nil
@@ -431,7 +436,7 @@ func recordFilesInState(state *batchManagerState, files []cacheFileRecord, proce
 	return recorded
 }
 
-func invokeSilverPipeline(composeFiles []string, build bool, mode string, inputFiles []string, extractDay string) error {
+func invokeSilverPipeline(composeFiles []string, build bool, mode string, inputFiles []string, extractDay string, silverServiceName string) error {
 	if err := composeUp(composeFiles, "cassandra1", "cassandra2", "cassandra3"); err != nil {
 		return err
 	}
@@ -452,7 +457,7 @@ func invokeSilverPipeline(composeFiles []string, build bool, mode string, inputF
 		args = append(args, "-e", fmt.Sprintf("%s=%s", silverPipelineDayEnv, strings.TrimSpace(extractDay)))
 	}
 
-	args = append(args, tenant2SilverService)
+	args = append(args, silverServiceName)
 	return run("docker", args...)
 }
 
@@ -509,6 +514,29 @@ func parseRequiredExtractDay(value string) (string, error) {
 	}
 
 	return normalized, nil
+}
+
+func normalizeBatchmanagerTenant(tenantID string) (string, error) {
+	normalizedTenantID := strings.ToLower(strings.TrimSpace(tenantID))
+	if normalizedTenantID == "" {
+		normalizedTenantID = defaultBatchmanagerTenant
+	}
+
+	if _, exists := supportedBatchmanagerTenants[normalizedTenantID]; exists {
+		return normalizedTenantID, nil
+	}
+
+	supported := make([]string, 0, len(supportedBatchmanagerTenants))
+	for currentTenantID := range supportedBatchmanagerTenants {
+		supported = append(supported, currentTenantID)
+	}
+	sort.Strings(supported)
+
+	return "", fmt.Errorf("mysimbdp-batchmanager currently supports tenants=%s", strings.Join(supported, ", "))
+}
+
+func silverServiceNameForTenant(tenantID string) string {
+	return fmt.Sprintf("%s-silverpipeline", tenantID)
 }
 
 func fatalf(format string, args ...any) {

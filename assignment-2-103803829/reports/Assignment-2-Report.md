@@ -6,21 +6,17 @@
 
 
 ## Part 1
-1.
-mysimbdp-messagingsystem - Apache Kafka
-streamingestworker
-mysimbdp-coredms
-multi tenancy model
+### 1.
 
 **Messaging system** : I used Apache Kafka for near real-time ingestion. 
 
 **Why Kafka?** The protocol it uses is optimized for high throughput, low latency, and efficient message "batching", which is ideal for a giant dataset that needs to be delivered at once. It gives a lot of integrated features that makes parallelism possible, so that I am able to use to the maximum capacity my resources (since for the first assignment everything runs on my local computer). The Kafka partitioning feature ties nicely with the Cassandra integrated partitioning, so when a consumer tries to insert a batch I am guaranteed that all datasamples will be in the same partition. (Kafka is partitioned by sensor_id and Cassandra partitions data by hour and then by sensor_id).
 
-The design is as follows: each tenant provides a csv big data file daily with weather measurment records. In my experiment **tenant1** uses BME280 sensor records and **tenant2** uses DHT22 sensor records, which have different formats. 
+The design is as follows: each tenant provides a .csv big data file daily with weather measurment records. In my experiment **tenant1** uses BME280 sensor records and **tenant2** uses DHT22 sensor records, which have different formats. 
 
-Both tenants can ingest independently by running separate Kafka brokers, with tenant-specific source files and parsing rules defined in tenant_configs/*.json.
+Both tenants can ingest independently by running separate Kafka brokers, with tenant-specific source files and parsing rules defined in [tenant_configs/*.json](../code/tenant_configs).
 
-In the current setup, each tenant can also use a different CSV structure and source file through tenant_configs/*.json.
+In the current setup, each tenant can also use a different CSV structure and source file through [tenant_configs/*.json](../code/tenant_configs).
 
 
 ```Example tenant1 data:```
@@ -42,15 +38,9 @@ In the current setup, each tenant can also use a different CSV structure and sou
  - *Simplified Monitoring and Billing*: By separating data into keyspaces, you can easily track storage metrics per keyspace. This allows you to bill tenants accurately based on the actual disk space or throughput they consume.
 
 
-2.
-DESIGN AND IMPLEMENT
-mysimbdp-streamingestmanager
- - start and stop streamingestworker om demand
- - invoke streamingestworker as a blackbox
+### 2.
 
-explain what tenant has to do to develop streamingestworker
-
-```mysimbdp-streamingestmanager``` : it is a control plane that orchestrates Docker Compose services for multiple tenants. It can start/stop tenant specific *streamingestworker*s. It does not do any ingesting itself.
+**mysimbdp-streamingestmanager** : it is a control plane that orchestrates Docker Compose services for multiple tenants. It can start/stop tenant specific **streamingestworker**s. It does not do any ingesting itself.
 
 The tenant topology is hardcoded in a tenant registry map:
 
@@ -87,11 +77,12 @@ The manager parses flags and executes the following commands:
 - listen-alerts:
     - runs a HTTP server that recieves alerts from ```streamingestmonitor```
 
-The manager only runs compose commands, the tenant specific details are a blackbox for it. They are handled as environment variables, which are fetched from the tenant configuration files.
+The manager only runs compose commands, the tenant specific details are a **blackbox** for it. They are handled as environment variables, which are fetched from the tenant configuration files.
 
-What does the tenant have to do for *streamingestworker*:
- - A tenant provides a configuration JSON file, that will be used by the default Kafka producer and consumer internal for mysimpbdp.
+**What does the tenant have to do for *streamingestworker***:
+ - A tenant provides a configuration JSON file, that will be used by the default Kafka producer and consumer internal for mysimpbdp. The information will be read by Kafka producers and consumers, so the keyspace, tablename, data schema, data source location, Cassandra partion key, etc. will be inserted into the default ingestion workers.
 
+Here is an example of the .json configuration file for ingestion:
 ```json
 {
   "tenant_id": "tenant1",
@@ -125,13 +116,7 @@ What does the tenant have to do for *streamingestworker*:
 }
 ```
 
-3.
-DEVELOP 2 streamingestworkers
-
-performance of ingestion tests, failures and exceptions, under normal assumed loads
-
-then for heavy loads but with a limited capability, under-provisoning of
-streamingestworker due to the limitation of mysimbdp resources
+### 3.
 
 **WARNING** The minimum throughput expected by the monitor is set very high, so that the alerting can be observed for testing purposes. In reality, it would be set according to the expected throughput, so about minimum 2000 messages per Kafka producer.
 
@@ -140,8 +125,8 @@ streamingestworker due to the limitation of mysimbdp resources
 Description: The normal run has 10 concurrent workers, 10 Kafka partitions. The underprovisioned run has 1 worker and 1 partition. They are both left to run for a total of 120 seconds.
 
 Comparison target:
-- baseline: `code/benchmark_results/underprovisioned_short_120s`
-- chunked multi-source: `code/benchmark_results/validation_10workers_chunked_rerun/test_20260310_195009`
+- baseline: [code/benchmark_results/underprovisioned_short_120s](../code/benchmark_results/underprovisioned_short_120s)
+- chunked multi-source: [code/benchmark_results/normal_short_120s](../code/benchmark_results/normal_short_120s)
 
 Summary (both tenants combined):
 
@@ -160,21 +145,21 @@ Per-tenant details:
 | chunked_10workers_10sources_rerun | tenant2 | 2808.77 | 28087.70 | 0.6384 | 434.4330 | 2088110 | 2080888 | 99.65 | 0 | drained | 33 | 840 |
 
 Observations:
-- The chunked multi-source run reached full offered load (`5002944` produced rows) while also draining Kafka completely (`final lag = 0` for both tenants). However, the underprovisioned run did not fully insert data into the database in the allocated time, even with additional draining buffer.
+- The normal run, with 10 workers and chunked file reading produced all available rows (`5002944` produced rows) while also draining Kafka completely (`final lag = 0` for both tenants), meaning the number of parallel workers/broker (or per tenant) was enough to drain all produced messages in under 2 minutes. However, the underprovisioned run did not fully insert data into the database in the allocated time, even with additional draining buffer. The underprovisioned run also produced all the messages, but failed to consume them in under 2 minutes.
 - Total average throughput is reported as `WORKERS * avg_throughput_rps`: baseline uses `WORKERS=1` (same as average throughput), rerun uses `WORKERS=10`.
-- Processing fraction improved from `45.45%` to `99.79%` when each source replica (each kafka producer) read a different chunk file.
+- Processing fraction improved from `45.45%` to `99.79%` when each source replica (each kafka producer) read a different chunk file. This means the fraction of inserted messages out of the total produced messages. The lacking 0.21% comes from duplicate rows in the input cvs files, which can be seen in the last column of the above table.
 - `total_ingested_mb` increased from `503.7340` to `1077.6729` in the same 120s benchmark window, indicating much higher effective ingestion completion for the normal run than the underprovisioned one.
-- Trade-off: insert exceptions increased (`0` -> `41`).
+- Trade-off: insert exceptions increased (`0` -> `41`). In the underprovisioned run there is only one worker/tenant that starts, after which ingestion begins, this is a low parallelism envirionment and no exceptions appear. However, in the 10 worker/tenant run, an environment with a lot of threads, we can see that not all workers are started early enough, so there are a few retries untill all of them succesfully start ingesting. Exception logs file can be seen in [worker_insert_exceptions_by_tenant.txt](../code/benchmark_results/normal_short_120s/worker_insert_exceptions_by_tenant.txt).
 
 
 #### Performance Report (Scenario 2) - Cassandra Write-Limit `5ms` vs `20ms` vs `50ms`
 
-Description: In this scenario we have set 1 worker and 1 partition, while throttling the Cassandra writes via an artificial sleep between ingesting batches (CASSANDRA_WRITE_SLEEP_MS). This scenario simulates an intensive ingestion workload where incoming data rate significantly exceeds the processing capability of the ingestion pipeline.
+Description: In this scenario I have set 1 worker and 1 partition, while throttling the Cassandra writes via an artificial sleep between ingesting batches (CASSANDRA_WRITE_SLEEP_MS). This scenario simulates an intensive ingestion workload where incoming data rate significantly exceeds the processing capability of the ingestion pipeline.
 
 Source folders:
-- `code/benchmark_results/write_limit_5ms_20260310_163743/test_20260310_163743`
-- `code/benchmark_results/write_limit_20ms_20260310_163743/test_20260310_164641`
-- `code/benchmark_results/write_limit_50ms_20260310_163743/test_20260310_170348`
+- [write_limit_5ms](../code/benchmark_results/write_limit_5ms_20260310_163743)
+- [write_limit_20ms](../code/benchmark_results/write_limit_20ms_20260310_163743)
+- [write_limit_50ms](../code/benchmark_results/write_limit_50ms_20260310_163743)
 
 
 Combined summary (both tenants):
@@ -197,22 +182,14 @@ Per-tenant details:
 | 50 | tenant2 | 404.22 | 0.0917 | 20.2192 | 2088110 | 90559 | 4.34 | 1998685 | timeout | 0 | 840 |
 
 Observations:
-- Increasing `CASSANDRA_WRITE_SLEEP_MS` from `5` to `20` to `50` reduced throughput and processed fraction.
-- Residual Kafka lag increased monotonically with larger write sleep.
-- Insert exceptions stayed at `0` in all three runs.
+- Increasing `CASSANDRA_WRITE_SLEEP_MS` from `5` to `20` to `50` reduced throughput and processed fraction, while increasing the Kafka lag (messages produced but not consumed).
+- Insert exceptions stayed at `0` in all three runs, matching the behaviour of the underprovisioned run from the previous scenario, where we also had 1 worker, but had 0s Cassandra write sleep.
 - All three runs timed out during drain due to intentionally high offered load and short runtime.
 
 The results demonstrate that under a heavy ingestion workload, the processing capacity of streamingestworker becomes limited by the downstream Cassandra write latency, resulting in reduced throughput, increasing Kafka backlog, and a low fraction of processed records.
 
-4.
-DESIGN
-mysimbdp-streamingestmonitor
-
-average ingestion time, total ingestion data size, and number of records
-
-components, flows and the mechanism for reporting
-
-```mysimbdp-streamingestmonitor```: is a HTTP service that recieves worker performanec reports and forwards alerts to ```streamingestmanager``` when necessary.
+### 4.
+**mysimbdp-streamingestmonitor**: is a HTTP service that recieves worker performanec reports and forwards alerts to **streamingestmanager** when necessary.
 
 A report format would look like this:
 ```go
@@ -226,26 +203,24 @@ type workerPerformanceReport struct {
 	BatchesInWindow         int     `json:"batches_in_window"`
 	AvgBatchIngestMS        float64 `json:"avg_batch_ingest_ms"`
   ThroughputRecordsPerSec float64 `json:"throughput_records_per_sec"`
-  IngestedBytesInWindow   int64   `json:"ingested_bytes_in_window"`
   IngestedMBInWindow      float64 `json:"ingested_mb_in_window"`
   IngestedMBPerSec        float64 `json:"ingested_mb_per_sec"`
-  TotalIngestedBytes      int64   `json:"total_ingested_bytes"`
   TotalIngestedMB         float64 `json:"total_ingested_mb"`
 	TotalInserted           int     `json:"total_inserted"`
 	TotalConsumed           int     `json:"total_consumed"`
 }
 ```
 
-I also designed a cooldown system. When an alert is sent, then there is a coodown period before any other alert is sent to the manager, to prevent useless spamming.
+I also designed a **cooldown system**. When an alert is sent, then there is a coodown period before any other alert is sent to the manager, to prevent useless spamming.
 
-```mysimbdp-streamingestmonitor``` has the following configuration:
+**mysimbdp-streamingestmonitor** has the following configuration:
 - MONITOR_LISTEN_ADDR - default 8081
 - MANAGER_ALERT_URL - default http://streamingestmanager:8082/alerts
 - MONITOR_MIN_THROUGHPUT_RPS - default 300
 - MONITOR_MAX_AVG_BATCH_INGEST_MS - default 250
 - MONITOR_ALERT_COOLDOWN_SECONDS - default 30
 
-```mysimbdp-streamingestmonitor``` has the following endpoints:
+**mysimbdp-streamingestmonitor** has the following endpoints:
 - GET /healthz : returns 200 ok for health checks
 - POST /reports: reports worker performance:
     - tenant ID
@@ -259,52 +234,76 @@ I also designed a cooldown system. When an alert is sent, then there is a coodow
     - When there is a reason to alert the manager (small throughput and/or small average batch ingest), it first checks it is not in a cooldown period, in which case the alert is skipped. If it is not in a cooldown period, it sends the alert in json format via HTTP.
 
 
-5.
+### 5.
 
-The ```mysimbdp-streamingestmonitor``` is implemented in (streamingestmonitor.go)[../code/streamingestmonitor.go].
+The **mysimbdp-streamingestmonitor** is implemented in (streamingestmonitor.go)[../code/streamingestmonitor.go].
 There, the function *evaluateThresholds* recieves the worker performance and returns a list of possible alert reasons. If the list is empty, then the workers are under normal parameters. The reasons that can be added to the list are : minimum ingestion throughput not met, exceeded average batch ingest.
 
-As explained in the previous point, the ```mysimbdp-streamingestmonitor``` sends HTTP messages to ```streamingestmanager```.
+As explained in the previous point, the **mysimbdp-streamingestmonitor** sends HTTP messages to **streamingestmanager**.
 
 ```Demonstrate these features.```
-All the logs can be further analysed in (code/benchmark_results)[code/benchmark_results].
+All the logs can be further analysed in [code/benchmark_results](../code/benchmark_results).
+
 Here is an extract from [log_streamingestmanager.txt](../code/benchmark_results/good_test/log_streamingestmanager.txt). What we can observe is that in the beginning 0 throughput is reported, because the ingestion didn't fully have time to start yet.
 
 
 ```sh
 streamingestmanager  | monitor alert received: tenant=tenant1 worker=75a23c80f655 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+
 streamingestmanager  | monitor alert received: tenant=tenant1 worker=97111007d5e8 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+
 streamingestmanager  | monitor alert received: tenant=tenant1 worker=08c6673c5656 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+
 streamingestmanager  | monitor alert received: tenant=tenant2 worker=bda42625c2f8 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+
 streamingestmanager  | monitor alert received: tenant=tenant2 worker=6bddf94b63d7 severity=warning reasons=throughput 0.00 rps below minimum 1000000.00 rps throughput=0.00 avg_batch_ms=0.00 window_mb=0.0000 total_mb=0.0000
+
 streamingestmanager  | monitor alert received: tenant=tenant1 worker=63c34b5a4948 severity=warning reasons=throughput 889.06 rps below minimum 1000000.00 rps throughput=889.06 avg_batch_ms=5.81 window_mb=2.1471 total_mb=4.9553
+
 streamingestmanager  | monitor alert received: tenant=tenant1 worker=97111007d5e8 severity=warning reasons=throughput 1933.15 rps below minimum 1000000.00 rps throughput=1933.15 avg_batch_ms=5.67 window_mb=4.6833 total_mb=10.8362
+
 streamingestmanager  | monitor alert received: tenant=tenant1 worker=75a23c80f655 severity=warning reasons=throughput 940.30 rps below minimum 1000000.00 rps throughput=940.30 avg_batch_ms=5.79 window_mb=2.2819 total_mb=5.3147
+
 streamingestmanager  | monitor alert received: tenant=tenant1 worker=08c6673c5656 severity=warning reasons=throughput 891.47 rps below minimum 1000000.00 rps throughput=891.47 avg_batch_ms=5.85 window_mb=2.1601 total_mb=5.0169
+
 streamingestmanager  | monitor alert received: tenant=tenant2 worker=2ff91db36b9c severity=warning reasons=throughput 2759.26 rps below minimum 1000000.00 rps throughput=2759.26 avg_batch_ms=3.46 window_mb=6.2830 total_mb=13.9587
 ```
-
 
 And here is an extract of logs from [log_streamingestmonitor.txt](../code/benchmark_results/good_test/log_streamingestmonitor.txt). Again, we observe in the beginning the startup process, no records had time to be inserted yet and the monitor reports 0 records inserted.
 ```sh
 streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=08c6673c5656 throughput=0.00 rps avg_batch_ms=0.00 window=10.5s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+
 streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=75a23c80f655 throughput=0.00 rps avg_batch_ms=0.00 window=10.7s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+
 streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=97111007d5e8 throughput=0.00 rps avg_batch_ms=0.00 window=10.4s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+
 streamingestmonitor  | 2026/03/10 12:42:37 alert forwarded: tenant=tenant1 worker=75a23c80f655 reasons=throughput 0.00 rps below minimum 1000000.00 rps
+
 streamingestmonitor  | 2026/03/10 12:42:37 alert forwarded: tenant=tenant1 worker=97111007d5e8 reasons=throughput 0.00 rps below minimum 1000000.00 rps
+
 streamingestmonitor  | 2026/03/10 12:42:37 alert forwarded: tenant=tenant1 worker=08c6673c5656 reasons=throughput 0.00 rps below minimum 1000000.00 rps
+
 streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=63c34b5a4948 throughput=2.49 rps avg_batch_ms=33.00 window=10.0s records=25 window_mb=0.0058 total_mb=0.0058 mbps=0.0006
+
 streamingestmonitor  | 2026/03/10 12:42:37 alert skipped due to cooldown: tenant=tenant1 worker=63c34b5a4948
+
 streamingestmonitor  | 2026/03/10 12:42:37 report received: tenant=tenant1 worker=234820a34f1c throughput=0.00 rps avg_batch_ms=0.00 window=10.5s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+
 streamingestmonitor  | 2026/03/10 12:42:37 alert skipped due to cooldown: tenant=tenant1 worker=234820a34f1c
+
 streamingestmonitor  | 2026/03/10 12:42:38 report received: tenant=tenant1 worker=135350cbe6fc throughput=0.00 rps avg_batch_ms=0.00 window=10.3s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+
 streamingestmonitor  | 2026/03/10 12:42:38 alert skipped due to cooldown: tenant=tenant1 worker=135350cbe6fc
+
 streamingestmonitor  | 2026/03/10 12:42:38 report received: tenant=tenant1 worker=332a28b8806f throughput=0.00 rps avg_batch_ms=0.00 window=10.2s records=0 window_mb=0.0000 total_mb=0.0000 mbps=0.0000
+
 streamingestmonitor  | 2026/03/10 12:42:38 alert skipped due to cooldown: tenant=tenant1 worker=332a28b8806f
+
 streamingestmonitor  | 2026/03/10 12:42:47 report received: tenant=tenant1 worker=08c6673c5656 throughput=1219.81 rps avg_batch_ms=8.53 window=10.0s records=12200 window_mb=2.8568 total_mb=2.8568 mbps=0.2856
+
 streamingestmonitor  | 2026/03/10 12:42:47 alert skipped due to cooldown: tenant=tenant1 worker=08c6673c5656
+
 streamingestmonitor  | 2026/03/10 12:42:47 report received: tenant=tenant1 worker=97111007d5e8 throughput=2627.05 rps avg_batch_ms=7.36 window=10.0s records=26275 window_mb=6.1529 total_mb=6.1529 mbps=0.6152
-s
 ```
 
 Then we can also take a look at the errors, which are all gathered in [worker_insert_exceptions_by_tenant.txt](../code/benchmark_results/good_test/worker_insert_exceptions_by_tenant.txt)
@@ -343,11 +342,7 @@ A simmiliar exception type happens in tenant2 stream ingest worker logs: a certa
 Overall, the data ingestion system functions without any significant errors and failures. 
 
 ## Part 2
-1. 
-DESIGN 
-bronze to silver data pipelines
-
-DESIGN a schema for a set of constraints for tenant service agreement that mysimbdp will support
+### 1. 
 
 ```First type of tenant```
 The data input frequency for my platformed is assumed to be once per day, with a file size of approximately 3GB. It is assumed that the silverpipeline would take around 5-15 minutes with a moderate compute.
@@ -450,7 +445,7 @@ pipeline_constraints:
     max_processing_delay_sec: 15
 ```
 
-2.
+### 2.
 IMPLEMENT an instance of a silver pipeline. Explain design as a tenant.
 tenant-caching-dir: local disk within the platform
 
@@ -474,7 +469,7 @@ The silverpipeline also follows a black-box format via environment variables:
 
 This design lets the provider invoke the pipeline without depending on the internal code structure of the tenant silverpipeline implementation.
 
-3.
+### 3.
 DESIGN AND IMPELMENT mysimbdp-batchmanager, which uses silverpipeline as a blackbox
 
 I implemented `mysimbdp-batchmanager` in `code/batchmanagercmd/main.go`.
@@ -504,7 +499,7 @@ How does the **mysimbdp-batchmanager** know the list of silverpipelines and sche
 
 Since silverdata has to be produce only once/bronz data batch, the tenants discuss with the bdp manager a frequency of processing the data. This is set in the tenant configuration manifest with `min_batch_interval_sec`, which for the current tenants is 24 hours. The **mysimbdp-batchmanager** will run the silverpipeline for tenants according to the preset interval. It can also schedule them as it wishes for optimal resource utilization. This can also be set in the tenant manifest via the `max_processing_delay_sec`. The latency is an agreed period of time from full bronze data ingestion to silverpipeline run, for example 2 hours.
 
-4.
+### 4.
 
 ### In the following sequence of terminal outputs we can see a silverpipeline run for tenant2 LOCALLY:
 
@@ -710,7 +705,40 @@ nant2.sensor_observations_dht22_silver;"
   - Cassandra insert stage is nearly identical across backends (`50ms` vs `51ms`), indicating backend difference is mostly in cache I/O.
   - Both log files preserve full traceability with `run_id`, `status`, `duration_ms`, and `error` fields, making failed runs easy to diagnose.
 
-5.
+### Aggregated metrics for tenant1 and tenant2
+
+After making the silverpipeline tenant-aware, I reran the full pipeline with the new explicit data-volume counters enabled for both tenants and for both storage backends (`local` and `gcs`). The relevant run logs are:
+
+- `code/logs/silverpipeline/tenant1-metrics-test-2/run_status.jsonl`
+- `code/logs/silverpipeline/tenant1-gcs-metrics-test/run_status.jsonl`
+- `code/logs/silverpipeline/tenant2-metrics-test/run_status.jsonl`
+- `code/logs/silverpipeline/tenant2-gcs-metrics-test/run_status.jsonl`
+
+Measured results per successful run:
+
+| tenant | backend | duration_ms | cassandra_read_rows | cassandra_read_bytes | cache_rows | cache_bytes | silver_rows | silver_bytes | cassandra_inserted_rows | cassandra_inserted_bytes |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| tenant1 | local | 36,497 | 2,911,563 | 269,042,612 | 2,911,563 | 269,042,612 | 24 | 3,927 | 24 | 3,927 |
+| tenant1 | gcs | 96,894 | 2,911,563 | 269,042,612 | 2,911,563 | 269,042,612 | 24 | 3,927 | 24 | 3,927 |
+| tenant2 | local | 15,035 | 2,078,885 | 156,649,308 | 2,078,885 | 156,649,308 | 24 | 2,164 | 24 | 2,164 |
+| tenant2 | gcs | 50,043 | 2,078,885 | 156,649,308 | 2,078,885 | 156,649,308 | 24 | 2,164 | 24 | 2,164 |
+
+Observations:
+
+- For a given tenant, `local` and `gcs` produced identical row and byte counts. Only the cache target changed; the extracted bronze rows and generated silver aggregates stayed the same.
+- `tenant1` processed more bronze data than `tenant2` on the selected day: `2,911,563` rows vs `2,078,885` rows.
+- The cloud runs were slower mainly because cache I/O moved through GCS, not because Cassandra extraction or silver cardinality changed.
+
+If I count each tenant-day once, the combined daily totals are:
+
+| aggregated scope | cassandra_read_rows | cassandra_read_bytes | cache_rows | cache_bytes | silver_rows | silver_bytes | cassandra_inserted_rows | cassandra_inserted_bytes |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| tenant1 + tenant2 unique daily totals | 4,990,448 | 425,691,920 | 4,990,448 | 425,691,920 | 48 | 6,091 | 48 | 6,091 |
+| all four successful measurement runs | 9,980,896 | 851,383,840 | 9,980,896 | 851,383,840 | 96 | 12,182 | 96 | 12,182 |
+
+This confirms that the same tenant-aware silverpipeline works for both tenants, and that switching between `local` and `gcs` storage preserves the exact data volumes while changing only runtime and cache location.
+
+### 5.
 
 
 ## Part 3
