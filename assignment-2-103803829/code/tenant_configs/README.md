@@ -25,7 +25,14 @@ The services load configs from `TENANT_CONFIG_DIR` (default: `./tenant_configs`)
 Silver pipeline runtime config:
 
 - `silverpipeline_<tenant>.yaml` stores pipeline constraints and optional runtime settings for the silver stage.
-- `pipeline.cache_dir`: cache folder where bronze extracts and hourly summary CSVs are written.
+- `pipeline.storage_backend`: cache backend (`local` or `gcs`). Default is `local`.
+- `pipeline.cache_dir`: local cache folder used when `pipeline.storage_backend=local`.
+- `pipeline.logging.dir`: base directory for silverpipeline file logs.
+- `pipeline.logging.run_file`: run-level JSONL log filename/path (pipeline success/failure, total duration, config context).
+- `pipeline.logging.task_file`: task-level JSONL log filename/path (extract/transform/insert task status, duration, row counts, data sizes).
+- `pipeline.gcs.bucket`: target bucket used when `pipeline.storage_backend=gcs`.
+- `pipeline.gcs.prefix`: object prefix used when `pipeline.storage_backend=gcs`.
+- `pipeline.gcs.credentials_file`: optional in-container credentials JSON path for GCS mode.
 - `pipeline.extract_page_size`: Cassandra page size used when extracting bronze rows.
 - `pipeline.extract_day`: bronze day partition (`YYYY-MM-DD`) extracted by `extract-cache` and `full` modes.
 - `pipeline.batchmanager.input_glob`: cache file pattern scanned by `mysimbdp-batchmanager`.

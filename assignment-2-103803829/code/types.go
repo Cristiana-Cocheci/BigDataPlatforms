@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	smallcsvFilePath          = "/data/2025-01-01_bme280_sensor_113.csv"
 	csvFilePath               = "/data/2025-06-01_bme280.csv"
 	defaultKafkaBrokers       = "kafka:29092"
 	defaultKafkaTopic         = "bme280-measurements"
@@ -52,22 +51,6 @@ type MeasurementJSON struct {
 	Humidity         *float32 `json:"humidity"`
 }
 
-type Measurement struct {
-	sensor_id         int
-	sensor_type       string
-	location          *float32
-	lat               *float32
-	lon               *float32
-	day               string
-	hour              int
-	timestamp         string
-	pressure          *float32
-	altitude          *float32
-	pressure_sealevel *float32
-	temperature       *float32
-	humidity          *float32
-}
-
 type TenantConfig struct {
 	TenantID       string             `json:"tenant_id"`
 	Tier           string             `json:"tier"`
@@ -106,18 +89,15 @@ func getEnv(key string, defaultValue string) string {
 func parseCSVList(value string) []string {
 	parts := strings.Split(value, ",")
 	result := make([]string, 0, len(parts))
-
 	for _, part := range parts {
 		trimmed := strings.TrimSpace(part)
 		if trimmed != "" {
 			result = append(result, trimmed)
 		}
 	}
-
 	if len(result) == 0 {
 		return []string{"cassandra1", "cassandra2", "cassandra3"}
 	}
-
 	return result
 }
 
@@ -187,7 +167,6 @@ func normalizeTenantTier(tier string) string {
 	}
 }
 
-// Shared helper functions
 func parseFloat32(s string) *float32 {
 	if s == "" || s == "NaN" || s == "nan" {
 		return nil
@@ -215,47 +194,22 @@ func parseInt(s string) int {
 }
 
 func createDay(t string) string {
-	// 2025-01-01T01:13:29
-	day := strings.Split(t, "T")[0]
+	day, _, _ := strings.Cut(t, "T")
 	return day
 }
 
 func extractHour(t string) int {
-	// 2025-01-01T01:13:29 -> extract 01
-	parts := strings.Split(t, "T")
-	if len(parts) < 2 {
+	_, timePart, ok := strings.Cut(t, "T")
+	if !ok {
 		return 0
 	}
-	timeParts := strings.Split(parts[1], ":")
-	if len(timeParts) < 1 {
+	hourPart, _, _ := strings.Cut(timePart, ":")
+	if hourPart == "" {
 		return 0
 	}
-	hour, err := strconv.Atoi(timeParts[0])
+	hour, err := strconv.Atoi(hourPart)
 	if err != nil {
 		return 0
 	}
 	return hour
-}
-
-func jsonToMeasurement(mj *MeasurementJSON) (*Measurement, error) {
-	t := createDay(mj.Timestamp)
-	hour := extractHour(mj.Timestamp)
-
-	m := &Measurement{
-		sensor_id:         mj.SensorID,
-		sensor_type:       mj.SensorType,
-		location:          mj.Location,
-		lat:               mj.Lat,
-		lon:               mj.Lon,
-		day:               t,
-		hour:              hour,
-		timestamp:         mj.Timestamp,
-		pressure:          mj.Pressure,
-		altitude:          mj.Altitude,
-		pressure_sealevel: mj.PressureSealevel,
-		temperature:       mj.Temperature,
-		humidity:          mj.Humidity,
-	}
-
-	return m, nil
 }

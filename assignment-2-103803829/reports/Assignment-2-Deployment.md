@@ -91,3 +91,28 @@ docker exec cassandra1 cqlsh -e "CONSISTENCY ONE; SELECT day,hour,records_aggreg
 ./batchmanager --command cleanup-processed --tenant tenant2
 ./batchmanager --command status --tenant tenant2
 ```
+
+
+gcloud
+
+```sh
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=127.0.0.1 SILVER_PIPELINE_MODE=extract-cache \
+SILVER_PIPELINE_DAY=2025-06-01 \
+SILVER_PIPELINE_STORAGE_BACKEND=gcs \
+SILVER_PIPELINE_GCS_BUCKET=caching-silverpipeline-bucket \
+SILVER_PIPELINE_GCS_PREFIX=tenant2/silverpipeline-cache SILVER_PIPELINE_GCS_CREDENTIALS_FILE=./silverpipelinecmd/css-cristianacocheci-2025-6126fecb6879.json \
+go run ./silverpipelinecmd
+
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=127.0.0.1 \
+SILVER_PIPELINE_MODE=transform-cache \
+SILVER_PIPELINE_STORAGE_BACKEND=gcs \
+SILVER_PIPELINE_GCS_BUCKET=caching-silverpipeline-bucket \
+SILVER_PIPELINE_GCS_PREFIX=tenant2/silverpipeline-cache \
+SILVER_PIPELINE_GCS_CREDENTIALS_FILE=./silverpipelinecmd/css-cristianacocheci-2025-6126fecb6879.json \
+SILVER_PIPELINE_INPUT_FILES=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache/sensor_observations_dht22_bronze_20260311_114933_bronze_extract.csv \
+go run ./silverpipelinecmd
+```

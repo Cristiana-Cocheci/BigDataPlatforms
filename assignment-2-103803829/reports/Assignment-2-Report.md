@@ -500,9 +500,13 @@ This design has two advantages:
 - it preserves the black-box nature of the tenant pipeline
 - it avoids reprocessing unchanged cache files by using the provider-managed state file
 
+How does the **mysimbdp-batchmanager** know the list of silverpipelines and schedules the execution of silverpipeline for tenants?
+
+Since silverdata has to be produce only once/bronz data batch, the tenants discuss with the bdp manager a frequency of processing the data. This is set in the tenant configuration manifest with `min_batch_interval_sec`, which for the current tenants is 24 hours. The **mysimbdp-batchmanager** will run the silverpipeline for tenants according to the preset interval. It can also schedule them as it wishes for optimal resource utilization. This can also be set in the tenant manifest via the `max_processing_delay_sec`. The latency is an agreed period of time from full bronze data ingestion to silverpipeline run, for example 2 hours.
+
 4.
 
-In the following sequence of terminal outputs we can see a silverpipeline run for tenant2:
+### In the following sequence of terminal outputs we can see a silverpipeline run for tenant2 LOCALLY:
 
 - At first we exctract the new bronze data from cassandra into the cache directory.
 ```sh
@@ -583,6 +587,128 @@ tenant=tenant2 cleanup-processed completed cache_dir=/Users/cricoche/Desktop/aal
 
 tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2 matched=0 pending=0 state_file=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2/.batchmanager_state.json
 ```
+
+
+### Next we can observe a cloud caching alternative
+
+- Fetching data from Cassandra and inserting into google cloud bucket (the cloud caching).
+```sh
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=127.0.0.1 SILVER_PIPELINE_MODE=extract-cache \
+SILVER_PIPELINE_DAY=2025-06-01 \
+SILVER_PIPELINE_STORAGE_BACKEND=gcs \
+SILVER_PIPELINE_GCS_BUCKET=caching-silverpipeline-bucket \
+SILVER_PIPELINE_GCS_PREFIX=tenant2/silverpipeline-cache SILVER_PIPELINE_GCS_CREDENTIALS_FILE=./silverpipelinecmd/css-cristianacocheci-2025-6126fecb6879.json \
+go run ./silverpipelinecmd
+
+
+2026/03/11 13:49:33 Silver pipeline starting tenant=tenant2 mode=extract-cache keyspace=mysimbdp_tenant2 consistency=ONE storage_backend=gcs storage_target=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache extract_page_size=1000 extract_day=2025-06-01 metrics=temperature,humidity max_runtime=30m0s max_retries=3
+2026/03/11 13:50:22 Silver pipeline extracted bronze_table=sensor_observations_dht22_bronze day=2025-06-01 raw_rows=2078885 cache_csv=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache/sensor_observations_dht22_bronze_20260311_114933_bronze_extract.csv
+2026/03/11 13:50:22 Silver pipeline extract completed: files=1
+2026/03/11 13:50:22 Silver pipeline completed successfully for tenant=tenant2
+```
+- This is how the cloud bucket looks now:
+![Google cloud bucket](../code/figures/gcp-silver1.png)
+
+- Fetching data from cloud bucket, processing, then inserting back into cloud bucket.
+
+```sh
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=127.0.0.1 \
+SILVER_PIPELINE_MODE=transform-cache \
+SILVER_PIPELINE_STORAGE_BACKEND=gcs \
+SILVER_PIPELINE_GCS_BUCKET=caching-silverpipeline-bucket \
+SILVER_PIPELINE_GCS_PREFIX=tenant2/silverpipeline-cache \
+SILVER_PIPELINE_GCS_CREDENTIALS_FILE=./silverpipelinecmd/css-cristianacocheci-2025-6126fecb6879.json \
+SILVER_PIPELINE_INPUT_FILES=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache/sensor_observations_dht22_bronze_20260311_114933_bronze_extract.csv \
+go run ./silverpipelinecmd
+
+
+2026/03/11 13:51:21 Silver pipeline starting tenant=tenant2 mode=transform-cache keyspace=mysimbdp_tenant2 consistency=ONE storage_backend=gcs storage_target=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache extract_page_size=1000 extract_day=2025-06-01 metrics=temperature,humidity max_runtime=30m0s max_retries=3
+2026/03/11 13:51:35 Silver pipeline completed cache_file=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache/sensor_observations_dht22_bronze_20260311_114933_bronze_extract.csv bronze_table=sensor_observations_dht22_bronze silver_table=mysimbdp_tenant2.sensor_observations_dht22_silver raw_rows=2078885 kept_rows=2078885 dropped_rows=0 silver_rows=24 summary_csv=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache/sensor_observations_dht22_bronze_20260311_114933_silver_hourly.csv metrics=temperature,humidity
+2026/03/11 13:51:35 Silver pipeline completed successfully for tenant=tenant2
+```
+- This is how the cloud bucket looks now:
+![Google cloud bucket](../code/figures/gcp-silver2.png)
+
+- Checking silver data can be found in Cassandra.
+```sh
+ docker exec cassandra1 cqlsh -e "SELECT count(*) FROM mysimbdp_te
+nant2.sensor_observations_dht22_silver;"
+
+ count
+-------
+    24
+
+(1 rows)
+```
+
+  ### Comparative report from run/task logs across different runs
+
+  I compared the JSON log records generated in:
+
+  - `code/logs/silverpipeline/tenant2/run_status.jsonl`
+  - `code/logs/silverpipeline/tenant2/task_status.jsonl`
+
+  Additional local-cache executions used for this comparison:
+
+  ```sh
+  # local full run
+  TENANT_ID=tenant2 \
+  CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+  CASSANDRA_HOSTS=127.0.0.1 \
+  SILVER_PIPELINE_MODE=full \
+  SILVER_PIPELINE_STORAGE_BACKEND=local \
+  SILVER_PIPELINE_DAY=2025-06-01 \
+  go run ./silverpipelinecmd
+
+  # local transform-cache run (same mode as gcs transform-cache baseline)
+  TENANT_ID=tenant2 \
+  CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+  CASSANDRA_HOSTS=127.0.0.1 \
+  SILVER_PIPELINE_MODE=transform-cache \
+  SILVER_PIPELINE_STORAGE_BACKEND=local \
+  SILVER_PIPELINE_INPUT_FILES=sensor_observations_dht22_bronze_20260311_121538_bronze_extract.csv \
+  go run ./silverpipelinecmd
+  ```
+
+  Run-level comparison (`run_status.jsonl`):
+
+  | run_id | backend | mode | status | duration_ms | notes |
+  |---|---|---|---|---:|---|
+  | `20260311_121057.889884000` | gcs | transform-cache | success | 17050 | baseline gcs transform run |
+  | `20260311_121308.722261000` | gcs | transform-cache | failed | 362 | input object not found |
+  | `20260311_121538.252584000` | local | full | success | 15214 | includes extract + transform |
+  | `20260311_121706.548544000` | local | transform-cache | failed | 0 | input path format issue |
+  | `20260311_121810.767052000` | local | transform-cache | success | 1239 | mode-matched local transform run |
+
+  Task-level comparison for successful `transform-cache` runs (`task_status.jsonl`):
+
+  | task | gcs duration_ms (`run_id=20260311_121057...`) | local duration_ms (`run_id=20260311_121810...`) | key metrics |
+  |---|---:|---:|---|
+  | `resolve_transform_inputs` | 304 | 0 | `matched_files=1` both |
+  | `aggregate_bronze_cache` | 16188 | 1183 | `raw_rows=2078885`, `kept_rows=2078885`, `dropped_rows=0` both |
+  | `write_silver_summary` | 303 | 0 | `summary_rows=24`, `summary_size_bytes=2164` both |
+  | `ensure_silver_table` | 1 | 3 | same table: `mysimbdp_tenant2.sensor_observations_dht22_silver` |
+  | `insert_silver_aggregates` | 50 | 51 | `inserted_rows=24` both |
+  | `transform_cache_file` | 16682 | 1239 | same bronze input cardinality |
+  | `run_transform_from_cache` | 16683 | 1239 | `cache_files=1` both |
+  | `validate_storage_limit` (`pipeline-final`) | 61 | 0 | `max_silver_storage_gb=100` both |
+
+  Task-level failed-run comparison:
+
+  | run_id | backend | failed task | duration_ms | error summary |
+  |---|---|---|---:|---|
+  | `20260311_121308.722261000` | gcs | `resolve_transform_inputs` | 360 | gcs object does not exist |
+  | `20260311_121706.548544000` | local | `resolve_transform_inputs` | 0 | local input path was prefixed twice with `cache_dir` |
+
+  Observations from logs:
+
+  - For mode-matched successful `transform-cache` runs, local cache was much faster than gcs cache mainly in read/aggregate and summary write stages.
+  - Cassandra insert stage is nearly identical across backends (`50ms` vs `51ms`), indicating backend difference is mostly in cache I/O.
+  - Both log files preserve full traceability with `run_id`, `status`, `duration_ms`, and `error` fields, making failed runs easy to diagnose.
 
 5.
 

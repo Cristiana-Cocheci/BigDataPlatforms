@@ -46,11 +46,10 @@ type workerPerformanceReport struct {
 }
 
 func activeTenantID() string {
-	tenantID := strings.ToLower(strings.TrimSpace(os.Getenv("TENANT_ID")))
-	if tenantID == "" {
-		return "tenant1"
+	if tenantID := strings.ToLower(strings.TrimSpace(os.Getenv("TENANT_ID"))); tenantID != "" {
+		return tenantID
 	}
-	return tenantID
+	return "tenant1"
 }
 
 func activeWorkerID() string {
@@ -69,8 +68,6 @@ func cassandraConsistencyForTier(tier string) gocql.Consistency {
 	switch normalizeTenantTier(tier) {
 	case tenantTierSilver:
 		return gocql.One
-	case tenantTierGold:
-		return gocql.Quorum
 	default:
 		return gocql.Quorum
 	}
@@ -190,10 +187,7 @@ func schemaForTenant(config TenantConfig) (tenantSchemaProfile, error) {
 }
 
 func normalizeSchemaToken(value string) string {
-	normalized := strings.ToLower(strings.TrimSpace(value))
-	normalized = strings.ReplaceAll(normalized, "-", "_")
-	normalized = strings.ReplaceAll(normalized, " ", "_")
-	return normalized
+	return strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(strings.TrimSpace(value)), "-", "_"), " ", "_")
 }
 
 func primaryKeyClause(partitionKeys []string, clusteringKeys []string) string {
@@ -498,13 +492,6 @@ func tableSuffixFromRecord(schema tenantSchemaProfile, record map[string]any) st
 	return tableSuffix
 }
 
-func float32ToText(value *float32) any {
-	if value == nil {
-		return nil
-	}
-	return strconv.FormatFloat(float64(*value), 'f', -1, 32)
-}
-
 func sanitizeIdentifierPart(input string, fallback string) string {
 	trimmed := strings.ToLower(strings.TrimSpace(input))
 	if trimmed == "" {
@@ -584,7 +571,6 @@ func insertBatch(session *gocql.Session, schema tenantSchemaProfile, tableName s
 		return nil
 	}
 
-	// Use UnloggedBatch for better performance
 	batch := session.NewBatch(gocql.UnloggedBatch)
 
 	insertQuery := insertCQL(schema, tableName)
@@ -827,7 +813,6 @@ func consumeMessages(session *gocql.Session) error {
 
 	log.Println("Kafka consumer connected, consuming from topic:", kafkaTopic)
 
-	// Read first message to determine table suffix and create table
 	firstMsg, err := r.ReadMessage(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to read first message: %w", err)
@@ -838,18 +823,13 @@ func consumeMessages(session *gocql.Session) error {
 		return fmt.Errorf("failed to unmarshal first message: %w", err)
 	}
 	tableSuffix := tableSuffixFromRecord(schema, firstRecord)
-	tableName := getTableName(schema, tableSuffix)
+	log.Printf("Detected table_suffix_field=%s value=%s, creating table with profile=%s: %s", schema.TableSuffixField, tableSuffix, schema.Name, getTableName(schema, tableSuffix))
 
-	log.Printf("Detected table_suffix_field=%s value=%s, creating table with profile=%s: %s", schema.TableSuffixField, tableSuffix, schema.Name, tableName)
-
-	// Create table once at the beginning
-	createdTableName, err := createTableIfNotExists(session, schema, tableSuffix)
+	tableName, err := createTableIfNotExists(session, schema, tableSuffix)
 	if err != nil {
 		return err
 	}
-	tableName = createdTableName
 
-	// Start consuming with the first message already read
 	batch := make([]map[string]any, 0, insertBatchSize)
 	batchBytes := int64(0)
 	messageCount := 1
@@ -858,7 +838,6 @@ func consumeMessages(session *gocql.Session) error {
 	lastLogTime := time.Now()
 	lastLogInsert := 0
 
-	// Add first record to batch
 	batch = append(batch, firstRecord)
 	batchBytes += int64(len(firstMsg.Value))
 
@@ -871,7 +850,6 @@ func consumeMessages(session *gocql.Session) error {
 
 		messageCount++
 
-		// Parse JSON as dynamic tenant record
 		record, err := parseKafkaRecord(msg.Value)
 		if err != nil {
 			log.Printf("Warning: Failed to unmarshal message %d: %v", messageCount, err)
@@ -881,7 +859,6 @@ func consumeMessages(session *gocql.Session) error {
 		batch = append(batch, record)
 		batchBytes += int64(len(msg.Value))
 
-		// Insert batch when size reached
 		if len(batch) >= insertBatchSize {
 			batchStart := time.Now()
 			if err := insertBatchWithRetry(session, schema, tableName, batch, insertMaxRetries, insertRetryBaseDelay, insertRetryMaxDelay); err != nil {
@@ -957,7 +934,6 @@ func consumeMessages(session *gocql.Session) error {
 		}
 	}
 
-	// Insert remaining records
 	if len(batch) > 0 {
 		batchStart := time.Now()
 		if err := insertBatchWithRetry(session, schema, tableName, batch, insertMaxRetries, insertRetryBaseDelay, insertRetryMaxDelay); err != nil {
@@ -1080,13 +1056,9 @@ func main() {
 		)
 	}
 
-	// Create cluster
 	cluster := gocql.NewCluster(cassandraHosts...)
-	// cluster := gocql.NewCluster("cassandra1", "cassandra2", "cassandra3", "cassandra4", "cassandra5") // Add more nodes for better performance
 	cluster.Keyspace = cassandraKeyspace
 	cluster.Consistency = tierConsistency
-	// cluster.Consistency = gocql.One
-	//cluster.Consistency = gocql.All
 	cluster.Timeout = 120 * time.Second
 	clusterNumConns := parsePositiveIntEnv("CASSANDRA_NUM_CONNS", 4)
 	if clusterNumConns < 1 {
@@ -1094,10 +1066,8 @@ func main() {
 		clusterNumConns = 4
 	}
 	cluster.NumConns = clusterNumConns
-	// Disable initial host lookup to speed up connection
 	cluster.DisableInitialHostLookup = true
 
-	// Create session
 	session, err := cluster.CreateSession()
 	if err != nil {
 		log.Fatalf("Failed to create session: %v", err)

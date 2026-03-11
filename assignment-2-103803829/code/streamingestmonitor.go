@@ -212,17 +212,11 @@ func evaluateThresholds(report workerPerformanceReport, cfg monitorConfig) []str
 	reasons := make([]string, 0, 2)
 
 	if cfg.minThroughputRPS > 0 && report.ThroughputRecordsPerSec < cfg.minThroughputRPS {
-		reasons = append(
-			reasons,
-			fmt.Sprintf("throughput %.2f rps below minimum %.2f rps", report.ThroughputRecordsPerSec, cfg.minThroughputRPS),
-		)
+		reasons = append(reasons, fmt.Sprintf("throughput %.2f rps below minimum %.2f rps", report.ThroughputRecordsPerSec, cfg.minThroughputRPS))
 	}
 
 	if cfg.maxAvgBatchIngestMS > 0 && report.AvgBatchIngestMS > cfg.maxAvgBatchIngestMS {
-		reasons = append(
-			reasons,
-			fmt.Sprintf("avg batch ingest %.2f ms above maximum %.2f ms", report.AvgBatchIngestMS, cfg.maxAvgBatchIngestMS),
-		)
+		reasons = append(reasons, fmt.Sprintf("avg batch ingest %.2f ms above maximum %.2f ms", report.AvgBatchIngestMS, cfg.maxAvgBatchIngestMS))
 	}
 
 	return reasons
@@ -312,6 +306,5 @@ func bytesToMB(bytes int64) float64 {
 	if bytes <= 0 {
 		return 0
 	}
-
 	return float64(bytes) / (1024.0 * 1024.0)
 }

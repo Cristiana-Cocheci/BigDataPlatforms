@@ -27,6 +27,7 @@ const (
 	silverPipelineDayEnv          = "SILVER_PIPELINE_DAY"
 	silverPipelineModeExtract     = "extract-cache"
 	silverPipelineModeTransform   = "transform-cache"
+	silverPipelineStorageLocal    = "local"
 )
 
 type silverPipelineConfig struct {
@@ -35,8 +36,9 @@ type silverPipelineConfig struct {
 }
 
 type silverPipelineRuntime struct {
-	CacheDir     string                   `yaml:"cache_dir"`
-	BatchManager silverPipelineBatchModel `yaml:"batchmanager"`
+	StorageBackend string                   `yaml:"storage_backend"`
+	CacheDir       string                   `yaml:"cache_dir"`
+	BatchManager   silverPipelineBatchModel `yaml:"batchmanager"`
 }
 
 type silverPipelineBatchModel struct {
@@ -139,8 +141,7 @@ func runBatch(cacheDir string, inputGlob string, stateFilePath string, composeFi
 		}
 
 		recordedAt := time.Now().UTC().Format(time.RFC3339)
-		recordedFiles := recordFilesInState(&state, managedFiles, recordedAt)
-		if recordedFiles > 0 {
+		if recordFilesInState(&state, managedFiles, recordedAt) > 0 {
 			if err := saveBatchManagerState(stateFilePath, state); err != nil {
 				return err
 			}
@@ -223,14 +224,13 @@ func cleanupProcessedCacheFiles(cacheDir string, inputGlob string, stateFilePath
 
 	deletedFiles := 0
 	recordedAt := time.Now().UTC().Format(time.RFC3339)
+	if state.Files == nil {
+		state.Files = make(map[string]batchManagerFileState)
+	}
 
 	for _, file := range matchedFiles {
 		if err := os.Remove(file.Path); err != nil {
 			return fmt.Errorf("failed to delete cache file %s: %w", file.Path, err)
-		}
-
-		if state.Files == nil {
-			state.Files = make(map[string]batchManagerFileState)
 		}
 
 		state.Files[file.Name] = batchManagerFileState{
@@ -420,7 +420,6 @@ func recordFilesInState(state *batchManagerState, files []cacheFileRecord, proce
 		if exists && existing.Size == file.Size && existing.ModTimeUnix == file.ModTimeUnix && existing.ProcessedAt == processedAt {
 			continue
 		}
-
 		state.Files[file.Name] = batchManagerFileState{
 			Size:        file.Size,
 			ModTimeUnix: file.ModTimeUnix,

@@ -20,7 +20,6 @@ func parseNonNegativeInt(raw string) (int, bool) {
 	if err != nil || parsed < 0 {
 		return 0, false
 	}
-
 	return parsed, true
 }
 
@@ -28,7 +27,6 @@ func sourceIdentity() string {
 	if hostname := strings.TrimSpace(os.Getenv("HOSTNAME")); hostname != "" {
 		return hostname
 	}
-
 	return fmt.Sprintf("pid-%d", os.Getpid())
 }
 
@@ -173,11 +171,10 @@ func produceMessages() error {
 		tenantConfig.SourceChunkDir,
 	)
 
-	// Create Kafka writer
 	w := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:      []string{kafkaBrokers},
 		Topic:        kafkaTopic,
-		Balancer:     &kafka.Hash{}, // Use hash balancer for key-based partitioning
+		Balancer:     &kafka.Hash{},
 		RequiredAcks: -1,
 		MaxAttempts:  3,
 	})
@@ -185,7 +182,6 @@ func produceMessages() error {
 
 	log.Println("Kafka producer connected to", kafkaBrokers)
 
-	// Open CSV chunk file
 	filePath := getChunkFilePath(tenantConfig)
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -199,14 +195,12 @@ func produceMessages() error {
 	lineCount := 0
 	messageCount := 0
 
-	// Skip header
 	if scanner.Scan() {
 		lineCount++
 	}
 
 	messages := make([]kafka.Message, 0, kafkaBatchSize)
 
-	// Process each line
 	for scanner.Scan() {
 		lineCount++
 		line := scanner.Text()
@@ -221,7 +215,6 @@ func produceMessages() error {
 			continue
 		}
 
-		// Convert to JSON
 		data, err := json.Marshal(m)
 		if err != nil {
 			log.Printf("Warning: Failed to marshal line %d: %v", lineCount, err)
@@ -229,12 +222,10 @@ func produceMessages() error {
 		}
 
 		messages = append(messages, kafka.Message{
-			// Partition key for kafka is sensor_id, so that all measurements from the same sensor go to the same partition
 			Key:   []byte(strconv.Itoa(m.SensorID)),
 			Value: data,
 		})
 
-		// Send batch to Kafka
 		if len(messages) >= kafkaBatchSize {
 			if err := w.WriteMessages(context.Background(), messages...); err != nil {
 				return fmt.Errorf("failed to write messages: %w", err)
@@ -245,7 +236,6 @@ func produceMessages() error {
 		}
 	}
 
-	// Send remaining messages
 	if len(messages) > 0 {
 		if err := w.WriteMessages(context.Background(), messages...); err != nil {
 			return fmt.Errorf("failed to write remaining messages: %w", err)
@@ -267,61 +257,49 @@ func produceMessages() error {
 
 func parseMeasurement(line string, tenantConfig TenantConfig) (*MeasurementJSON, error) {
 	fields := strings.Split(line, ";")
+	format := strings.ToLower(strings.TrimSpace(tenantConfig.CSVFormat))
 
-	switch strings.ToLower(strings.TrimSpace(tenantConfig.CSVFormat)) {
+	minFields := 0
+	switch format {
 	case csvFormatBME280Full:
-		if len(fields) < 11 {
-			return nil, fmt.Errorf("invalid number of fields for format=%s: %d", tenantConfig.CSVFormat, len(fields))
-		}
-
-		timestamp := strings.TrimSpace(fields[5])
-
-		return &MeasurementJSON{
-			SensorID:         parseInt(strings.TrimSpace(fields[0])),
-			SensorType:       strings.TrimSpace(fields[1]),
-			Location:         parseFloat32(strings.TrimSpace(fields[2])),
-			Lat:              parseFloat32(strings.TrimSpace(fields[3])),
-			Lon:              parseFloat32(strings.TrimSpace(fields[4])),
-			Day:              createDay(timestamp),
-			Hour:             extractHour(timestamp),
-			Timestamp:        timestamp,
-			Pressure:         parseFloat32(strings.TrimSpace(fields[6])),
-			Altitude:         parseFloat32(strings.TrimSpace(fields[7])),
-			PressureSealevel: parseFloat32(strings.TrimSpace(fields[8])),
-			Temperature:      parseFloat32(strings.TrimSpace(fields[9])),
-			Humidity:         parseFloat32(strings.TrimSpace(fields[10])),
-		}, nil
-
+		minFields = 11
 	case csvFormatDHT22Compact:
-		if len(fields) < 8 {
-			return nil, fmt.Errorf("invalid number of fields for format=%s: %d", tenantConfig.CSVFormat, len(fields))
-		}
-
-		timestamp := strings.TrimSpace(fields[5])
-
-		return &MeasurementJSON{
-			SensorID:         parseInt(strings.TrimSpace(fields[0])),
-			SensorType:       strings.TrimSpace(fields[1]),
-			Location:         parseFloat32(strings.TrimSpace(fields[2])),
-			Lat:              parseFloat32(strings.TrimSpace(fields[3])),
-			Lon:              parseFloat32(strings.TrimSpace(fields[4])),
-			Day:              createDay(timestamp),
-			Hour:             extractHour(timestamp),
-			Timestamp:        timestamp,
-			Pressure:         nil,
-			Altitude:         nil,
-			PressureSealevel: nil,
-			Temperature:      parseFloat32(strings.TrimSpace(fields[6])),
-			Humidity:         parseFloat32(strings.TrimSpace(fields[7])),
-		}, nil
-
+		minFields = 8
 	default:
 		return nil, fmt.Errorf("unsupported csv_format=%s for tenant=%s", tenantConfig.CSVFormat, tenantConfig.TenantID)
 	}
+
+	if len(fields) < minFields {
+		return nil, fmt.Errorf("invalid number of fields for format=%s: %d", tenantConfig.CSVFormat, len(fields))
+	}
+
+	timestamp := strings.TrimSpace(fields[5])
+	measurement := &MeasurementJSON{
+		SensorID:   parseInt(strings.TrimSpace(fields[0])),
+		SensorType: strings.TrimSpace(fields[1]),
+		Location:   parseFloat32(strings.TrimSpace(fields[2])),
+		Lat:        parseFloat32(strings.TrimSpace(fields[3])),
+		Lon:        parseFloat32(strings.TrimSpace(fields[4])),
+		Day:        createDay(timestamp),
+		Hour:       extractHour(timestamp),
+		Timestamp:  timestamp,
+	}
+
+	if format == csvFormatBME280Full {
+		measurement.Pressure = parseFloat32(strings.TrimSpace(fields[6]))
+		measurement.Altitude = parseFloat32(strings.TrimSpace(fields[7]))
+		measurement.PressureSealevel = parseFloat32(strings.TrimSpace(fields[8]))
+		measurement.Temperature = parseFloat32(strings.TrimSpace(fields[9]))
+		measurement.Humidity = parseFloat32(strings.TrimSpace(fields[10]))
+		return measurement, nil
+	}
+
+	measurement.Temperature = parseFloat32(strings.TrimSpace(fields[6]))
+	measurement.Humidity = parseFloat32(strings.TrimSpace(fields[7]))
+	return measurement, nil
 }
 
 func main() {
-	// Wait for Kafka to be ready
 	log.Println("Waiting for Kafka to be ready...")
 	time.Sleep(5 * time.Second)
 

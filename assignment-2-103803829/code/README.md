@@ -177,9 +177,10 @@ Expected behavior in logs:
 Behavior:
 
 - discovers tenant bronze tables matching `<table_prefix>_*_bronze` in the tenant keyspace
-- extracts bronze rows from Cassandra into `tenant_caching_dir/tenant2/*.csv`
-- reloads the cached CSV, drops rows with missing fields, and computes hourly `avg`, `min`, `max`, and `median`
+- extracts bronze rows from Cassandra to the configured cache backend (`local` filesystem or `gcs` bucket objects)
+- reloads cached bronze CSVs from the same backend, drops rows with missing fields, and computes hourly `avg`, `min`, `max`, and `median`
 - writes silver aggregates back to Cassandra tables named `<table_prefix>_<suffix>_silver`
+- writes hourly silver summary CSVs to the configured cache backend
 
 The tenant2 implementation is intentionally tenant-specific. It validates `TENANT_ID=tenant2` and reads its keyspace/table settings from `tenant_configs/tenant2.json` and `tenant_configs/silverpipeline_tenant2.yaml`.
 
@@ -194,10 +195,21 @@ For tenant2, the runtime config is in `tenant_configs/silverpipeline_tenant2.yam
 # build the silver pipeline binary
 go build -o silverpipeline ./silverpipelinecmd
 
-# run it against tenant2 Cassandra bronze tables
+# run local-cache mode (default backend)
 TENANT_ID=tenant2 \
 CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
 CASSANDRA_HOSTS=cassandra1,cassandra2,cassandra3 \
+SILVER_PIPELINE_DAY=2025-06-01 \
+./silverpipeline
+
+# run GCS-cache mode
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=cassandra1,cassandra2,cassandra3 \
+SILVER_PIPELINE_STORAGE_BACKEND=gcs \
+SILVER_PIPELINE_GCS_BUCKET=caching-silverpipeline-bucket \
+SILVER_PIPELINE_GCS_PREFIX=tenant2/silverpipeline-cache \
+SILVER_PIPELINE_GCS_CREDENTIALS_FILE=./silverpipelinecmd/css-cristianacocheci-2025-6126fecb6879.json \
 SILVER_PIPELINE_DAY=2025-06-01 \
 ./silverpipeline
 ```
@@ -208,18 +220,25 @@ Or run it with Docker Compose after bronze ingestion has completed:
 docker compose --profile silver -f docker-compose.yml -f docker-compose.multitenant-brokers.yml run --rm tenant2-silverpipeline
 ```
 
-Black-box contract used by `mysimbdp-batchmanager`:
+Black-box contract used by `mysimbdp-batchmanager` and direct runs:
 
-- `SILVER_PIPELINE_MODE=extract-cache` extracts bronze Cassandra tables into `tenant_caching_dir/tenant2`
+- `SILVER_PIPELINE_MODE=extract-cache` extracts bronze Cassandra tables into the configured backend
 - `SILVER_PIPELINE_DAY=YYYY-MM-DD` scopes bronze extraction to that day partition (`day`)
 - `SILVER_PIPELINE_MODE=transform-cache` transforms cached bronze CSVs and writes tenant2 silver tables
-- `SILVER_PIPELINE_INPUT_FILES=file1.csv,file2.csv` limits `transform-cache` mode to the named cache files
+- `SILVER_PIPELINE_INPUT_FILES=file1.csv,file2.csv` limits `transform-cache` mode to specific cache inputs
+- `SILVER_PIPELINE_STORAGE_BACKEND=local|gcs` selects the cache backend (`local` by default)
+- `SILVER_PIPELINE_GCS_BUCKET`, `SILVER_PIPELINE_GCS_PREFIX`, and `SILVER_PIPELINE_GCS_CREDENTIALS_FILE` configure GCS mode
+- `SILVER_PIPELINE_LOG_DIR` sets the base path for silverpipeline file logs
+- `SILVER_PIPELINE_RUN_LOG_FILE` sets the run-status JSONL filename/path
+- `SILVER_PIPELINE_TASK_LOG_FILE` sets the task-status JSONL filename/path
 
 Expected outputs:
 
-- cached bronze extract CSVs in `tenant_caching_dir/tenant2`
-- cached hourly silver summary CSVs in `tenant_caching_dir/tenant2`
+- local backend: bronze and silver summary CSVs in `tenant_caching_dir/tenant2`
+- GCS backend: bronze and silver summary CSVs in `gs://<bucket>/<prefix>/...`
 - Cassandra silver table for tenant2: `mysimbdp_tenant2.sensor_observations_dht22_silver`
+- run log file (JSONL): default `logs/silverpipeline/tenant2/run_status.jsonl`
+- task log file (JSONL): default `logs/silverpipeline/tenant2/task_status.jsonl`
 
 ## mysimbdp-batchmanager
 
@@ -233,6 +252,9 @@ Behavior:
 - deletes all bronze and silver cache files with `--command cleanup-processed` while recording each deleted file in the batchmanager state
 - invokes the tenant pipeline through `docker compose run --rm tenant2-silverpipeline`
 - passes only contract-level inputs (`SILVER_PIPELINE_MODE`, `SILVER_PIPELINE_DAY`, and `SILVER_PIPELINE_INPUT_FILES`) instead of inspecting pipeline internals
+
+Current limitation:
+`mysimbdp-batchmanager` tracks only local filesystem cache files. For `storage_backend: gcs`, run the tenant2 silverpipeline directly (`SILVER_PIPELINE_MODE=full|extract-cache|transform-cache`) instead of using batchmanager state tracking.
 
 ### Build and run
 
