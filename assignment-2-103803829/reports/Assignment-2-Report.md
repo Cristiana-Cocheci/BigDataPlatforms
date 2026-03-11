@@ -738,6 +738,46 @@ If I count each tenant-day once, the combined daily totals are:
 
 This confirms that the same tenant-aware silverpipeline works for both tenants, and that switching between `local` and `gcs` storage preserves the exact data volumes while changing only runtime and cache location.
 
+### Constraint Violation Demonstration
+
+After adding runtime throughput enforcement in the silverpipeline, I created two intentionally bad configs:
+
+- `code/tenant_configs/silverpipeline_tenant2_bad_throughput.yaml` with `max_records_per_second: 1` and `max_mb_per_second: 1`.
+- `code/tenant_configs/silverpipeline_tenant2_bad_runtime.yaml` with `max_pipeline_runtime_sec: 1`.
+
+Commands used (from `code/` directory):
+
+```sh
+# Throughput violation demo
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=127.0.0.1 \
+SILVER_PIPELINE_CONFIG=./tenant_configs/silverpipeline_tenant2_bad_throughput.yaml \
+SILVER_PIPELINE_MODE=transform-cache \
+SILVER_PIPELINE_INPUT_FILES=sensor_observations_dht22_bronze_20260311_141926_bronze_extract.csv \
+go run ./silverpipelinecmd
+
+# Runtime violation demo
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=127.0.0.1 \
+SILVER_PIPELINE_CONFIG=./tenant_configs/silverpipeline_tenant2_bad_runtime.yaml \
+SILVER_PIPELINE_MODE=full \
+go run ./silverpipelinecmd
+```
+
+Observed results from run logs:
+
+| case | run log | status | observed error |
+|---|---|---|---|
+| bad throughput constraints | `code/logs/silverpipeline/tenant2-bad-throughput/run_status.jsonl` | failed | `silver pipeline throughput validation failed: measured records_per_second 1520756.85 exceeds max_records_per_second 1; measured mb_per_second 109.28 exceeds max_mb_per_second 1` |
+| bad runtime constraints | `code/logs/silverpipeline/tenant2-bad-runtime/run_status.jsonl` | failed | `silver pipeline failed: failed to extract bronze rows from sensor_observations_dht22_bronze for day=2025-06-01 hour=1: context deadline exceeded` |
+
+Task-level evidence is also available in:
+
+- `code/logs/silverpipeline/tenant2-bad-throughput/task_status.jsonl` (contains failed task `validate_throughput_limit`)
+- `code/logs/silverpipeline/tenant2-bad-runtime/task_status.jsonl` (contains failed extract/full-pipeline tasks due to timeout)
+
 ### 5.
 
 

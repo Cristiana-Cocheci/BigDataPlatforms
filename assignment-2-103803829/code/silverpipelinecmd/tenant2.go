@@ -1983,6 +1983,85 @@ func enforceStorageSizeLimitWithTaskLog(ctx context.Context, pipelineConfig silv
 	return nil
 }
 
+func throughputMeasurement(mode string, stats silverPipelineDataStats) (int, int64, string) {
+	switch mode {
+	case silverPipelineModeTransform:
+		if stats.CacheRows > 0 || stats.CacheBytes > 0 {
+			return stats.CacheRows, stats.CacheBytes, "cache"
+		}
+		return stats.CassandraReadRows, stats.CassandraReadBytes, "cassandra_read"
+	case silverPipelineModeExtract, silverPipelineModeFull:
+		if stats.CassandraReadRows > 0 || stats.CassandraReadBytes > 0 {
+			return stats.CassandraReadRows, stats.CassandraReadBytes, "cassandra_read"
+		}
+		return stats.CacheRows, stats.CacheBytes, "cache"
+	default:
+		if stats.CassandraReadRows > 0 || stats.CassandraReadBytes > 0 {
+			return stats.CassandraReadRows, stats.CassandraReadBytes, "cassandra_read"
+		}
+		return stats.CacheRows, stats.CacheBytes, "cache"
+	}
+}
+
+func enforceThroughputConstraintsWithTaskLog(mode string, pipelineConfig silverPipelineConfig, stats silverPipelineDataStats, runDuration time.Duration) (map[string]any, error) {
+	startedAt := time.Now()
+	maxRecordsPerSecond := pipelineConfig.PipelineConstraints.Throughput.MaxRecordsPerSecond
+	maxMBPerSecond := pipelineConfig.PipelineConstraints.Throughput.MaxMBPerSecond
+
+	measuredRows, measuredBytes, measurementBasis := throughputMeasurement(mode, stats)
+	details := map[string]any{
+		"mode":                   mode,
+		"measurement_basis":      measurementBasis,
+		"measured_rows":          measuredRows,
+		"measured_bytes":         measuredBytes,
+		"run_duration_ms":        runDuration.Milliseconds(),
+		"max_records_per_second": maxRecordsPerSecond,
+		"max_mb_per_second":      maxMBPerSecond,
+	}
+
+	if maxRecordsPerSecond <= 0 && maxMBPerSecond <= 0 {
+		details["throughput_constraints_enabled"] = false
+		logSilverPipelineTask("validate_throughput_limit", "success", startedAt, details, nil)
+		return details, nil
+	}
+
+	details["throughput_constraints_enabled"] = true
+
+	if measuredRows == 0 && measuredBytes == 0 {
+		details["throughput_check_skipped"] = true
+		details["throughput_check_reason"] = "no rows or bytes measured for this run"
+		logSilverPipelineTask("validate_throughput_limit", "success", startedAt, details, nil)
+		return details, nil
+	}
+
+	durationSeconds := runDuration.Seconds()
+	if durationSeconds <= 0 {
+		durationSeconds = 0.001
+	}
+
+	measuredRecordsPerSecond := float64(measuredRows) / durationSeconds
+	measuredMBPerSecond := (float64(measuredBytes) / (1024 * 1024)) / durationSeconds
+	details["measured_records_per_second"] = measuredRecordsPerSecond
+	details["measured_mb_per_second"] = measuredMBPerSecond
+
+	violations := make([]string, 0, 2)
+	if maxRecordsPerSecond > 0 && measuredRecordsPerSecond > float64(maxRecordsPerSecond) {
+		violations = append(violations, fmt.Sprintf("measured records_per_second %.2f exceeds max_records_per_second %d", measuredRecordsPerSecond, maxRecordsPerSecond))
+	}
+	if maxMBPerSecond > 0 && measuredMBPerSecond > float64(maxMBPerSecond) {
+		violations = append(violations, fmt.Sprintf("measured mb_per_second %.2f exceeds max_mb_per_second %d", measuredMBPerSecond, maxMBPerSecond))
+	}
+
+	if len(violations) > 0 {
+		err := fmt.Errorf(strings.Join(violations, "; "))
+		logSilverPipelineTask("validate_throughput_limit", "failed", startedAt, details, err)
+		return details, err
+	}
+
+	logSilverPipelineTask("validate_throughput_limit", "success", startedAt, details, nil)
+	return details, nil
+}
+
 func extractBronzeTablesToCache(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client) ([]string, silverPipelineDataStats, error) {
 	if pipelineConfig.Pipeline.StorageBackend == silverPipelineStorageLocal {
 		if err := os.MkdirAll(pipelineConfig.Pipeline.CacheDir, 0o755); err != nil {
@@ -2436,23 +2515,27 @@ func main() {
 
 	runStartedAt := time.Now()
 	runDetails := map[string]any{
-		"extract_day":       extractDayForLog,
-		"extract_page_size": pipelineConfig.Pipeline.ExtractPageSize,
-		"metric_fields":     strings.Join(pipelineConfig.Pipeline.Transformation.MetricFields, ","),
-		"max_runtime_sec":   int(pipelineConfig.maxRuntime().Seconds()),
-		"max_retries":       pipelineConfig.maxRetries(),
-		"run_log_path":      runLogPath,
-		"task_log_path":     taskLogPath,
+		"extract_day":            extractDayForLog,
+		"extract_page_size":      pipelineConfig.Pipeline.ExtractPageSize,
+		"metric_fields":          strings.Join(pipelineConfig.Pipeline.Transformation.MetricFields, ","),
+		"max_runtime_sec":        int(pipelineConfig.maxRuntime().Seconds()),
+		"max_retries":            pipelineConfig.maxRetries(),
+		"max_records_per_second": pipelineConfig.PipelineConstraints.Throughput.MaxRecordsPerSecond,
+		"max_mb_per_second":      pipelineConfig.PipelineConstraints.Throughput.MaxMBPerSecond,
+		"run_log_path":           runLogPath,
+		"task_log_path":          taskLogPath,
 	}
 	pipelineLogger.logRunEvent("started", 0, runDetails, nil)
 
 	var runErr error
+	runStats := silverPipelineDataStats{}
 
 	switch mode {
 	case silverPipelineModeFull:
 		if fullStats, err := runSilverPipeline(ctx, session, tenantConfig, pipelineConfig, gcsClient); err != nil {
 			runErr = fmt.Errorf("silver pipeline failed: %w", err)
 		} else {
+			runStats = fullStats
 			addStatsToDetails(runDetails, fullStats)
 		}
 	case silverPipelineModeExtract:
@@ -2461,6 +2544,7 @@ func main() {
 			runErr = fmt.Errorf("silver pipeline extract failed: %w", err)
 			break
 		}
+		runStats = extractStats
 		addStatsToDetails(runDetails, extractStats)
 		log.Printf("Silver pipeline extract completed: files=%d", len(extractedFiles))
 		logSilverPipelineDataSummary("extract-cache", extractStats)
@@ -2480,7 +2564,18 @@ func main() {
 		} else if transformStats, err := runSilverPipelineFromCache(ctx, session, tenantConfig, pipelineConfig, gcsClient, cacheFiles); err != nil {
 			runErr = fmt.Errorf("silver pipeline transform-cache failed: %w", err)
 		} else {
+			runStats = transformStats
 			addStatsToDetails(runDetails, transformStats)
+		}
+	}
+
+	if runErr == nil {
+		throughputDetails, err := enforceThroughputConstraintsWithTaskLog(mode, pipelineConfig, runStats, time.Since(runStartedAt))
+		for key, value := range throughputDetails {
+			runDetails[key] = value
+		}
+		if err != nil {
+			runErr = fmt.Errorf("silver pipeline throughput validation failed: %w", err)
 		}
 	}
 
