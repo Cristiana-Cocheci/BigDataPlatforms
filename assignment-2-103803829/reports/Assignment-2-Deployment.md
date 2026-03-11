@@ -51,3 +51,43 @@ CASSANDRA_WRITE_SLEEP_MS=0 \
 FORCE_REBUILD_IMAGES=true \
 ./run_benchmark.sh
 ```
+
+
+Silverpipeline guideline 1:
+go build -o batchmanager ./batchmanagercmd
+go build -o silverpipeline ./silverpipelinecmd
+./batchmanager --command extract-cache --tenant tenant2
+./batchmanager --command status --tenant tenant2
+./batchmanager --command run --tenant tenant2
+./batchmanager --command status --tenant tenant2
+./batchmanager --command cleanup-processed --tenant tenant2
+
+
+```sh
+DAY=2025-06-01
+
+# Build latest binaries
+go build -o silverpipeline ./silverpipelinecmd
+go build -o batchmanager ./batchmanagercmd
+
+# Start clean
+./batchmanager --command cleanup-processed --tenant tenant2
+./batchmanager --command status --tenant tenant2
+
+# Extract bronze cache for one day (mandatory --day)
+# Use --build to ensure docker image includes latest code changes
+./batchmanager --command extract-cache --tenant tenant2 --day "$DAY" --build
+./batchmanager --command status --tenant tenant2
+
+# Transform cache -> write silver to Cassandra
+./batchmanager --command run --tenant tenant2
+./batchmanager --command status --tenant tenant2
+
+# Verify silver rows in Cassandra for that day
+docker exec cassandra1 cqlsh -e "CONSISTENCY ONE; SELECT COUNT(*) FROM mysimbdp_tenant2.sensor_observations_dht22_silver WHERE day='${DAY}';"
+docker exec cassandra1 cqlsh -e "CONSISTENCY ONE; SELECT day,hour,records_aggregated,temperature_avg,humidity_avg FROM mysimbdp_tenant2.sensor_observations_dht22_silver WHERE day='${DAY}' LIMIT 5;"
+
+# Optional: clean cache files after test
+./batchmanager --command cleanup-processed --tenant tenant2
+./batchmanager --command status --tenant tenant2
+```

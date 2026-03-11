@@ -26,3 +26,18 @@ pipeline_constraints:
 
   latency:
     max_processing_delay_sec: 7200
+
+pipeline:
+  cache_dir: ./tenant_caching_dir/tenant2
+  extract_page_size: 1000
+  extract_day: "2025-06-01"
+
+  batchmanager:
+    input_glob: "*_bronze_extract.csv"
+    state_file: .batchmanager_state.json
+
+  transformation:
+    drop_rows_with_missing_entries: true
+    metric_fields:
+      - temperature
+      - humidity

@@ -216,3 +216,29 @@ services:
       - CASSANDRA_WRITE_SLEEP_MS=${CASSANDRA_WRITE_SLEEP_MS:-0}
       - MONITOR_REPORT_URL=${MONITOR_REPORT_URL:-http://streamingestmonitor:8081/reports}
       - MONITOR_REPORT_INTERVAL_SECONDS=${MONITOR_REPORT_INTERVAL_SECONDS:-15}
+
+  tenant2-silverpipeline:
+    build:
+      context: .
+      dockerfile: dockerfile
+    profiles:
+      - silver
+    depends_on:
+      cassandra1:
+        condition: service_healthy
+      cassandra2:
+        condition: service_healthy
+      cassandra3:
+        condition: service_healthy
+    networks:
+      - cassandra_net
+    volumes:
+      - ./tenant_configs:/app/tenant_configs:ro
+      - ./tenant_caching_dir:/app/tenant_caching_dir
+    command: ./silverpipeline
+    environment:
+      - TENANT_ID=tenant2
+      - CASSANDRA_KEYSPACE=mysimbdp_tenant2
+      - CASSANDRA_HOSTS=cassandra1,cassandra2,cassandra3
+      - CASSANDRA_NUM_CONNS=${CASSANDRA_NUM_CONNS:-2}
+      - SILVER_PIPELINE_CONFIG=./tenant_configs/silverpipeline_tenant2.yaml

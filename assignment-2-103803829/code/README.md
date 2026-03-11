@@ -170,6 +170,89 @@ Expected behavior in logs:
 
 `report received` and `monitor alert received` log lines also include `window_mb=...` and `total_mb=...` for data-volume tracking.
 
+## Tenant2 silver pipeline
+
+`silverpipelinecmd/main.go` implements the tenant2 silver transformation stage for question 2.
+
+Behavior:
+
+- discovers tenant bronze tables matching `<table_prefix>_*_bronze` in the tenant keyspace
+- extracts bronze rows from Cassandra into `tenant_caching_dir/tenant2/*.csv`
+- reloads the cached CSV, drops rows with missing fields, and computes hourly `avg`, `min`, `max`, and `median`
+- writes silver aggregates back to Cassandra tables named `<table_prefix>_<suffix>_silver`
+
+The tenant2 implementation is intentionally tenant-specific. It validates `TENANT_ID=tenant2` and reads its keyspace/table settings from `tenant_configs/tenant2.json` and `tenant_configs/silverpipeline_tenant2.yaml`.
+
+For tenant2, the runtime config is in `tenant_configs/silverpipeline_tenant2.yaml` and the hourly metrics are computed for:
+
+- `temperature`
+- `humidity`
+
+### Build and run
+
+```sh
+# build the silver pipeline binary
+go build -o silverpipeline ./silverpipelinecmd
+
+# run it against tenant2 Cassandra bronze tables
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=cassandra1,cassandra2,cassandra3 \
+SILVER_PIPELINE_DAY=2025-06-01 \
+./silverpipeline
+```
+
+Or run it with Docker Compose after bronze ingestion has completed:
+
+```sh
+docker compose --profile silver -f docker-compose.yml -f docker-compose.multitenant-brokers.yml run --rm tenant2-silverpipeline
+```
+
+Black-box contract used by `mysimbdp-batchmanager`:
+
+- `SILVER_PIPELINE_MODE=extract-cache` extracts bronze Cassandra tables into `tenant_caching_dir/tenant2`
+- `SILVER_PIPELINE_DAY=YYYY-MM-DD` scopes bronze extraction to that day partition (`day`)
+- `SILVER_PIPELINE_MODE=transform-cache` transforms cached bronze CSVs and writes tenant2 silver tables
+- `SILVER_PIPELINE_INPUT_FILES=file1.csv,file2.csv` limits `transform-cache` mode to the named cache files
+
+Expected outputs:
+
+- cached bronze extract CSVs in `tenant_caching_dir/tenant2`
+- cached hourly silver summary CSVs in `tenant_caching_dir/tenant2`
+- Cassandra silver table for tenant2: `mysimbdp_tenant2.sensor_observations_dht22_silver`
+
+## mysimbdp-batchmanager
+
+`batchmanagercmd/main.go` implements a provider-side batch control component that treats `tenant2-silverpipeline` as a black box.
+
+Behavior:
+
+- scans `tenant_caching_dir/tenant2` for bronze cache files matching `*_bronze_extract.csv`
+- tracks both bronze (`*_bronze_extract.csv`) and silver (`*_silver_hourly.csv`) cache files in `tenant_caching_dir/tenant2/.batchmanager_state.json`
+- requires `--day YYYY-MM-DD` for `--command extract-cache`
+- deletes all bronze and silver cache files with `--command cleanup-processed` while recording each deleted file in the batchmanager state
+- invokes the tenant pipeline through `docker compose run --rm tenant2-silverpipeline`
+- passes only contract-level inputs (`SILVER_PIPELINE_MODE`, `SILVER_PIPELINE_DAY`, and `SILVER_PIPELINE_INPUT_FILES`) instead of inspecting pipeline internals
+
+### Build and run
+
+```sh
+# build batchmanager
+go build -o batchmanager ./batchmanagercmd
+
+# optional: refresh tenant2 cache from bronze Cassandra tables
+./batchmanager --command extract-cache --tenant tenant2 --day 2025-06-01
+
+# inspect pending cache files
+./batchmanager --command status --tenant tenant2
+
+# process pending cached files through the tenant2 black-box silverpipeline
+./batchmanager --command run --tenant tenant2
+
+# delete all bronze and silver cache files for tenant2
+./batchmanager --command cleanup-processed --tenant tenant2
+```
+
 ## Black-box model for streamingestworker
 
 `mysimbdp` imposes an invocation contract. The manager does not inspect worker code; it only starts/stops container instances with agreed runtime parameters.

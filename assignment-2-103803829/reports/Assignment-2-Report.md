@@ -454,10 +454,135 @@ pipeline_constraints:
 IMPLEMENT an instance of a silver pipeline. Explain design as a tenant.
 tenant-caching-dir: local disk within the platform
 
+At first I implemented a silverpipeline for [tenant2](../code/silverpipelinecmd/tenant2.go), because it has a smaller data schema. As a tenant I am doing the following steps: 
+- reading broze data from the database (table **mysimbdp_tenant2.sensor_observations_dht22_bronze**); 
+- writing data (on local disk) into ```tenant_caching_dir/tenant2/sensor_observations_dht22_[timestamp]_runId_bronze_extract.csv```
+- clean cached data by removing rows with missing entries
+- processing data (on local disk) into ```tenant_caching_dir/tenant2/sensor_observations_dht22_[timestamp]_runId_silver_hourly.csv```. The processing includes a per hour aggregation of the temperature and humidity from the daily data, computing min/max/avg/median columns.
+- writing data back into cassandra cluster into the table **mysimbdp_tenant2.sensor_observations_dht22_silver**
+
+
+The reason for using `tenant-caching-dir` in between Cassandra bronze and Cassandra silver is that it gives the provider a controlled staging area. This makes the transformation pipeline easier to inspect, retry, and manage in batch mode. 
+
+The runtime configuration for tenant2 is stored in `code/tenant_configs/silverpipeline_tenant2.yaml`. 
+
+The silverpipeline also follows a black-box format via environment variables:
+
+- `SILVER_PIPELINE_MODE=extract-cache`: extract bronze Cassandra tables into tenant cache files.
+- `SILVER_PIPELINE_MODE=transform-cache`: transform cached bronze files and write silver tables.
+- `SILVER_PIPELINE_INPUT_FILES=...`: optional comma-separated cache files that the platform wants the pipeline to process.
+
+This design lets the provider invoke the pipeline without depending on the internal code structure of the tenant silverpipeline implementation.
+
 3.
 DESIGN AND IMPELMENT mysimbdp-batchmanager, which uses silverpipeline as a blackbox
 
+I implemented `mysimbdp-batchmanager` in `code/batchmanagercmd/main.go`.
+
+Its role is similar to a provider-side control plane for silver transformations. The batchmanager:
+
+- scans `tenant_caching_dir/tenant2` for files matching the tenant2 cache pattern `*_bronze_extract.csv`
+- keeps a state file `.batchmanager_state.json` in the same cache directory to remember which files have already been processed
+- invokes `tenant2-silverpipeline` through docker compose as a black box
+- passes the provider contract variables (`SILVER_PIPELINE_MODE`, `SILVER_PIPELINE_INPUT_FILES`)
+
+This is suitable for mysimbdp because the provider controls the execution lifecycle but not the internal transformation code. 
+
+The batchmanager has 3 useful commands:
+
+- `status`: shows which tenant2 cache files are pending or already processed
+- `extract-cache`: calls the tenant2 silverpipeline to refresh the bronze CSV files from Cassandra with a specific partition day (mandatory flag)
+- `run`: calls the tenant2 silverpipeline to transform the pending cache files
+- `cleanup-processed`: calls the tenant2 silverpipeline to delete already processed bronze cached files
+
+This design has two advantages:
+
+- it preserves the black-box nature of the tenant pipeline
+- it avoids reprocessing unchanged cache files by using the provider-managed state file
+
 4.
+
+In the following sequence of terminal outputs we can see a silverpipeline run for tenant2:
+
+- At first we exctract the new bronze data from cassandra into the cache directory.
+```sh
+./batchmanager --command extract-cache --tenant tenant2 --day 2025-06-01
+
+[+] Running 3/3
+ ✔ Container cassandra1  Running                                                                                                        0.0s 
+ ✔ Container cassandra2  Running                                                                                                        0.0s 
+ ✔ Container cassandra3  Running                                                                                                        0.0s 
+[+] Creating 3/3
+ ✔ Container cassandra1  Running                                                                                                        0.0s 
+ ✔ Container cassandra2  Running                                                                                                        0.0s 
+ ✔ Container cassandra3  Running                                                                                                        0.0s 
+2026/03/11 08:39:32 Silver pipeline starting tenant=tenant2 mode=extract-cache keyspace=mysimbdp_tenant2 consistency=ONE cache_dir=./tenant_caching_dir/tenant2 extract_page_size=1000  extract_day=2025-06-01 metrics=temperature,humidity max_runtime=30m0s max_retries=3
+2026/03/11 08:39:55 Silver pipeline extracted bronze_table=sensor_observations_dht22_bronze day=2025-06-01 raw_rows=2078885 cache_csv=tenant_caching_dir/tenant2/sensor_observations_dht22_bronze_20260311_083932_bronze_extract.csv
+2026/03/11 08:39:55 Silver pipeline extract completed: files=1
+2026/03/11 08:39:55 Silver pipeline completed successfully for tenant=tenant2
+tenant=tenant2 cache refresh completed day=2025-06-01
+```
+
+- Now a new file appeared in the cached directory after succesfully extracting data. Next we check the status of the caching directory. How many cached files are pending, and how many have been resolved? We see only one is pending, and one is resolved.
+```sh
+./batchmanager --command status --tenant tenant2
+
+tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2 matched=2 pending=1 state_file=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2/.batchmanager_state.json
+- processed file=sensor_observations_dht22_bronze_20260311_080837_bronze_extract.csv size=156649308 processed_at=2026-03-11T08:18:38Z
+- pending file=sensor_observations_dht22_bronze_20260311_083932_bronze_extract.csv size=156649308 processed_at=
+```
+
+- Then we run the silverpipeline processing and ingestion back into cassandra.
+```sh
+./batchmanager --command run --tenant tenant2
+
+
+[+] Running 3/3
+ ✔ Container cassandra1  Running                                                                                                        0.0s 
+ ✔ Container cassandra2  Running                                                                                                        0.0s 
+ ✔ Container cassandra3  Running                                                                                                        0.0s 
+[+] Creating 3/3
+ ✔ Container cassandra1  Running                                                                                                        0.0s 
+ ✔ Container cassandra2  Running                                                                                                        0.0s 
+ ✔ Container cassandra3  Running                                                                                                        0.0s 
+2026/03/11 08:41:28 Silver pipeline starting tenant=tenant2 mode=transform-cache keyspace=mysimbdp_tenant2 consistency=ONE cache_dir=./tenant_caching_dir/tenant2 extract_page_size=1000 metrics=temperature,humidity max_runtime=30m0s max_retries=3
+2026/03/11 08:41:30 Silver pipeline completed cache_file=tenant_caching_dir/tenant2/sensor_observations_dht22_bronze_20260311_083932_bronze_extract.csv bronze_table=sensor_observations_dht22_bronze silver_table=mysimbdp_tenant2.sensor_observations_dht22_silver raw_rows=2078885 kept_rows=2078885 dropped_rows=0 silver_rows=24 summary_csv=tenant_caching_dir/tenant2/sensor_observations_dht22_bronze_20260311_083932_silver_hourly.csv metrics=temperature,humidity
+2026/03/11 08:41:30 Silver pipeline completed successfully for tenant=tenant2
+tenant=tenant2 processed_files=1 state_file=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2/.batchmanager_state.json
+```
+
+- After this we can see all files have been processed.
+```sh
+./batchmanager --command status --tenant tenant2
+tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2 matched=2 pending=0 state_file=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2/.batchmanager_state.json
+- processed file=sensor_observations_dht22_bronze_20260311_080837_bronze_extract.csv size=156649308 processed_at=2026-03-11T08:18:38Z
+- processed file=sensor_observations_dht22_bronze_20260311_083932_bronze_extract.csv size=156649308 processed_at=2026-03-11T08:41:30Z
+```
+
+- We can also check the cassandra database to make sure everything was inserted properly. We see the matching 24 rows for the 24 hours of the day, each containing the aggregated numerical data.
+
+```sh
+SELECT COUNT(*) FROM mysimbdp_tenant2.sensor_observations_dht22_silver;
+
+ count
+-------
+    24
+
+(1 rows)
+```
+
+- In the end, we can also run cleanup command and the files will be deleted from cache. We can see that the batchmanager_state.json is empty in the end
+
+```sh
+./batchmanager --command cleanup-processed --tenant tenant2
+
+tenant=tenant2 cleanup-processed completed cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2 matched=0 deleted=0 kept=0 state_file=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2/.batchmanager_state.json
+
+
+./batchmanager --command status --tenant tenant2   
+
+tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2 matched=0 pending=0 state_file=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2/.batchmanager_state.json
+```
 
 5.
 
