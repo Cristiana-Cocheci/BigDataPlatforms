@@ -1,5 +1,0 @@
- Container code-tenant2-source-1  Stopping
- Container code-tenant2-source-1  Stopped
-Going to remove code-tenant2-source-1
- Container code-tenant2-source-1  Removing
- Container code-tenant2-source-1  Removed

@@ -133,6 +133,8 @@ performance of ingestion tests, failures and exceptions, under normal assumed lo
 then for heavy loads but with a limited capability, under-provisoning of
 streamingestworker due to the limitation of mysimbdp resources
 
+**WARNING** The minimum throughput expected by the monitor is set very high, so that the alerting can be observed for testing purposes. In reality, it would be set according to the expected throughput, so about minimum 2000 messages per Kafka producer.
+
 #### Performance Report (Scenario 1): Underprovisioning vs normal run
 
 Description: The normal run has 10 concurrent workers, 10 Kafka partitions. The underprovisioned run has 1 worker and 1 partition. They are both left to run for a total of 120 seconds.
@@ -475,77 +477,4 @@ DESIGN AND IMPELMENT mysimbdp-batchmanager, which uses silverpipeline as a black
 5. improve silverpipeline
 
 
-
-## Under-Provisioned Benchmark Results (Latest Run)
-
-- Run directory: `code/benchmark_results/underprovisioned_20260308_105157`
-- Finished at: `2026-03-08T08:55:44Z`
-- Goal: stress ingestion with intentionally under-provisioned workers (`WORKERS=1`) while source producers send data continuously.
-
-### Test configuration
-
-- `TENANTS=tenant1 tenant2`
-- `WORKERS=1`
-- `TEST_DURATION_SECONDS=90`
-- `PREPARE_CHUNKS=false`
-- `RESET_STACK=true`
-- `MIN_THROUGHPUT_RPS=1000000`
-
-Source: `code/benchmark_results/underprovisioned_20260308_105157/test_config.env`
-
-### Monitor and alert summary
-
-- Reports received: `21`
-- Alerts forwarded: `11`
-- Alerts seen by manager: `11`
-- Total ingested data size (MB): `N/A in this legacy run folder; available in new runs as total_ingested_mb`
-
-Source: `code/benchmark_results/underprovisioned_20260308_105157/run_summary.env`
-
-### Throughput and data-size summary (monitor)
-
-- tenant1: `avg 4366.15 rps`, `min 217.22`, `max 5053.53`, `avg batch 5.42 ms`
-- tenant2: `avg 4393.40 rps`, `min 0.00`, `max 5033.88`, `avg batch 4.26 ms`
-
-With the new monitor metric pipeline, `monitor_throughput_by_tenant.csv` also includes:
-- `avg_ingested_mb_per_report`
-- `total_ingested_mb`
-
-Source: `code/benchmark_results/underprovisioned_20260308_105157/monitor_throughput_by_tenant.csv`
-
-### Cassandra end-state validation
-
-- tenant1 inserted (exact via hour partition sum): `549706`
-- tenant2 inserted (direct `COUNT(*)`): `425685`
-- Sample rows are present for both tenants.
-
-Sources:
-- `code/benchmark_results/underprovisioned_20260308_105157/cassandra_counts_tenant1_by_hour.txt`
-- `code/benchmark_results/underprovisioned_20260308_105157/cassandra_counts_tenant2.txt`
-- `code/benchmark_results/underprovisioned_20260308_105157/cassandra_samples_tenant1.txt`
-- `code/benchmark_results/underprovisioned_20260308_105157/cassandra_samples_tenant2.txt`
-
-### Success-rate style processing metric
-
-This benchmark folder does not include a direct `success_rate` field, so the practical processing fraction is computed as:
-
-`inserted_in_cassandra / produced_to_kafka`
-
-- tenant1 produced: `1160000`, inserted: `549706`, processed fraction: `47.39%`
-- tenant2 produced: `2088110`, inserted: `425685`, processed fraction: `20.39%`
-- combined processed fraction: `30.03%`
-
-Notes:
-- Lower fractions in this run mainly reflect intentional under-provisioning and limited runtime, leaving backlog in Kafka.
-- Worker logs for this run show no insert errors.
-
-### Chunk-size note
-
-- In this latest run, chunk prep was disabled (`PREPARE_CHUNKS=false`), so initial chunk-size lines are not present in this run folder.
-- Example run with chunk-size lines: `code/benchmark_results/underprovisioned_20260308_103528/manager_start_tenant1.txt`
-- `Total rows: 2914834`
-- `Number of chunks: 1`
-- `Rows per chunk: 2914834`
-
-## Benchmark Addendum (Requested Full Reports)
 

@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
+# Exit on first error, undefined variable, or failed pipeline command.
 set -euo pipefail
 
+# Run from the script directory so all relative paths resolve consistently.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Compose stack: base services + multitenant broker override file.
 COMPOSE_FILES=("-f" "docker-compose.yml" "-f" "docker-compose.multitenant-brokers.yml")
 
+# Wrapper to ensure every compose invocation uses the same file set.
 compose() {
   docker compose "${COMPOSE_FILES[@]}" "$@"
 }
 
+# Emit UTC timestamp in ISO-like format for metadata files.
 timestamp_utc() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
+# Fail fast when a required command is not installed.
 require_cmd() {
   local cmd="$1"
   if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -22,6 +28,7 @@ require_cmd() {
   fi
 }
 
+# Tenant -> worker service name mapping.
 worker_service_for_tenant() {
   case "$1" in
     tenant1) echo "tenant1-streamingestworker" ;;
@@ -30,6 +37,7 @@ worker_service_for_tenant() {
   esac
 }
 
+# Tenant -> source/producer service name mapping.
 source_service_for_tenant() {
   case "$1" in
     tenant1) echo "tenant1-source" ;;
@@ -38,6 +46,7 @@ source_service_for_tenant() {
   esac
 }
 
+# Tenant -> Cassandra keyspace mapping.
 keyspace_for_tenant() {
   case "$1" in
     tenant1) echo "mysimbdp_tenant1" ;;
@@ -46,6 +55,7 @@ keyspace_for_tenant() {
   esac
 }
 
+# Tenant -> Kafka broker container mapping.
 kafka_container_for_tenant() {
   case "$1" in
     tenant1) echo "kafka-tenant1" ;;
@@ -54,6 +64,7 @@ kafka_container_for_tenant() {
   esac
 }
 
+# Tenant -> Kafka topic mapping.
 kafka_topic_for_tenant() {
   case "$1" in
     tenant1) echo "bme280-measurements" ;;
@@ -62,6 +73,7 @@ kafka_topic_for_tenant() {
   esac
 }
 
+# Tenant -> Kafka consumer group mapping used by workers.
 kafka_consumer_group_for_tenant() {
   case "$1" in
     tenant1) echo "tenant1-ingest-group" ;;
@@ -70,15 +82,18 @@ kafka_consumer_group_for_tenant() {
   esac
 }
 
+# Make arbitrary names safe for artifact filenames.
 sanitize_name() {
   printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_'
 }
 
+# Unified logger: print to console and append to per-run log file.
 log() {
   local msg="$1"
   printf '[%s] %s\n' "$(date +"%H:%M:%S")" "$msg" | tee -a "$RUN_DIR/run.log"
 }
 
+# Wait until a container is healthy/running or timeout expires.
 wait_for_container_ready() {
   local container_name="$1"
   local timeout_seconds="$2"
@@ -99,6 +114,7 @@ wait_for_container_ready() {
   return 1
 }
 
+# Read total Kafka lag for one tenant by summing lag across partitions.
 tenant_kafka_total_lag() {
   local tenant="$1"
   local kafka_container
@@ -127,6 +143,7 @@ tenant_kafka_total_lag() {
   return 1
 }
 
+# Poll Kafka lag until tenant backlog drains to zero or timeout is reached.
 wait_for_tenant_drain() {
   local tenant="$1"
   local timeout_seconds="$2"
@@ -152,6 +169,7 @@ wait_for_tenant_drain() {
   return 1
 }
 
+# Stop only the source producer for one tenant (workers keep draining).
 stop_source_only_for_tenant() {
   local tenant="$1"
   local source_service
@@ -159,6 +177,7 @@ stop_source_only_for_tenant() {
   compose stop "$source_service"
 }
 
+# Remove the tenant source container after it has been stopped.
 remove_stopped_source_for_tenant() {
   local tenant="$1"
   local source_service
@@ -166,6 +185,7 @@ remove_stopped_source_for_tenant() {
   compose rm -f "$source_service"
 }
 
+# Snapshot logs from selected services since ingest start time.
 collect_service_logs() {
   local since="$1"
   local service
@@ -177,6 +197,7 @@ collect_service_logs() {
   done
 }
 
+# Build per-tenant monitor summary CSV + global monitor counters.
 collect_monitor_summary() {
   local monitor_log="$RUN_DIR/log_streamingestmonitor.txt"
   local manager_log="$RUN_DIR/log_streamingestmanager.txt"
@@ -186,6 +207,7 @@ collect_monitor_summary() {
   alerts="$(grep -c "alert forwarded:" "$monitor_log" 2>/dev/null || true)"
   manager_alerts="$(grep -c "monitor alert received:" "$manager_log" 2>/dev/null || true)"
 
+  # Parse monitor reports and aggregate throughput/batch/MB stats by tenant.
   awk '
 /report received:/ {
     tenant=""; worker=""; throughput=""; avg_batch=""; window_mb=""; total_mb=""; mbps="";
@@ -270,6 +292,7 @@ END {
 }
 ' "$monitor_log" >"$RUN_DIR/monitor_throughput_by_tenant.csv"
 
+  # Sum total_ingested_mb across all tenant rows in the generated summary.
   total_ingested_mb="$(awk -F, '
 FNR == 1 {
   total_col = 0;
@@ -297,6 +320,7 @@ END {
   } >"$RUN_DIR/monitor_counters.env"
 }
 
+# Convert container-mounted /data paths to repository-relative host paths.
 map_container_data_path_to_host() {
   local path="$1"
   if [[ "$path" == /data/* ]]; then
@@ -307,6 +331,7 @@ map_container_data_path_to_host() {
   printf '%s\n' "$path"
 }
 
+# Read tenant config and resolve the source CSV path on the host filesystem.
 source_csv_host_path_for_tenant() {
   local tenant="$1"
   local config_path="${TENANT_CONFIG_DIR}/${tenant}.json"
@@ -324,6 +349,7 @@ source_csv_host_path_for_tenant() {
   map_container_data_path_to_host "$source_csv"
 }
 
+# Return CSV data row count (excluding header row).
 count_csv_data_rows() {
   local csv_file="$1"
 
@@ -334,6 +360,7 @@ count_csv_data_rows() {
   awk 'END { if (NR > 0) { print NR - 1 } else { print 0 } }' "$csv_file"
 }
 
+# Build CSV of expected row counts per tenant from manager output or source file fallback.
 collect_expected_rows_by_tenant() {
   local output_file="$RUN_DIR/initial_rows_by_tenant.csv"
   local tenant
@@ -345,10 +372,12 @@ collect_expected_rows_by_tenant() {
       local initial_rows=""
 
       if [[ -f "$manager_start_file" ]]; then
+        # Prefer manager-reported total rows when available.
         initial_rows="$(awk -F': ' '/^Total rows:[[:space:]]*[0-9]+/ {print $2; exit}' "$manager_start_file" 2>/dev/null || true)"
       fi
 
       if [[ -z "$initial_rows" ]]; then
+        # Fallback: infer expected rows directly from tenant source CSV.
         local source_csv_host
         source_csv_host="$(source_csv_host_path_for_tenant "$tenant" 2>/dev/null || true)"
         if [[ -n "$source_csv_host" ]]; then
@@ -365,6 +394,7 @@ collect_expected_rows_by_tenant() {
   } >"$output_file"
 }
 
+# Sum Cassandra per-table daily counts into one inserted-row total per tenant.
 collect_inserted_rows_by_tenant() {
   local output_file="$RUN_DIR/cassandra_rows_by_tenant.csv"
   local tenant
@@ -388,6 +418,7 @@ collect_inserted_rows_by_tenant() {
   } >"$output_file"
 }
 
+# Parse source logs and capture max produced message total per source container.
 collect_producer_rows_by_tenant() {
   local output_file="$RUN_DIR/producer_rows_by_tenant.csv"
   local tenant
@@ -403,6 +434,7 @@ collect_producer_rows_by_tenant() {
       source_log="$RUN_DIR/log_$(sanitize_name "$source_service").txt"
 
       if [[ -f "$source_log" ]]; then
+        # Some source logs emit incremental totals; keep max per container and sum them.
         producer_rows="$(awk '
 index($0, "Total messages produced:") > 0 {
   container = $1
@@ -449,6 +481,7 @@ END {
   } >"$output_file"
 }
 
+# Count duplicated logical rows in a source CSV using (day, hour, sensor, timestamp).
 count_duplicate_rows_in_source_csv() {
   local csv_file="$1"
 
@@ -475,6 +508,7 @@ NR > 1 {
 ' "$csv_file" | LC_ALL=C sort | uniq -c | awk '{if ($1 > 1) dup += $1 - 1} END {print dup + 0}'
 }
 
+# Build per-tenant CSV of duplicate rows detected in source files.
 collect_duplicate_rows_by_tenant() {
   local output_file="$RUN_DIR/duplicate_rows_by_tenant.csv"
   local tenant
@@ -499,6 +533,7 @@ collect_duplicate_rows_by_tenant() {
   } >"$output_file"
 }
 
+# Join row-count and exception artifacts onto the monitor throughput summary CSV.
 append_row_counts_to_monitor_summary() {
   local monitor_csv="$RUN_DIR/monitor_throughput_by_tenant.csv"
   local initial_csv="$RUN_DIR/initial_rows_by_tenant.csv"
@@ -512,6 +547,7 @@ append_row_counts_to_monitor_summary() {
     return
   fi
 
+  # Multi-file join by tenant using AWK maps.
   awk -F, '
 BEGIN {
   OFS=",";
@@ -561,9 +597,11 @@ FNR == 1 {
 }
 ' "$initial_csv" "$inserted_csv" "$producer_rows_csv" "$duplicate_rows_csv" "$insert_exception_counts_csv" "$monitor_csv" >"$temp_csv"
 
+  # Atomic replace of the summary file.
   mv "$temp_csv" "$monitor_csv"
 }
 
+# Extract insert-related worker errors and count them per tenant.
 collect_insert_exception_artifacts() {
   local details_file="$RUN_DIR/worker_insert_exceptions_by_tenant.txt"
   local counts_file="$RUN_DIR/worker_insert_exception_counts.csv"
@@ -585,6 +623,7 @@ collect_insert_exception_artifacts() {
       {
         echo "=== tenant=${tenant} service=${worker_service} ==="
         if [[ -f "$worker_log" ]]; then
+          # Keep both a numeric count and full matching lines for debugging.
           exception_count="$(grep -Ec "$insert_exception_regex" "$worker_log" 2>/dev/null || true)"
           grep -En "$insert_exception_regex" "$worker_log" 2>/dev/null || echo "no insert exceptions found"
         else
@@ -602,11 +641,13 @@ collect_insert_exception_artifacts() {
   } >"$counts_file"
 }
 
+# Helper wrapper for cqlsh queries with a configurable request timeout.
 run_cqlsh_query() {
   local query="$1"
   docker exec -i cassandra1 cqlsh --request-timeout="$CQLSH_REQUEST_TIMEOUT_SECONDS" -e "$query"
 }
 
+# Capture keyspace metadata, per-hour counts, and data samples for one tenant.
 collect_cassandra_snapshot() {
   local tenant="$1"
   local keyspace="$2"
@@ -617,6 +658,7 @@ collect_cassandra_snapshot() {
   local counts_file="$RUN_DIR/cassandra_counts_${tenant}.txt"
   local samples_file="$RUN_DIR/cassandra_samples_${tenant}.txt"
 
+  # Snapshot available tables + tenant schema registry state.
   run_cqlsh_query "SELECT table_name FROM system_schema.tables WHERE keyspace_name='${keyspace}';" >"$table_file" 2>&1 || true
   run_cqlsh_query "SELECT tenant_id, schema_profile, updated_at FROM ${keyspace}.tenant_schema_registry;" >"$registry_file" 2>&1 || true
 
@@ -644,6 +686,7 @@ collect_cassandra_snapshot() {
       table_total=0
       table_failed=0
 
+      # Count rows partition-by-partition (hour 0..23) for the benchmark day.
       for hour in {0..23}; do
         if partition_output="$(run_cqlsh_query "SELECT COUNT(*) FROM ${keyspace}.${table} WHERE day='${count_day}' AND hour = ${hour};" 2>&1)"; then
           partition_count="$(printf '%s\n' "$partition_output" | awk '/^[[:space:]]+[0-9]+[[:space:]]*$/ {gsub(/ /, ""); print; exit}')"
@@ -664,6 +707,7 @@ collect_cassandra_snapshot() {
 
       echo "total_for_day=${table_total}"
       if [[ "$table_failed" -eq 1 ]]; then
+        # If COUNT queries fail, include Cassandra size estimates as fallback context.
         echo "One or more partition count queries failed; falling back to size estimates"
         run_cqlsh_query "SELECT mean_partition_size, partitions_count FROM system.size_estimates WHERE keyspace_name='${keyspace}' AND table_name='${table}';" || true
       fi
@@ -678,6 +722,7 @@ collect_cassandra_snapshot() {
   done
 }
 
+# Hard dependencies required by this script.
 require_cmd docker
 require_cmd go
 require_cmd awk
@@ -685,6 +730,7 @@ require_cmd grep
 require_cmd sort
 require_cmd uniq
 
+# Runtime configuration (can be overridden via environment variables).
 TENANTS="${TENANTS:-tenant1 tenant2}"
 WORKERS="${WORKERS:-1}"
 PARTITIONS="${PARTITIONS:-$WORKERS}"
@@ -712,17 +758,20 @@ CASSANDRA_INSERT_BATCH_SIZE="${CASSANDRA_INSERT_BATCH_SIZE:-25}"
 CASSANDRA_WRITE_SLEEP_MS="${CASSANDRA_WRITE_SLEEP_MS:-0}"
 TENANT_CONFIG_DIR="${TENANT_CONFIG_DIR:-./tenant_configs}"
 
+# Per-run output directory under benchmark_results/.
 RESULTS_ROOT="${RESULTS_ROOT:-benchmark_results}"
 RUN_ID="$(date +"%Y%m%d_%H%M%S")"
 RUN_DIR="${RESULTS_ROOT}/test_${RUN_ID}"
 mkdir -p "$RUN_DIR"
 
+# Parse tenant list and validate non-empty.
 read -r -a TENANT_LIST <<<"$TENANTS"
 if [[ "${#TENANT_LIST[@]}" -eq 0 ]]; then
   echo "TENANTS is empty" >&2
   exit 1
 fi
 
+# Validate numeric tunables early to fail fast on invalid inputs.
 if ! [[ "$PARTITIONS" =~ ^[0-9]+$ ]] || [[ "$PARTITIONS" -lt 1 ]]; then
   echo "PARTITIONS must be an integer >= 1" >&2
   exit 1
@@ -753,22 +802,26 @@ if ! [[ "$CASSANDRA_WRITE_SLEEP_MS" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
+# Validate that each tenant has known service/keyspace mappings.
 for tenant in "${TENANT_LIST[@]}"; do
   worker_service_for_tenant "$tenant" >/dev/null
   source_service_for_tenant "$tenant" >/dev/null
   keyspace_for_tenant "$tenant" >/dev/null
 done
 
+# Chunk preparation path uses Python scripts.
 if [[ "$PREPARE_CHUNKS" == "true" ]]; then
   require_cmd python3
 fi
 
+# Services whose logs are always captured as artifacts.
 SERVICES_TO_CAPTURE=("streamingestmanager" "streamingestmonitor")
 for tenant in "${TENANT_LIST[@]}"; do
   SERVICES_TO_CAPTURE+=("$(worker_service_for_tenant "$tenant")")
   SERVICES_TO_CAPTURE+=("$(source_service_for_tenant "$tenant")")
 done
 
+# Persist effective test configuration for reproducibility.
 cat >"$RUN_DIR/test_config.env" <<EOF
 RUN_ID=$RUN_ID
 STARTED_AT_UTC=$(timestamp_utc)
@@ -800,11 +853,13 @@ EOF
 
 log "Benchmark output directory: $RUN_DIR"
 
+# Optional full environment reset to guarantee a clean run.
 if [[ "$RESET_STACK" == "true" ]]; then
   log "Resetting compose stack (including volumes)"
   compose down --remove-orphans -v || true
 fi
 
+# Optional image rebuild for fresh binaries in containers.
 if [[ "$FORCE_REBUILD_IMAGES" == "true" ]]; then
   log "Rebuilding docker images"
   build_services=("streamingestmanager" "streamingestmonitor")
@@ -819,6 +874,7 @@ fi
 log "Building manager binary"
 go build -o streamingestmanager streamingestmanager.go
 
+# Export tuning knobs consumed by monitor/worker/source services.
 export MONITOR_MIN_THROUGHPUT_RPS="$MIN_THROUGHPUT_RPS"
 export MONITOR_MAX_AVG_BATCH_INGEST_MS="$MAX_AVG_BATCH_INGEST_MS"
 export MONITOR_ALERT_COOLDOWN_SECONDS="$ALERT_COOLDOWN_SECONDS"
@@ -832,10 +888,12 @@ export SOURCE_CHUNK_AUTO_ASSIGN="$SOURCE_CHUNK_AUTO_ASSIGN"
 log "Cassandra write settings: num_conns=${CASSANDRA_NUM_CONNS} batch_size=${CASSANDRA_INSERT_BATCH_SIZE} write_sleep_ms=${CASSANDRA_WRITE_SLEEP_MS}"
 log "Source chunk settings: source_replicas=${SOURCE_REPLICAS} source_num_chunks=${SOURCE_NUM_CHUNKS} auto_assign=${SOURCE_CHUNK_AUTO_ASSIGN}"
 
+# Start storage/messaging infrastructure and control plane.
 log "Starting infrastructure and control services"
 compose up -d cassandra1 cassandra2 cassandra3 zookeeper-tenant1 kafka-tenant1 zookeeper-tenant2 kafka-tenant2 streamingestmanager
 compose up -d --force-recreate streamingestmonitor
 
+# Block until Cassandra cluster is healthy.
 for cassandra_node in cassandra1 cassandra2 cassandra3; do
   log "Waiting for ${cassandra_node} to be ready"
   if ! wait_for_container_ready "$cassandra_node" 360; then
@@ -844,6 +902,7 @@ for cassandra_node in cassandra1 cassandra2 cassandra3; do
   fi
 done
 
+# Block until per-tenant Kafka brokers are healthy.
 for tenant in "${TENANT_LIST[@]}"; do
   kafka_container="$(kafka_container_for_tenant "$tenant")"
   log "Waiting for ${kafka_container} to be ready"
@@ -856,6 +915,7 @@ done
 INGEST_START_UTC="$(timestamp_utc)"
 echo "INGEST_START_UTC=$INGEST_START_UTC" >>"$RUN_DIR/test_config.env"
 
+# Start each tenant ingest pipeline (worker(s) + source producer).
 for tenant in "${TENANT_LIST[@]}"; do
   log "Starting tenant=${tenant} workers=${WORKERS} source_replicas=${SOURCE_REPLICAS} partitions=${PARTITIONS} with source producer"
   start_args=(--command start --tenant "$tenant" --workers "$WORKERS" --source-replicas "$SOURCE_REPLICAS" --partitions "$PARTITIONS" --with-source)
@@ -863,19 +923,24 @@ for tenant in "${TENANT_LIST[@]}"; do
     start_args+=(--prepare-chunks)
   fi
 
+# Use manager to start tenant pipelines
   ./streamingestmanager "${start_args[@]}" >"$RUN_DIR/manager_start_${tenant}.txt" 2>&1
   compose ps >"$RUN_DIR/compose_ps_after_start_${tenant}.txt" 2>&1 || true
 done
 
+# Let the workload run for the requested benchmark duration.
 log "Collecting runtime for ${TEST_DURATION_SECONDS}s"
 sleep "$TEST_DURATION_SECONDS"
 
+# Capture compose state before initiating shutdown.
 log "Capturing compose status before shutdown"
 compose ps >"$RUN_DIR/compose_ps_before_stop.txt" 2>&1 || true
 
+# Track whether each tenant drained successfully before stop.
 echo "tenant,drain_status,final_kafka_lag" >"$RUN_DIR/drain_status_by_tenant.csv"
 
 if [[ "$DRAIN_BEFORE_STOP" == "true" ]]; then
+  # Graceful shutdown: stop producers first, then wait for worker lag to drain.
   log "Drain-aware shutdown enabled: stopping sources before draining workers"
 
   for tenant in "${TENANT_LIST[@]}"; do
@@ -900,10 +965,12 @@ if [[ "$DRAIN_BEFORE_STOP" == "true" ]]; then
     echo "${tenant},${local_drain_status},${final_lag}" >>"$RUN_DIR/drain_status_by_tenant.csv"
   done
 
+  # Capture logs while workers are still running at post-drain point.
   log "Capturing logs and monitor summary after drain wait"
   collect_service_logs "$INGEST_START_UTC"
   collect_monitor_summary
 
+  # Stop workers after drain accounting; optionally stop broker too.
   for tenant in "${TENANT_LIST[@]}"; do
     log "Stopping tenant=${tenant} worker after drain"
     stop_args=(--command stop --tenant "$tenant" --stop-source=false)
@@ -911,10 +978,12 @@ if [[ "$DRAIN_BEFORE_STOP" == "true" ]]; then
       stop_args+=(--stop-broker)
     fi
 
+# Use manager to stop tenant pipelines
     ./streamingestmanager "${stop_args[@]}" >"$RUN_DIR/manager_stop_${tenant}.txt" 2>&1 || true
     remove_stopped_source_for_tenant "$tenant" >>"$RUN_DIR/source_stop_${tenant}.txt" 2>&1 || true
   done
 else
+  # Fast shutdown: no drain wait, capture logs and stop immediately.
   log "Drain-aware shutdown disabled: capturing logs and stopping source/worker immediately"
   collect_service_logs "$INGEST_START_UTC"
   collect_monitor_summary
@@ -931,20 +1000,24 @@ else
   done
 fi
 
+# Optional settle period to allow in-flight writes to complete.
 if [[ "$POST_STOP_SETTLE_SECONDS" -gt 0 ]]; then
   log "Waiting ${POST_STOP_SETTLE_SECONDS}s for Cassandra write pressure to settle"
   sleep "$POST_STOP_SETTLE_SECONDS"
 fi
 
+# Snapshot final control-plane state.
 compose ps >"$RUN_DIR/compose_ps_final.txt" 2>&1 || true
 ./streamingestmanager --command status >"$RUN_DIR/manager_status_final.txt" 2>&1 || true
 
+# Collect Cassandra table metadata/counts/samples per tenant.
 for tenant in "${TENANT_LIST[@]}"; do
   keyspace="$(keyspace_for_tenant "$tenant")"
   log "Collecting Cassandra snapshot for tenant=${tenant} keyspace=${keyspace}"
   collect_cassandra_snapshot "$tenant" "$keyspace"
 done
 
+# Build final per-tenant correctness metrics from multiple artifact sources.
 log "Computing expected, produced, inserted, duplicate, and exception row metrics by tenant"
 collect_expected_rows_by_tenant
 collect_producer_rows_by_tenant
@@ -953,6 +1026,7 @@ collect_duplicate_rows_by_tenant
 collect_insert_exception_artifacts
 append_row_counts_to_monitor_summary
 
+# Extract compact performance lines for easier report inclusion.
 log "Extracting worker and producer performance lines"
 : >"$RUN_DIR/worker_performance_lines.txt"
 : >"$RUN_DIR/producer_performance_lines.txt"
@@ -965,15 +1039,18 @@ for tenant in "${TENANT_LIST[@]}"; do
   grep -E "Produced [0-9]+ messages|Performance: Duration=" "$RUN_DIR/log_$(sanitize_name "$source_service").txt" >>"$RUN_DIR/producer_performance_lines.txt" 2>/dev/null || true
 done
 
+# Record run end timestamp and synthesize top-level summary env file.
 FINISHED_AT_UTC="$(timestamp_utc)"
 echo "FINISHED_AT_UTC=$FINISHED_AT_UTC" >>"$RUN_DIR/test_config.env"
 
+# Build compact env summary consumed by post-processing/report scripts.
 {
   echo "run_dir=$RUN_DIR"
   echo "finished_at_utc=$FINISHED_AT_UTC"
   cat "$RUN_DIR/monitor_counters.env"
 } >"$RUN_DIR/run_summary.env"
 
+# Print the key artifact paths generated for this benchmark run.
 log "Benchmark completed. Main outputs:"
 log "- $RUN_DIR/run_summary.env"
 log "- $RUN_DIR/monitor_throughput_by_tenant.csv"

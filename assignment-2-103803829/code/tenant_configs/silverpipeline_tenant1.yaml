@@ -1,0 +1,28 @@
+tenant_id: tenant1
+
+pipeline_constraints:
+
+  compute:
+    max_cpu_cores: 4
+    max_memory_gb: 8
+    max_parallel_jobs: 1
+
+  throughput:
+    max_records_per_second: 10000
+    max_mb_per_second: 50
+
+  scheduling:
+    pipeline_type: batch
+    min_batch_interval_sec: 86400
+    max_pipeline_runtime_sec: 1800
+
+  storage:
+    max_silver_storage_gb: 100
+    silver_retention_days: 30
+
+  reliability:
+    max_retries: 3
+    checkpoint_interval_sec: 300
+
+  latency:
+    max_processing_delay_sec: 7200
