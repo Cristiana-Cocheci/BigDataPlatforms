@@ -806,9 +806,43 @@ With this information I could create a Data Validation component in the architec
 In order to **save the detected quality of data** in the platform I could extend the monitoring metrics from **streamingestmonitor** with quality metrics. This way I could account for quality rate, for example. This will make sure logs of the impure data will remain stored in the platform.
 
 
-4. new architecture for multiple silverpipelines
+4. 
+In this scenario, I would allow a tenant to multiple pipeline definitions, each with its own constraints. For example:
 
-5. improve silverpipeline
+```json
+tenant_id: tenant2
 
+silver_pipelines:
+  pipeline1:
+    description: "..."
+    compute: "..."
+    scheduling: "..."
+    etc: "..."
+  
+  pipeline2:
+    description: "..."
+    compute: "..."
+    scheduling: "..."
+    etc: "..."
+```
 
+Then, I would extend **batchmanager** to track a list of given pipelines per tenant, instead of assuming a single pipeline per tenant. The pipelines would each have a pipeline ID from which they would be tracked by the manager.
 
+To avoid conflicts between pipelines, each pipeline should have a different caching directory inside of the tenant root caching directory. Moreover, I would create a batchmanager_state.json per pipeline, to track pending and resolved files.
+
+Another thing to take into account is the scheduling, because each pipeline may have different CPU limits.
+
+The new design would keep the black-box principles of the current design, but also generalize them even more.
+
+5. 
+
+In order to improve performance, fault management and maintenance I would split the pipeline into multiple services: 
+- an independent service that extracts bronze data from the database and writes to cache
+- an independent analasys and transformation service
+- an independent service of writing processed silver data into the database
+
+In this way, if a stage of the process fails, there is no need for redoing the whole process, but only the stage that fails. The bronze data extraction would be triggered daily according to the system scheduling. After full insertion the transformation service would be triggered, after which the insertion service would be triggered. 
+
+Each service would monitor its successes and failures though logs. The logging helps improve debugging and monitoring.
+
+For a heavy load, I could additionally employ a service like Apache Spark. This way data processing could be distributed efficiently, while maintaining a high fault tolerance.
