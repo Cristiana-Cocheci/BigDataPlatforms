@@ -32,7 +32,7 @@ go build -o silverpipeline ./silverpipelinecmd \
 ### 0) Start in code directory
 
 ```sh
-cd assignment-1-103803829/assignment-2-103803829/code
+cd ./assignment-2-103803829/code
 ```
 
 ### 1) Ingestion benchmarking (run_benchmark.sh)

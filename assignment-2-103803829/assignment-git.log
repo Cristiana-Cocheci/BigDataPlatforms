@@ -1,1 +1,126 @@
-...
+git log
+commit d29abc8e1d390d430832dada53adad55dd1b3b49 (HEAD -> main, origin/main)
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Mar 12 20:50:08 2026 +0200
+
+    refining reports
+
+commit 4f522f4ce7df0f4410ea639ce990016f3232f29d
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Mar 12 19:10:18 2026 +0200
+
+    report and commenting
+
+commit 91e137454b59302723e1114fb2d8fe8f8cd3619c
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Mar 12 16:00:09 2026 +0200
+
+    report part 3 almost done
+
+commit 4929847e722cdf2efe1b31abcb077815dc7c6cee
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Mar 12 13:17:46 2026 +0200
+
+    report
+
+commit b8908530ac690afa4b3cdd8ca5f32e33f312b00b
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Mar 12 10:21:30 2026 +0200
+
+    working on report
+
+commit 270b7459800701db78b4b5c4851cd679cef470bc
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Wed Mar 11 20:16:31 2026 +0200
+
+    pipeline failed due to constraints
+
+commit bee33280994e2d07765c221ec794107fd2aff315
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Wed Mar 11 16:28:54 2026 +0200
+
+    metrics for silverpipelines on 2 tenants + report additions
+
+commit 1843775a8619a52941f1a5d90ca7341558d58a16
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Wed Mar 11 14:32:28 2026 +0200
+
+    cloud bucket
+
+commit d2658e738a6f412b6bb26ba261e84adfd70a72fd
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Wed Mar 11 11:50:23 2026 +0200
+
+    silver pipeline tenant 2
+
+commit 1304d647bb585f191a3fab13c60a888a8a8f25df
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Wed Mar 11 09:21:07 2026 +0200
+
+    finished testing, added comments on script
+
+commit 336793efe0e7d91dd68bad97e4a6fb81e954b7e5
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Mar 10 20:19:56 2026 +0200
+
+    added more to report
+
+commit bce33dd7795f31952aba4f8b01509d157e270b5f
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Mar 10 18:48:02 2026 +0200
+
+    fixed chunking, todo repair report
+
+commit 33193163c92e95a06ad45d4d8a81520354b05900
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Mar 10 17:38:34 2026 +0200
+
+    more testing, started part 2
+
+commit e53a14be7fda3a79b49690f87951ff205e638b29
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Mar 10 14:27:11 2026 +0200
+
+    added data size monitoring
+
+commit 90916c4dec49d948b2eea439f13833618708ba81
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Mar 10 12:23:40 2026 +0200
+
+    fixed container startup for quorum consistency
+
+commit 2769da97e4db68b3e6cc2bbf31ab1903922110ef
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Mar 10 10:57:08 2026 +0200
+
+    finetuning benchmarking, added tiers to tenants config
+
+commit e716a73aa28615b825546061475aba77fbf44f1c
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Mon Mar 9 10:13:17 2026 +0200
+
+    benchmarking part 2
+
+commit a3731e0f6203cb33f48279ec027e22b39f77030c
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Sun Mar 8 11:15:10 2026 +0200
+
+    benchmarking part 1
+
+commit 2cb24e8881477ed4e7b19699843e7fe4ca164ab3
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Sun Mar 8 10:09:56 2026 +0200
+
+    monitor, no testing yet
+
+commit ec4a6d07bb9214d7111c2858a22bf04cadf8d517
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Mar 5 11:42:29 2026 +0200
+
+    starting second assignment part 2
+
+commit 15999e91cce6d5f4783d73cb47f109d707708c54
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Mar 5 11:40:43 2026 +0200
+
+    starting second assignment

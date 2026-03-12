@@ -31,7 +31,10 @@ In the current setup, each tenant can also use a different CSV structure and sou
 |36474|DHT22|81266|53.248|-6.124|2025-06-01T00:00:00|13.00|99.90|
 
 
-**Multi-tenancy model** : All tenants will share the same Cassandra cluster, where each tenant *X* has its own keyspace named *mysimbdp_tenantX*. This way, it is easy for mysimpbdp to add and remove tenants based on the principle of pay-per-use for the following reasons:
+**Multi-tenancy model** : 
+Each tenant has a separate kafka broker. 
+
+All tenants will share the same Cassandra cluster, where each tenant *X* has its own keyspace named *mysimbdp_tenantX*. This way, it is easy for mysimpbdp to add and remove tenants based on the principle of pay-per-use for the following reasons:
  - *Rapid Provisioning (Onboarding)*: Adding a new tenant consists in only a CREATE KEYSPACE command. Since the infrastructure (the Cassandra cluster) is already running, there is no need for new containers / virtual machines / new software for every new customer.
  - *Granular Resource Management*: Cassandra allows configurations at the keyspace level. You can use Replication Factors to offer different service tiers, like for example a *gold* tenant might pay more for a replication factor of 3, while a *bronze* tenant pays less for a replication factor of 1.
  - *Instant Decommissioning (Offboarding)*: If a tenant stops paying, you can remove their entire footprint—data, schemas,  using a DROP KEYSPACE command.
@@ -192,7 +195,7 @@ Observations:
 The results demonstrate that under a heavy ingestion workload, the processing capacity of streamingestworker becomes limited by the downstream Cassandra write latency, resulting in reduced throughput, increasing Kafka backlog, and a low fraction of processed records.
 
 ### 4.
-**mysimbdp-streamingestmonitor**: is a HTTP service that recieves worker performanec reports and forwards alerts to **streamingestmanager** when necessary.
+**mysimbdp-streamingestmonitor**: is a HTTP service that receives worker performanec reports and forwards alerts to **streamingestmanager** when necessary.
 
 A report format would look like this:
 ```go
@@ -340,7 +343,7 @@ tenant1-streamingestworker-4  | 2026/03/10 12:42:37 Inserted 25 records (total: 
 tenant1-streamingestworker-4  | 2026/03/10 12:42:37 Inserted 25 records (total: 75, consumed messages: 75)
 ```
 
-A simmiliar exception type happens in tenant2 stream ingest worker logs: a certain worker is not available yet, so the monitor catches and alerts the exceptions, but after startup settles, the exception does not appear anymore.
+A similar exception type happens in tenant2 stream ingest worker logs: a certain worker is not available yet, so the monitor catches and alerts the exceptions, but after startup settles, the exception does not appear anymore.
 
 Overall, the data ingestion system functions without any significant errors and failures. 
 
@@ -701,8 +704,8 @@ Observed results from run logs:
 
 We can also see the failed task detailed logs in:
 
-- [bad_throughput_task_status.jsonl](code/logs/silverpipeline/tenant2-bad-throughput/task_status.jsonl) (contains failed task `validate_throughput_limit`)
-- [bad_runtime_task_status.jsonl](code/logs/silverpipeline/tenant2-bad-runtime/task_status.jsonl) (contains failed full-pipeline tasks due to timeout)
+- [bad_throughput_task_status.jsonl](../code/logs/silverpipeline/tenant2-bad-throughput/task_status.jsonl) (contains failed task `validate_throughput_limit`)
+- [bad_runtime_task_status.jsonl](../code/logs/silverpipeline/tenant2-bad-runtime/task_status.jsonl) (contains failed full-pipeline tasks due to timeout)
 
 ### COMPARING CLOUD WITH LOCAL CACHE
 

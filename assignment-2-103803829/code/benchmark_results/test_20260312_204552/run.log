@@ -25,3 +25,21 @@
 [20:49:40] Stopping tenant=tenant1 worker after drain
 [20:49:41] Stopping tenant=tenant2 worker after drain
 [20:49:42] Waiting 15s for Cassandra write pressure to settle
+[20:49:57] Collecting Cassandra snapshot for tenant=tenant1 keyspace=mysimbdp_tenant1
+[20:50:07] Collecting Cassandra snapshot for tenant=tenant2 keyspace=mysimbdp_tenant2
+[20:50:17] Computing expected, produced, inserted, duplicate, and exception row metrics by tenant
+[20:50:17] Extracting worker and producer performance lines
+[20:50:17] Benchmark completed. Main outputs:
+[20:50:17] - benchmark_results/test_20260312_204552/run_summary.env
+[20:50:17] - benchmark_results/test_20260312_204552/monitor_throughput_by_tenant.csv
+[20:50:17] - benchmark_results/test_20260312_204552/worker_performance_lines.txt
+[20:50:17] - benchmark_results/test_20260312_204552/producer_performance_lines.txt
+[20:50:17] - benchmark_results/test_20260312_204552/cassandra_counts_<tenant>.txt
+[20:50:17] - benchmark_results/test_20260312_204552/cassandra_samples_<tenant>.txt
+[20:50:17] - benchmark_results/test_20260312_204552/initial_rows_by_tenant.csv
+[20:50:17] - benchmark_results/test_20260312_204552/producer_rows_by_tenant.csv
+[20:50:17] - benchmark_results/test_20260312_204552/cassandra_rows_by_tenant.csv
+[20:50:17] - benchmark_results/test_20260312_204552/duplicate_rows_by_tenant.csv
+[20:50:17] - benchmark_results/test_20260312_204552/drain_status_by_tenant.csv
+[20:50:17] - benchmark_results/test_20260312_204552/worker_insert_exception_counts.csv
+[20:50:17] - benchmark_results/test_20260312_204552/worker_insert_exceptions_by_tenant.txt
