@@ -239,7 +239,7 @@ I also designed a **cooldown system**. When an alert is sent, then there is a co
 
 ### 5.
 
-The **mysimbdp-streamingestmonitor** is implemented in (streamingestmonitor.go)[../code/streamingestmonitor.go].
+The **mysimbdp-streamingestmonitor** is implemented in [streamingestmonitor.go](../code/streamingestmonitor.go).
 There, the function *evaluateThresholds* recieves the worker performance and returns a list of possible alert reasons. If the list is empty, then the workers are under normal parameters. The reasons that can be added to the list are : minimum ingestion throughput not met, exceeded average batch ingest.
 
 As explained in the previous point, the **mysimbdp-streamingestmonitor** sends HTTP messages to **streamingestmanager**.
@@ -791,7 +791,20 @@ Another solution would be to keep the current architecture but allow the tenant 
 
 However, I think the first solution is more reliable, as it makes the two components independent of each other.
 
-3. new architecture for monitoring quality of data
+3. In order to **detect the quality of data** the tenants would neet to provide a set of constraints the ingestion system would check. A .json file like the following would suffice:
+
+```json
+"quality_constraints": {
+  "temperature": { "min": -50, "max": 60 },
+  "humidity": { "min": 0, "max": 100 },
+  "pressure": { "min": 80000, "max": 110000 },
+  "reject_if_missing": ["sensor_id", "timestamp"]
+```
+
+With this information I could create a Data Validation component in the architecture that would run inside **streamingestworker** before insertion. If the record matches required criteria, it would be forwarded to the database. If the record does not match the criteria, I could design a **Kafka Dead Letter Queue**, where all corrupted records would be sent and preserved for future inspection, if desired.
+
+In order to **save the detected quality of data** in the platform I could extend the monitoring metrics from **streamingestmonitor** with quality metrics. This way I could account for quality rate, for example. This will make sure logs of the impure data will remain stored in the platform.
+
 
 4. new architecture for multiple silverpipelines
 
