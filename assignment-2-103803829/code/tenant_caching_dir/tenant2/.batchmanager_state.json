@@ -39,6 +39,46 @@
       "size": 2164,
       "mod_time_unix": 1773221900,
       "processed_at": "2026-03-11T09:39:02Z"
+    },
+    "sensor_observations_dht22_bronze_20260311_123438_bronze_extract.csv": {
+      "size": 156649308,
+      "mod_time_unix": 1773232492,
+      "processed_at": "2026-03-12T19:20:06Z"
+    },
+    "sensor_observations_dht22_bronze_20260311_123438_silver_hourly.csv": {
+      "size": 2164,
+      "mod_time_unix": 1773232493,
+      "processed_at": "2026-03-12T19:20:06Z"
+    },
+    "sensor_observations_dht22_bronze_20260311_141926_bronze_extract.csv": {
+      "size": 156649308,
+      "mod_time_unix": 1773238779,
+      "processed_at": "2026-03-12T19:20:06Z"
+    },
+    "sensor_observations_dht22_bronze_20260311_141926_silver_hourly.csv": {
+      "size": 2164,
+      "mod_time_unix": 1773252696,
+      "processed_at": "2026-03-12T19:20:06Z"
+    },
+    "sensor_observations_dht22_bronze_20260311_180530_bronze_extract.csv": {
+      "size": 6053888,
+      "mod_time_unix": 1773252331,
+      "processed_at": "2026-03-12T19:20:06Z"
+    },
+    "sensor_observations_dht22_bronze_20260311_181148_bronze_extract.csv": {
+      "size": 8060928,
+      "mod_time_unix": 1773252709,
+      "processed_at": "2026-03-12T19:20:06Z"
+    },
+    "sensor_observations_dht22_bronze_20260312_183936_bronze_extract.csv": {
+      "size": 33803,
+      "mod_time_unix": 1773340776,
+      "processed_at": "2026-03-12T19:20:06Z"
+    },
+    "sensor_observations_dht22_bronze_20260312_183936_silver_hourly.csv": {
+      "size": 233,
+      "mod_time_unix": 1773340776,
+      "processed_at": "2026-03-12T19:20:06Z"
     }
   }
 }

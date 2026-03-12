@@ -29,7 +29,7 @@ go build -o silverpipeline ./silverpipelinecmd \
 ./batchmanager --command status --tenant tenant2 \
 ./batchmanager --command cleanup-processed --tenant tenant2 \ -->
 
-### 0) Start in code directory
+### 0) Start in code directory and build binaries if necessary
 
 ```sh
 cd ./assignment-2-103803829/code
