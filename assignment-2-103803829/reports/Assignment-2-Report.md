@@ -82,6 +82,9 @@ The manager only runs compose commands, the tenant specific details are a **blac
 **What does the tenant have to do for *streamingestworker***:
  - A tenant provides a configuration JSON file, that will be used by the default Kafka producer and consumer internal for mysimpbdp. The information will be read by Kafka producers and consumers, so the keyspace, tablename, data schema, data source location, Cassandra partion key, etc. will be inserted into the default ingestion workers.
 
+- Kafka `consumer.go` no longer has tenant-specific hardcoded insert statements. It now builds `CREATE TABLE` and `INSERT` CQL directly from each tenant JSON schema.
+
+
 Here is an example of the .json configuration file for ingestion:
 ```json
 {
@@ -344,8 +347,14 @@ Overall, the data ingestion system functions without any significant errors and 
 ## Part 2
 ### 1. 
 
+Conceptually, the silverpipeline does the following:
+- fetch daily data from Cassandra bronze table and write it in a caching directory (either local or on cloud)
+- transform bronze data inside caching directory into silver data
+- insert silver data into Cassandra silver table
+
+Transformation silverpipeline constraints:
 ```First type of tenant```
-The data input frequency for my platformed is assumed to be once per day, with a file size of approximately 3GB. It is assumed that the silverpipeline would take around 5-15 minutes with a moderate compute.
+The data input frequency for my platformed is assumed to be once per day, with a file size of approximately 3GB. It is assumed that the silverpipeline would take less than 5-10 minutes with a moderate compute.
 
 Because of these assumptions, a reasonable pipeline design would have the following features:
 - **Compute**: there is only one pipeline per day with moderate compute necessities
@@ -446,64 +455,65 @@ pipeline_constraints:
 ```
 
 ### 2.
-IMPLEMENT an instance of a silver pipeline. Explain design as a tenant.
-tenant-caching-dir: local disk within the platform
 
 At first I implemented a silverpipeline for [tenant2](../code/silverpipelinecmd/tenant2.go), because it has a smaller data schema. As a tenant I am doing the following steps: 
 - reading broze data from the database (table **mysimbdp_tenant2.sensor_observations_dht22_bronze**); 
-- writing data (on local disk) into ```tenant_caching_dir/tenant2/sensor_observations_dht22_[timestamp]_runId_bronze_extract.csv```
+- writing data (on local disk) into [tenant_caching_dir/tenant2/sensor_observations_dht22_[timestamp]_runId_bronze_extract.csv](code/tenant_caching_dir/tenant2)
 - clean cached data by removing rows with missing entries
-- processing data (on local disk) into ```tenant_caching_dir/tenant2/sensor_observations_dht22_[timestamp]_runId_silver_hourly.csv```. The processing includes a per hour aggregation of the temperature and humidity from the daily data, computing min/max/avg/median columns.
+- processing data (on local disk) into [tenant_caching_dir/tenant2/sensor_observations_dht22_[timestamp]_runId_silver_hourly.csv](../code/tenant_caching_dir/tenant2). The processing includes a per hour aggregation of the temperature and humidity from the daily data, computing min/max/avg/median columns.
 - writing data back into cassandra cluster into the table **mysimbdp_tenant2.sensor_observations_dht22_silver**
 
 
 The reason for using `tenant-caching-dir` in between Cassandra bronze and Cassandra silver is that it gives the provider a controlled staging area. This makes the transformation pipeline easier to inspect, retry, and manage in batch mode. 
 
-The runtime configuration for tenant2 is stored in `code/tenant_configs/silverpipeline_tenant2.yaml`. 
+The runtime configuration for tenant2 is stored in [code/tenant_configs/silverpipeline_tenant2.yaml](../code/tenant_configs/silverpipeline_tenant2.yaml). 
 
 The silverpipeline also follows a black-box format via environment variables:
 
 - `SILVER_PIPELINE_MODE=extract-cache`: extract bronze Cassandra tables into tenant cache files.
 - `SILVER_PIPELINE_MODE=transform-cache`: transform cached bronze files and write silver tables.
-- `SILVER_PIPELINE_INPUT_FILES=...`: optional comma-separated cache files that the platform wants the pipeline to process.
 
 This design lets the provider invoke the pipeline without depending on the internal code structure of the tenant silverpipeline implementation.
 
 ### 3.
-DESIGN AND IMPELMENT mysimbdp-batchmanager, which uses silverpipeline as a blackbox
 
-I implemented `mysimbdp-batchmanager` in `code/batchmanagercmd/main.go`.
+I implemented **mysimbdp-batchmanager** in [code/batchmanagercmd/main.go](../code/batchmanagercmd/main.go).
 
-Its role is similar to a provider-side control plane for silver transformations. The batchmanager:
+Its role is to be a provider-side control plane for silver transformations. The batchmanager:
 
-- scans `tenant_caching_dir/tenant2` for files matching the tenant2 cache pattern `*_bronze_extract.csv`
-- keeps a state file `.batchmanager_state.json` in the same cache directory to remember which files have already been processed
-- invokes `tenant2-silverpipeline` through docker compose as a black box
+- invokes **silverpipeline** through docker compose as a black box
+- scans tenant_caching_dir for files matching the tenant2 cache pattern **_bronze_extract.csv*
+- keeps a state file **.batchmanager_state.json** in the same cache directory to remember which files have already been processed
 - passes the provider contract variables (`SILVER_PIPELINE_MODE`, `SILVER_PIPELINE_INPUT_FILES`)
 
 This is suitable for mysimbdp because the provider controls the execution lifecycle but not the internal transformation code. 
 
 The batchmanager has 3 useful commands:
 
-- `status`: shows which tenant2 cache files are pending or already processed
-- `extract-cache`: calls the tenant2 silverpipeline to refresh the bronze CSV files from Cassandra with a specific partition day (mandatory flag)
+- `status`: shows which tenant* cache files are pending or already processed
+- `extract-cache`: calls the tenant* silverpipeline to refresh the bronze CSV files from Cassandra with a **specific partition day** (mandatory flag, as according to data schema design)
 - `run`: calls the tenant2 silverpipeline to transform the pending cache files
-- `cleanup-processed`: calls the tenant2 silverpipeline to delete already processed bronze cached files
+- `cleanup-processed`: calls the tenant* silverpipeline to delete already processed bronze cached files
 
 This design has two advantages:
 
-- it preserves the black-box nature of the tenant pipeline
-- it avoids reprocessing unchanged cache files by using the provider-managed state file
+- it preserves the **black-box** nature of the tenant pipeline
+- it avoids reprocessing unchanged cache files by using the provider-managed **state file**
 
-How does the **mysimbdp-batchmanager** know the list of silverpipelines and schedules the execution of silverpipeline for tenants?
+**How** does the **mysimbdp-batchmanager** know the list of silverpipelines and schedules the execution of silverpipeline for tenants?
 
 Since silverdata has to be produce only once/bronz data batch, the tenants discuss with the bdp manager a frequency of processing the data. This is set in the tenant configuration manifest with `min_batch_interval_sec`, which for the current tenants is 24 hours. The **mysimbdp-batchmanager** will run the silverpipeline for tenants according to the preset interval. It can also schedule them as it wishes for optimal resource utilization. This can also be set in the tenant manifest via the `max_processing_delay_sec`. The latency is an agreed period of time from full bronze data ingestion to silverpipeline run, for example 2 hours.
 
 ### 4.
 
+Next I will run tests on silverpipeline locally and with a cloud bucket as cache. The testing data uses one day worth of data from each tenant for all future tests:
+- test data for tenant1 is **2,911,563** rows and **269,042,612** bytes, `2025-06-01_bme280.csv`
+- test data for tenant2 is **2,078,885** rows and **156,649,308** bytes, `2025-06-01_dht22.csv`
+- test service agreements can be seen under [tenant_configs](../code/tenant_configs)- they include one for tenant1, one for tenant2, and then 2 extremely strict configs for testing pipeline failures ([silverpipeline_tenant2_bad_runtime.yaml](../code/tenant_configs/silverpipeline_tenant2_bad_runtime.yaml) and [silverpipeline_tenant2_bad_throughput.yaml](../code/tenant_configs/silverpipeline_tenant2_bad_throughput.yaml))
+
 ### In the following sequence of terminal outputs we can see a silverpipeline run for tenant2 LOCALLY:
 
-- At first we exctract the new bronze data from cassandra into the cache directory.
+- At first we **extract** the new bronze data (corresponding to the present day) from cassandra into the cache directory.
 ```sh
 ./batchmanager --command extract-cache --tenant tenant2 --day 2025-06-01
 
@@ -522,7 +532,7 @@ Since silverdata has to be produce only once/bronz data batch, the tenants discu
 tenant=tenant2 cache refresh completed day=2025-06-01
 ```
 
-- Now a new file appeared in the cached directory after succesfully extracting data. Next we check the status of the caching directory. How many cached files are pending, and how many have been resolved? We see only one is pending, and one is resolved.
+- Now a new file appeared in the cached directory after succesfully extracting data. Next we check the **status** of the caching directory. How many cached files are pending, and how many have been resolved? We see only **one is pending**, and one is resolved.
 ```sh
 ./batchmanager --command status --tenant tenant2
 
@@ -531,7 +541,8 @@ tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment
 - pending file=sensor_observations_dht22_bronze_20260311_083932_bronze_extract.csv size=156649308 processed_at=
 ```
 
-- Then we run the silverpipeline processing and ingestion back into cassandra.
+- Then we **run** the silverpipeline processing and ingestion back into cassandra.
+
 ```sh
 ./batchmanager --command run --tenant tenant2
 
@@ -550,7 +561,7 @@ tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment
 tenant=tenant2 processed_files=1 state_file=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2/.batchmanager_state.json
 ```
 
-- After this we can see all files have been processed.
+- After this we can see **all files have been processed**. (The second file that was previously pending now appears as processed with a processing timestamp).
 ```sh
 ./batchmanager --command status --tenant tenant2
 tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2 matched=2 pending=0 state_file=/Users/cricoche/Desktop/aalto_master/bigData/assignment-1-103803829/assignment-2-103803829/code/tenant_caching_dir/tenant2/.batchmanager_state.json
@@ -558,7 +569,7 @@ tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment
 - processed file=sensor_observations_dht22_bronze_20260311_083932_bronze_extract.csv size=156649308 processed_at=2026-03-11T08:41:30Z
 ```
 
-- We can also check the cassandra database to make sure everything was inserted properly. We see the matching 24 rows for the 24 hours of the day, each containing the aggregated numerical data.
+- We can also **check** the cassandra database to make sure everything was inserted properly. We see the matching 24 rows for the 24 hours of the day, each containing the aggregated numerical data. The table we are counting from is the ***_silver** table of dht22 weather measurements.
 
 ```sh
 SELECT COUNT(*) FROM mysimbdp_tenant2.sensor_observations_dht22_silver;
@@ -570,7 +581,7 @@ SELECT COUNT(*) FROM mysimbdp_tenant2.sensor_observations_dht22_silver;
 (1 rows)
 ```
 
-- In the end, we can also run cleanup command and the files will be deleted from cache. We can see that the batchmanager_state.json is empty in the end
+- In the end, we can also run **cleanup** command and the files will be deleted from cache. We can see that the batchmanager_state.json is empty in the end
 
 ```sh
 ./batchmanager --command cleanup-processed --tenant tenant2
@@ -586,7 +597,7 @@ tenant=tenant2 cache_dir=/Users/cricoche/Desktop/aalto_master/bigData/assignment
 
 ### Next we can observe a cloud caching alternative
 
-- Fetching data from Cassandra and inserting into google cloud bucket (the cloud caching).
+- **Fetching** data from Cassandra and inserting into **google cloud bucket** (the cloud caching). I personally created the gc bucket in my Aalto account, with the name **caching-silverpipeline-bucket**.
 ```sh
 TENANT_ID=tenant2 \
 CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
@@ -603,10 +614,10 @@ go run ./silverpipelinecmd
 2026/03/11 13:50:22 Silver pipeline extract completed: files=1
 2026/03/11 13:50:22 Silver pipeline completed successfully for tenant=tenant2
 ```
-- This is how the cloud bucket looks now:
+-** This is how the cloud bucket looks now:**
 ![Google cloud bucket](../code/figures/gcp-silver1.png)
 
-- Fetching data from cloud bucket, processing, then inserting back into cloud bucket.
+- Fetching data from cloud bucket, **processing**, then inserting back into cloud bucket.
 
 ```sh
 TENANT_ID=tenant2 \
@@ -625,10 +636,10 @@ go run ./silverpipelinecmd
 2026/03/11 13:51:35 Silver pipeline completed cache_file=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache/sensor_observations_dht22_bronze_20260311_114933_bronze_extract.csv bronze_table=sensor_observations_dht22_bronze silver_table=mysimbdp_tenant2.sensor_observations_dht22_silver raw_rows=2078885 kept_rows=2078885 dropped_rows=0 silver_rows=24 summary_csv=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache/sensor_observations_dht22_bronze_20260311_114933_silver_hourly.csv metrics=temperature,humidity
 2026/03/11 13:51:35 Silver pipeline completed successfully for tenant=tenant2
 ```
-- This is how the cloud bucket looks now:
+- **This is how the cloud bucket looks now:**
 ![Google cloud bucket](../code/figures/gcp-silver2.png)
 
-- Checking silver data can be found in Cassandra.
+- **Checking** silver data can be found in Cassandra.
 ```sh
  docker exec cassandra1 cqlsh -e "SELECT count(*) FROM mysimbdp_te
 nant2.sensor_observations_dht22_silver;"
@@ -639,44 +650,76 @@ nant2.sensor_observations_dht22_silver;"
 
 (1 rows)
 ```
+- We can see that again, all rows have been inserted in the Cassandra Database. Here we can see how a few rows from the silver table look like for tenant2. The partitioning is the same as for the bronze data - day and hour.
 
-  ### Comparative report from run/task logs across different runs
+```
+day;hour;records_aggregated;temperature_avg;temperature_min;temperature_max;temperature_median;humidity_avg;humidity_min;humidity_max;humidity_median
+2025-06-01;0;81790;22.06153727961886;0;65536;18.9;90.25209501044569;0;65536;99.9
+2025-06-01;1;85655;21.672311873212603;0;65536;18.6;91.04270839770365;0;65536;99.9
+2025-06-01;2;82241;22.19351830838679;0;65536;18.2;92.07960164522302;0;65536;99.9
+2025-06-01;3;85981;24.181261412405284;0;65536;17.9;94.8336964074182;0;65536;99.9
+2025-06-01;4;86683;22.249021037574106;0;65536;18;92.39216995495988;0;65536;99.9
+2025-06-01;5;87537;23.452549797228585;-99;65536;18.8;91.36052666307843;-99;65536;99.9
 
-  I compared the JSON log records generated in:
+```
+
+### Constraint Violation Demonstration
+
+As mentioned above, I created two intentionally bad configs. using these I demonstrate a failure of the pipeline for various reasons:
+
+-[silverpipeline_tenant2_bad_runtime.yaml](../code/tenant_configs/silverpipeline_tenant2_bad_runtime.yaml) with `max_pipeline_runtime_sec: 1`. 
+
+-[silverpipeline_tenant2_bad_throughput.yaml](../code/tenant_configs/silverpipeline_tenant2_bad_throughput.yaml) with `max_records_per_second: 1` and `max_mb_per_second: 1`.
+
+Commands used:
+
+```sh
+# Throughput violation demo
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=127.0.0.1 \
+SILVER_PIPELINE_CONFIG=./tenant_configs/silverpipeline_tenant2_bad_throughput.yaml \
+SILVER_PIPELINE_MODE=transform-cache \
+SILVER_PIPELINE_INPUT_FILES=sensor_observations_dht22_bronze_20260311_141926_bronze_extract.csv \
+go run ./silverpipelinecmd
+
+# Runtime violation demo
+TENANT_ID=tenant2 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
+CASSANDRA_HOSTS=127.0.0.1 \
+SILVER_PIPELINE_CONFIG=./tenant_configs/silverpipeline_tenant2_bad_runtime.yaml \
+SILVER_PIPELINE_MODE=full \
+go run ./silverpipelinecmd
+```
+
+Observed results from run logs:
+
+| case | run log | status | observed error |
+|---|---|---|---|
+| small throughput constraints | [bad_throughput_run_status.jsonl](../code/logs/silverpipeline/tenant2-bad-throughput/run_status.jsonl) | failed | `silver pipeline throughput validation failed: measured records_per_second 1520756.85 exceeds max_records_per_second 1; measured mb_per_second 109.28 exceeds max_mb_per_second 1` |
+| small runtime constraints | [bad_runtime_run_status.jsonl](../code/logs/silverpipeline/tenant2-bad-runtime/run_status.jsonl) | failed | `silver pipeline failed: failed to extract bronze rows from sensor_observations_dht22_bronze for day=2025-06-01 hour=1: context deadline exceeded` |
+
+We can also see the failed task detailed logs in:
+
+- [bad_throughput_task_status.jsonl](code/logs/silverpipeline/tenant2-bad-throughput/task_status.jsonl) (contains failed task `validate_throughput_limit`)
+- [bad_runtime_task_status.jsonl](code/logs/silverpipeline/tenant2-bad-runtime/task_status.jsonl) (contains failed full-pipeline tasks due to timeout)
+
+
+### Comparative report from run logs across different runs
+
+I compared the JSON log records generated in:
 
   - `code/logs/silverpipeline/tenant2/run_status.jsonl`
   - `code/logs/silverpipeline/tenant2/task_status.jsonl`
 
   Additional local-cache executions used for this comparison:
 
-  ```sh
-  # local full run
-  TENANT_ID=tenant2 \
-  CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
-  CASSANDRA_HOSTS=127.0.0.1 \
-  SILVER_PIPELINE_MODE=full \
-  SILVER_PIPELINE_STORAGE_BACKEND=local \
-  SILVER_PIPELINE_DAY=2025-06-01 \
-  go run ./silverpipelinecmd
-
-  # local transform-cache run (same mode as gcs transform-cache baseline)
-  TENANT_ID=tenant2 \
-  CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
-  CASSANDRA_HOSTS=127.0.0.1 \
-  SILVER_PIPELINE_MODE=transform-cache \
-  SILVER_PIPELINE_STORAGE_BACKEND=local \
-  SILVER_PIPELINE_INPUT_FILES=sensor_observations_dht22_bronze_20260311_121538_bronze_extract.csv \
-  go run ./silverpipelinecmd
-  ```
-
   Run-level comparison (`run_status.jsonl`):
 
   | run_id | backend | mode | status | duration_ms | notes |
   |---|---|---|---|---:|---|
   | `20260311_121057.889884000` | gcs | transform-cache | success | 17050 | baseline gcs transform run |
-  | `20260311_121308.722261000` | gcs | transform-cache | failed | 362 | input object not found |
   | `20260311_121538.252584000` | local | full | success | 15214 | includes extract + transform |
-  | `20260311_121706.548544000` | local | transform-cache | failed | 0 | input path format issue |
   | `20260311_121810.767052000` | local | transform-cache | success | 1239 | mode-matched local transform run |
 
   Task-level comparison for successful `transform-cache` runs (`task_status.jsonl`):
@@ -692,13 +735,7 @@ nant2.sensor_observations_dht22_silver;"
   | `run_transform_from_cache` | 16683 | 1239 | `cache_files=1` both |
   | `validate_storage_limit` (`pipeline-final`) | 61 | 0 | `max_silver_storage_gb=100` both |
 
-  Task-level failed-run comparison:
-
-  | run_id | backend | failed task | duration_ms | error summary |
-  |---|---|---|---:|---|
-  | `20260311_121308.722261000` | gcs | `resolve_transform_inputs` | 360 | gcs object does not exist |
-  | `20260311_121706.548544000` | local | `resolve_transform_inputs` | 0 | local input path was prefixed twice with `cache_dir` |
-
+ 
   Observations from logs:
 
   - For mode-matched successful `transform-cache` runs, local cache was much faster than gcs cache mainly in read/aggregate and summary write stages.
@@ -738,48 +775,7 @@ If I count each tenant-day once, the combined daily totals are:
 
 This confirms that the same tenant-aware silverpipeline works for both tenants, and that switching between `local` and `gcs` storage preserves the exact data volumes while changing only runtime and cache location.
 
-### Constraint Violation Demonstration
-
-After adding runtime throughput enforcement in the silverpipeline, I created two intentionally bad configs:
-
-- `code/tenant_configs/silverpipeline_tenant2_bad_throughput.yaml` with `max_records_per_second: 1` and `max_mb_per_second: 1`.
-- `code/tenant_configs/silverpipeline_tenant2_bad_runtime.yaml` with `max_pipeline_runtime_sec: 1`.
-
-Commands used (from `code/` directory):
-
-```sh
-# Throughput violation demo
-TENANT_ID=tenant2 \
-CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
-CASSANDRA_HOSTS=127.0.0.1 \
-SILVER_PIPELINE_CONFIG=./tenant_configs/silverpipeline_tenant2_bad_throughput.yaml \
-SILVER_PIPELINE_MODE=transform-cache \
-SILVER_PIPELINE_INPUT_FILES=sensor_observations_dht22_bronze_20260311_141926_bronze_extract.csv \
-go run ./silverpipelinecmd
-
-# Runtime violation demo
-TENANT_ID=tenant2 \
-CASSANDRA_KEYSPACE=mysimbdp_tenant2 \
-CASSANDRA_HOSTS=127.0.0.1 \
-SILVER_PIPELINE_CONFIG=./tenant_configs/silverpipeline_tenant2_bad_runtime.yaml \
-SILVER_PIPELINE_MODE=full \
-go run ./silverpipelinecmd
-```
-
-Observed results from run logs:
-
-| case | run log | status | observed error |
-|---|---|---|---|
-| bad throughput constraints | `code/logs/silverpipeline/tenant2-bad-throughput/run_status.jsonl` | failed | `silver pipeline throughput validation failed: measured records_per_second 1520756.85 exceeds max_records_per_second 1; measured mb_per_second 109.28 exceeds max_mb_per_second 1` |
-| bad runtime constraints | `code/logs/silverpipeline/tenant2-bad-runtime/run_status.jsonl` | failed | `silver pipeline failed: failed to extract bronze rows from sensor_observations_dht22_bronze for day=2025-06-01 hour=1: context deadline exceeded` |
-
-Task-level evidence is also available in:
-
-- `code/logs/silverpipeline/tenant2-bad-throughput/task_status.jsonl` (contains failed task `validate_throughput_limit`)
-- `code/logs/silverpipeline/tenant2-bad-runtime/task_status.jsonl` (contains failed extract/full-pipeline tasks due to timeout)
-
 ### 5.
-
 
 ## Part 3
 
@@ -787,7 +783,13 @@ Task-level evidence is also available in:
  Explain how a platform provider could know the amount of data ingested/processed and existing errors/performance for individual tenants.
 
 
-2. new architecture for a different data sink
+2. A natural solution I reccomend to 2 different data sinks would be to use the native **Kafka fan-out pattern**. This would mean that the producer sends messages to a single Kafka topic (can remain the same **bme280-measurements**), but this time instead of having a single consumer type, there would be two consumer groups, each writing to a different data sink. So a message would be read twice, once by each consumer group, and delivered to both sinks.
+
+This change would be easy to integrate in the current architecture, and would be easily scalable - each data sink can employ as many consumers as needed, independent from the others.
+
+Another solution would be to keep the current architecture but allow the tenant to provide a configuration file with a list of sinks. In this case the Kafka consumer would have to iterate through them and insert data in all of them.
+
+However, I think the first solution is more reliable, as it makes the two components independent of each other.
 
 3. new architecture for monitoring quality of data
 
