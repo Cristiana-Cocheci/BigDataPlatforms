@@ -779,9 +779,29 @@ This confirms that the same tenant-aware silverpipeline works for both tenants, 
 
 ## Part 3
 
-1. FIGURE of Architecture
- Explain how a platform provider could know the amount of data ingested/processed and existing errors/performance for individual tenants.
+1.  
 
+![Architecture](../code/figures/bdp2.drawio.png)
+
+**How does a platform provider know the amount of data ingested/processed and existing errors/performance for individual tenants?**
+
+The platform provider can access the worker report fields and the logs general store. 
+
+In my code such examples of logs can be seen in [silverpipeline logs folder](../code/logs) and [benchmark results](../code/benchmark_results/normal_short_120s), where there are a lot of log files and aggregated measuremnets: log_streamingestmanager, log_streamingestmonitor, log_tenant1_source, log_tenant1_streamingestworker ...
+
+In the benchmark folders are also computed statistics after the run in [monitor_throughput_by_tenant.csv](../code/benchmark_results/normal_short_120s/monitor_throughput_by_tenant.csv). Here we can observe amongst other aggregated metrics:
+- average throughput
+- average ingested MB per second, 
+- total ingested MB
+- inserted rows count
+- initial rouws count
+- producer ingested rows
+- duplicate rows
+- insert exceptions
+
+Alerts are also captured with the Streamingest monitor, which sends them forward to the Streamingest manager.
+
+More advanced and centralized logging behaviour can be implemented, depending on the requirements of the platform provider.
 
 2. A natural solution I reccomend to 2 different data sinks would be to use the native **Kafka fan-out pattern**. This would mean that the producer sends messages to a single Kafka topic (can remain the same **bme280-measurements**), but this time instead of having a single consumer type, there would be two consumer groups, each writing to a different data sink. So a message would be read twice, once by each consumer group, and delivered to both sinks.
 

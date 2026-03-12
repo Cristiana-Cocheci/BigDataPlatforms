@@ -387,6 +387,7 @@ func ensureSupportedSilverTenant(tenantID string) error {
 }
 
 func silverPipelineMode() string {
+	// Mode selects which stage to run: full (extract+transform), extract-only, or transform-from-cache.
 	switch strings.ToLower(strings.TrimSpace(os.Getenv(silverPipelineModeEnv))) {
 	case "", silverPipelineModeFull:
 		return silverPipelineModeFull
@@ -1234,6 +1235,7 @@ func resolveTransformInputFilesGCS(ctx context.Context, gcsClient *storage.Clien
 }
 
 func resolveTransformInputFiles(ctx context.Context, pipelineConfig silverPipelineConfig, gcsClient *storage.Client) ([]string, error) {
+	// Transform mode can auto-discover cached bronze extracts or use explicit file paths from env.
 	switch pipelineConfig.Pipeline.StorageBackend {
 	case silverPipelineStorageLocal:
 		return resolveTransformInputFilesLocal(pipelineConfig.Pipeline.CacheDir, pipelineConfig.Pipeline.BatchManager.InputGlob)
@@ -2063,6 +2065,8 @@ func enforceThroughputConstraintsWithTaskLog(mode string, pipelineConfig silverP
 }
 
 func extractBronzeTablesToCache(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client) ([]string, silverPipelineDataStats, error) {
+	// Extraction stage reads bronze tables for a single day and materializes CSV snapshots
+	// into the configured cache backend so transform can run independently.
 	if pipelineConfig.Pipeline.StorageBackend == silverPipelineStorageLocal {
 		if err := os.MkdirAll(pipelineConfig.Pipeline.CacheDir, 0o755); err != nil {
 			return nil, silverPipelineDataStats{}, fmt.Errorf("failed to create tenant cache directory %s: %w", pipelineConfig.Pipeline.CacheDir, err)
@@ -2161,6 +2165,8 @@ func extractBronzeTablesToCache(ctx context.Context, session *gocql.Session, ten
 }
 
 func processCachedBronzeFile(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client, cacheFile string) (silverPipelineDataStats, error) {
+	// Per-file transform flow: read cached bronze CSV -> aggregate hourly stats -> write
+	// silver summary CSV -> upsert aggregates to the tenant silver Cassandra table.
 	transformStartedAt := time.Now()
 	transformDetails := map[string]any{"cache_file": cacheFile}
 	fileStats := silverPipelineDataStats{}
@@ -2368,6 +2374,7 @@ func processCachedBronzeFile(ctx context.Context, session *gocql.Session, tenant
 }
 
 func runSilverPipelineFromCache(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client, cacheFiles []string) (silverPipelineDataStats, error) {
+	// Transform stage iterates deterministic cache inputs and accumulates end-to-end stats.
 	startedAt := time.Now()
 	details := map[string]any{"cache_files": len(cacheFiles)}
 	totalStats := silverPipelineDataStats{}
@@ -2391,6 +2398,7 @@ func runSilverPipelineFromCache(ctx context.Context, session *gocql.Session, ten
 }
 
 func runSilverPipeline(ctx context.Context, session *gocql.Session, tenantConfig TenantConfig, pipelineConfig silverPipelineConfig, gcsClient *storage.Client) (silverPipelineDataStats, error) {
+	// Full mode executes extract then transform, combining stats into one run summary.
 	startedAt := time.Now()
 	details := map[string]any{}
 
@@ -2530,6 +2538,7 @@ func main() {
 	var runErr error
 	runStats := silverPipelineDataStats{}
 
+	// Mode dispatch keeps one executable for all operational workflows.
 	switch mode {
 	case silverPipelineModeFull:
 		if fullStats, err := runSilverPipeline(ctx, session, tenantConfig, pipelineConfig, gcsClient); err != nil {

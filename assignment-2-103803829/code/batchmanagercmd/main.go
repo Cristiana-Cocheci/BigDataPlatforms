@@ -99,6 +99,8 @@ func main() {
 
 	stateFilePath := filepath.Join(hostCacheDir, pipelineConfig.Pipeline.BatchManager.StateFile)
 
+	// The command controls whether we only inspect cache/state, refresh cache from bronze,
+	// transform pending cache files, or remove processed cache files.
 	switch *command {
 	case "status":
 		if err := showBatchStatus(resolvedTenantID, hostCacheDir, pipelineConfig.Pipeline.BatchManager.InputGlob, stateFilePath); err != nil {
@@ -128,6 +130,7 @@ func main() {
 }
 
 func runBatch(tenantID string, cacheDir string, inputGlob string, stateFilePath string, composeFiles []string, build bool, force bool) error {
+	// Compare current cache files with recorded metadata; only changed/new files are transformed.
 	matchedFiles, err := discoverCacheFiles(cacheDir, inputGlob)
 	if err != nil {
 		return err
@@ -161,6 +164,7 @@ func runBatch(tenantID string, cacheDir string, inputGlob string, stateFilePath 
 		inputNames = append(inputNames, file.Name)
 	}
 
+	// Transform mode reuses extracted cache files and skips bronze extraction.
 	if err := invokeSilverPipeline(composeFiles, build, silverPipelineModeTransform, inputNames, "", silverServiceNameForTenant(tenantID)); err != nil {
 		return err
 	}
@@ -182,6 +186,7 @@ func runBatch(tenantID string, cacheDir string, inputGlob string, stateFilePath 
 }
 
 func showBatchStatus(tenantID string, cacheDir string, inputGlob string, stateFilePath string) error {
+	// Status computes pending files with the same logic as run, without mutating state.
 	matchedFiles, err := discoverCacheFiles(cacheDir, inputGlob)
 	if err != nil {
 		return err
@@ -217,6 +222,7 @@ func showBatchStatus(tenantID string, cacheDir string, inputGlob string, stateFi
 }
 
 func cleanupProcessedCacheFiles(tenantID string, cacheDir string, inputGlob string, stateFilePath string) error {
+	// Cleanup removes files managed by batchmanager and records their last seen metadata.
 	matchedFiles, err := discoverManagedCacheFiles(cacheDir, inputGlob)
 	if err != nil {
 		return err
@@ -259,6 +265,7 @@ func cleanupProcessedCacheFiles(tenantID string, cacheDir string, inputGlob stri
 }
 
 func discoverManagedCacheFiles(cacheDir string, inputGlob string) ([]cacheFileRecord, error) {
+	// Batchmanager owns both bronze extract files and generated silver summary files.
 	globs := []string{inputGlob, defaultBatchmanagerSilverGlob}
 	filesByPath := make(map[string]cacheFileRecord)
 
@@ -398,6 +405,7 @@ func saveBatchManagerState(stateFilePath string, state batchManagerState) error 
 }
 
 func pendingCacheFiles(files []cacheFileRecord, state batchManagerState, force bool) []cacheFileRecord {
+	// A file becomes pending when forced or when size/modtime differs from the last recorded run.
 	pending := make([]cacheFileRecord, 0)
 	for _, file := range files {
 		if force {
@@ -437,6 +445,7 @@ func recordFilesInState(state *batchManagerState, files []cacheFileRecord, proce
 }
 
 func invokeSilverPipeline(composeFiles []string, build bool, mode string, inputFiles []string, extractDay string, silverServiceName string) error {
+	// Ensure Cassandra is up, then run the tenant-specific silver service with mode-specific env.
 	if err := composeUp(composeFiles, "cassandra1", "cassandra2", "cassandra3"); err != nil {
 		return err
 	}
