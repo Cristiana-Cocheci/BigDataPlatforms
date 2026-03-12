@@ -1,8 +1,192 @@
 # This is a deployment/installation guide
 
-Running a benchmark
 
-```Configuration``` - each of the following parameters can be overriten in the command line
+<!-- Example use for an efficient deployment
+
+```sh
+TENANTS="tenant1 tenant2" \
+WORKERS=10 \
+PARTITIONS=10 \
+TEST_DURATION_SECONDS=120 \
+PREPARE_CHUNKS=true \
+RESET_STACK=true \
+DRAIN_BEFORE_STOP=true \
+DRAIN_TIMEOUT_SECONDS=100 \
+MIN_THROUGHPUT_RPS=1000000 \
+CASSANDRA_COUNT_DAY=2025-06-01 \
+CASSANDRA_WRITE_SLEEP_MS=0 \
+FORCE_REBUILD_IMAGES=true \
+./run_benchmark.sh
+``` -->
+
+
+<!-- Silverpipeline guideline 1: \
+go build -o batchmanager ./batchmanagercmd \
+go build -o silverpipeline ./silverpipelinecmd \
+./batchmanager --command extract-cache --tenant tenant2 \
+./batchmanager --command status --tenant tenant2 \
+./batchmanager --command run --tenant tenant2 \
+./batchmanager --command status --tenant tenant2 \
+./batchmanager --command cleanup-processed --tenant tenant2 \ -->
+
+### 0) Start in code directory
+
+```sh
+cd assignment-1-103803829/assignment-2-103803829/code
+```
+
+### 1) Ingestion benchmarking (run_benchmark.sh)
+
+```sh
+chmod +x run_benchmark.sh
+```
+
+#### 1.1 Baseline benchmark (both tenants, higher parallelism)
+
+```sh
+TENANTS="tenant1 tenant2" \
+WORKERS=5 \
+PARTITIONS=5 \
+SOURCE_REPLICAS=5 \
+TEST_DURATION_SECONDS=40 \
+PREPARE_CHUNKS=true \
+RESET_STACK=true \
+FORCE_REBUILD_IMAGES=true \
+MIN_THROUGHPUT_RPS=1000000 \
+MAX_AVG_BATCH_INGEST_MS=250 \
+REPORT_INTERVAL_SECONDS=10 \
+CASSANDRA_COUNT_DAY=2025-06-01 \
+./run_benchmark.sh
+```
+
+#### 1.2 Under-provisioned benchmark (both tenants, low parallelism)
+
+```sh
+TENANTS="tenant1 tenant2" \
+WORKERS=1 \
+PARTITIONS=1 \
+SOURCE_REPLICAS=1 \
+TEST_DURATION_SECONDS=40 \
+PREPARE_CHUNKS=true \
+RESET_STACK=true \
+FORCE_REBUILD_IMAGES=false \
+DRAIN_BEFORE_STOP=true \
+DRAIN_TIMEOUT_SECONDS=120 \
+REPORT_INTERVAL_SECONDS=10 \
+CASSANDRA_COUNT_DAY=2025-06-01 \
+./run_benchmark.sh
+```
+
+#### 1.3 Cassandra write-limit test (5ms, 20ms, 50ms, set in CASSANDRA_WRITE_SLEEP)
+
+```sh
+
+TENANTS="tenant1 tenant2" \
+WORKERS=1 \
+PARTITIONS=1 \
+SOURCE_REPLICAS=1 \
+TEST_DURATION_SECONDS=120 \
+PREPARE_CHUNKS=true \
+RESET_STACK=true \
+FORCE_REBUILD_IMAGES=false \
+DRAIN_BEFORE_STOP=true \
+DRAIN_TIMEOUT_SECONDS=120 \
+CASSANDRA_WRITE_SLEEP_MS=5 \
+RESULTS_ROOT="benchmark_results/write_limit_${SLEEP_MS}ms" \
+./run_benchmark.sh
+
+```
+
+#### 1.4 Read benchmark outputs
+
+```sh
+LATEST_RUN="$(ls -td benchmark_results/test_* | head -n 1)"
+echo "$LATEST_RUN"
+
+cat "$LATEST_RUN/run_summary.env"
+cat "$LATEST_RUN/monitor_throughput_by_tenant.csv"
+cat "$LATEST_RUN/cassandra_rows_by_tenant.csv"
+cat "$LATEST_RUN/drain_status_by_tenant.csv"
+
+docker exec cassandra1 cqlsh -e "CONSISTENCY ONE; SELECT COUNT(*) FROM mysimbdp_tenant2.sensor_observations_dht22_bronze WHERE day='2025-06-01' AND hour=0;"
+```
+
+### 2) Silverpipeline tests (both tenants)
+
+#### 2.1 Prepare infrastructure and images
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml up -d cassandra1 cassandra2 cassandra3
+docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml build tenant1-silverpipeline tenant2-silverpipeline
+```
+
+#### 2.2 Full silver run (local cache) for tenant1 and tenant2
+
+```sh
+SILVER_PIPELINE_MODE=full \
+SILVER_PIPELINE_DAY=2025-06-01 \
+SILVER_PIPELINE_STORAGE_BACKEND=local \
+docker compose --profile silver -f docker-compose.yml -f docker-compose.multitenant-brokers.yml run --rm tenant1-silverpipeline
+
+SILVER_PIPELINE_MODE=full \
+SILVER_PIPELINE_DAY=2025-06-01 \
+SILVER_PIPELINE_STORAGE_BACKEND=local \
+docker compose --profile silver -f docker-compose.yml -f docker-compose.multitenant-brokers.yml run --rm tenant2-silverpipeline
+```
+
+#### 2.3 Contract-mode run (extract-cache then transform-cache) for tenant1
+
+```sh
+SILVER_PIPELINE_MODE=extract-cache \
+SILVER_PIPELINE_DAY=2025-06-01 \
+SILVER_PIPELINE_STORAGE_BACKEND=local \
+docker compose --profile silver -f docker-compose.yml -f docker-compose.multitenant-brokers.yml run --rm tenant1-silverpipeline
+
+SILVER_PIPELINE_MODE=transform-cache \
+SILVER_PIPELINE_STORAGE_BACKEND=local \
+docker compose --profile silver -f docker-compose.yml -f docker-compose.multitenant-brokers.yml run --rm tenant1-silverpipeline
+```
+
+#### 2.4 Contract-mode run (extract-cache then transform-cache) for tenant2
+
+```sh
+SILVER_PIPELINE_MODE=extract-cache \
+SILVER_PIPELINE_DAY=2025-06-01 \
+SILVER_PIPELINE_STORAGE_BACKEND=local \
+docker compose --profile silver -f docker-compose.yml -f docker-compose.multitenant-brokers.yml run --rm tenant2-silverpipeline
+
+SILVER_PIPELINE_MODE=transform-cache \
+SILVER_PIPELINE_STORAGE_BACKEND=local \
+docker compose --profile silver -f docker-compose.yml -f docker-compose.multitenant-brokers.yml run --rm tenant2-silverpipeline
+```
+
+### 3) Validate silver outputs and logs
+
+#### 3.1 Check silver row counts in Cassandra
+
+```sh
+docker exec -i cassandra1 cqlsh -e "SELECT COUNT(*) FROM mysimbdp_tenant1.sensor_measurements_bme280_silver;"
+docker exec -i cassandra1 cqlsh -e "SELECT COUNT(*) FROM mysimbdp_tenant2.sensor_observations_dht22_silver;"
+```
+
+#### 3.2 Read latest silver run/task logs (both tenants)
+
+```sh
+tail -n 10 logs/silverpipeline/tenant1/run_status.jsonl
+tail -n 20 logs/silverpipeline/tenant1/task_status.jsonl
+
+tail -n 10 logs/silverpipeline/tenant2/run_status.jsonl
+tail -n 20 logs/silverpipeline/tenant2/task_status.jsonl
+```
+
+### 4) Optional cleanup
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml down --remove-orphans
+```
+
+
+### ```Benchmark Configuration``` - each of the following parameters can be overriten in the command line
 
 
 ```sh
@@ -34,35 +218,7 @@ CASSANDRA_WRITE_SLEEP_MS="${CASSANDRA_WRITE_SLEEP_MS:-0}"
 TENANT_CONFIG_DIR="${TENANT_CONFIG_DIR:-./tenant_configs}"
 ```
 
-Example use for an efficient deployment
-
-```sh
-TENANTS="tenant1 tenant2" \
-WORKERS=10 \
-PARTITIONS=10 \
-TEST_DURATION_SECONDS=120 \
-PREPARE_CHUNKS=true \
-RESET_STACK=true \
-DRAIN_BEFORE_STOP=true \
-DRAIN_TIMEOUT_SECONDS=100 \
-MIN_THROUGHPUT_RPS=1000000 \
-CASSANDRA_COUNT_DAY=2025-06-01 \
-CASSANDRA_WRITE_SLEEP_MS=0 \
-FORCE_REBUILD_IMAGES=true \
-./run_benchmark.sh
-```
-
-
-Silverpipeline guideline 1:
-go build -o batchmanager ./batchmanagercmd
-go build -o silverpipeline ./silverpipelinecmd
-./batchmanager --command extract-cache --tenant tenant2
-./batchmanager --command status --tenant tenant2
-./batchmanager --command run --tenant tenant2
-./batchmanager --command status --tenant tenant2
-./batchmanager --command cleanup-processed --tenant tenant2
-
-
+Explanation step by step for silver run
 ```sh
 DAY=2025-06-01
 
@@ -91,6 +247,8 @@ docker exec cassandra1 cqlsh -e "CONSISTENCY ONE; SELECT day,hour,records_aggreg
 ./batchmanager --command cleanup-processed --tenant tenant2
 ./batchmanager --command status --tenant tenant2
 ```
+
+Also for gcloud
 
 
 gcloud

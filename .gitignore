@@ -5,6 +5,12 @@ assignment-1-103803829/data/chunks/*
 
 
 assignment-2-103803829/cs-e4640-2026-assignment2.pdf
-assignment-2-103803829/data/*
+assignment-2-103803829/data/tenant1/chunks/*
+assignment-2-103803829/data/tenant1/2025-06_bme280.csv
+assignment-2-103803829/data/tenant1/2025-01-01_bme280_sensor_113.csv
+assignment-2-103803829/data/tenant1/2025-06-01_bme280.csv
+assignment-2-103803829/data/tenant2/chunks/*
+assignment-2-103803829/data/tenant2/2025-06_dht22.csv
+assignment-2-103803829/data/tenant2/2025-06-01_dht22.csv
 assignment-2-103803829/code/silverpipelinecmd/css-cristianacocheci-2025-6126fecb6879.json
 assignment-2-103803829/code/tenant_caching_dir/*/*.csv

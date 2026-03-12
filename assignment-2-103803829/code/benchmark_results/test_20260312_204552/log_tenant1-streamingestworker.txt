@@ -1,0 +1,64 @@
+tenant1-streamingestworker-3  | 2026/03/12 18:48:45 managed worker init: tenant=tenant1 topic=bme280-measurements group=tenant1-ingest-group keyspace=mysimbdp_tenant1 brokers=kafka-tenant1:29092
+tenant1-streamingestworker-3  | 2026/03/12 18:48:45 Connected to Cassandra cluster with tier policy: tenant=tenant1 tier=gold consistency=QUORUM
+tenant1-streamingestworker-3  | 2026/03/12 18:48:45 Tenant schema selected: tenant=tenant1 tier=gold consistency=QUORUM profile=bme280 format=bme280_full table_prefix=sensor_measurements columns=13
+tenant1-streamingestworker-3  | 2026/03/12 18:48:45 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant1-streamingestworker-3  | 2026/03/12 18:48:45 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=1319c65f18c0
+tenant1-streamingestworker-3  | 2026/03/12 18:48:45 Kafka consumer connected, consuming from topic: bme280-measurements
+tenant1-streamingestworker-3  | 2026/03/12 18:48:56 Detected table_suffix_field=sensor_type value=BME280, creating table with profile=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-3  | 2026/03/12 18:48:57 Created table using schema=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-3  | 2026/03/12 18:48:57 Inserted 25 records (total: 25, consumed messages: 25)
+tenant1-streamingestworker-5  | 2026/03/12 18:48:46 managed worker init: tenant=tenant1 topic=bme280-measurements group=tenant1-ingest-group keyspace=mysimbdp_tenant1 brokers=kafka-tenant1:29092
+tenant1-streamingestworker-5  | 2026/03/12 18:48:46 Connected to Cassandra cluster with tier policy: tenant=tenant1 tier=gold consistency=QUORUM
+tenant1-streamingestworker-5  | 2026/03/12 18:48:46 Tenant schema selected: tenant=tenant1 tier=gold consistency=QUORUM profile=bme280 format=bme280_full table_prefix=sensor_measurements columns=13
+tenant1-streamingestworker-5  | 2026/03/12 18:48:46 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant1-streamingestworker-5  | 2026/03/12 18:48:46 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=b327324a7f77
+tenant1-streamingestworker-5  | 2026/03/12 18:48:46 Kafka consumer connected, consuming from topic: bme280-measurements
+tenant1-streamingestworker-5  | 2026/03/12 18:48:56 Detected table_suffix_field=sensor_type value=BME280, creating table with profile=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-5  | 2026/03/12 18:48:56 Created table using schema=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-5  | 2026/03/12 18:48:56 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist (retrying in 500ms)
+tenant1-streamingestworker-5  | 2026/03/12 18:48:57 Inserted 25 records (total: 25, consumed messages: 25)
+tenant1-streamingestworker-5  | 2026/03/12 18:48:57 Inserted 25 records (total: 50, consumed messages: 50)
+tenant1-streamingestworker-5  | 2026/03/12 18:48:57 Inserted 25 records (total: 75, consumed messages: 75)
+tenant1-streamingestworker-5  | 2026/03/12 18:48:57 Inserted 25 records (total: 100, consumed messages: 100)
+tenant1-streamingestworker-5  | 2026/03/12 18:48:57 Inserted 25 records (total: 125, consumed messages: 125)
+tenant1-streamingestworker-3  | 2026/03/12 18:48:57 Inserted 25 records (total: 50, consumed messages: 50)
+tenant1-streamingestworker-3  | 2026/03/12 18:48:57 Inserted 25 records (total: 75, consumed messages: 75)
+tenant1-streamingestworker-3  | 2026/03/12 18:48:57 Inserted 25 records (total: 100, consumed messages: 100)
+tenant1-streamingestworker-3  | 2026/03/12 18:48:57 Inserted 25 records (total: 125, consumed messages: 125)
+tenant1-streamingestworker-4  | 2026/03/12 18:48:45 managed worker init: tenant=tenant1 topic=bme280-measurements group=tenant1-ingest-group keyspace=mysimbdp_tenant1 brokers=kafka-tenant1:29092
+tenant1-streamingestworker-4  | 2026/03/12 18:48:45 Connected to Cassandra cluster with tier policy: tenant=tenant1 tier=gold consistency=QUORUM
+tenant1-streamingestworker-4  | 2026/03/12 18:48:45 Tenant schema selected: tenant=tenant1 tier=gold consistency=QUORUM profile=bme280 format=bme280_full table_prefix=sensor_measurements columns=13
+tenant1-streamingestworker-4  | 2026/03/12 18:48:45 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant1-streamingestworker-4  | 2026/03/12 18:48:45 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=c7e7fbbc04c1
+tenant1-streamingestworker-4  | 2026/03/12 18:48:45 Kafka consumer connected, consuming from topic: bme280-measurements
+tenant1-streamingestworker-4  | 2026/03/12 18:48:56 Detected table_suffix_field=sensor_type value=BME280, creating table with profile=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-4  | 2026/03/12 18:48:56 Created table using schema=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-4  | 2026/03/12 18:48:56 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist (retrying in 500ms)
+tenant1-streamingestworker-4  | 2026/03/12 18:48:57 Inserted 25 records (total: 25, consumed messages: 25)
+tenant1-streamingestworker-4  | 2026/03/12 18:48:57 Inserted 25 records (total: 50, consumed messages: 50)
+tenant1-streamingestworker-4  | 2026/03/12 18:48:57 Inserted 25 records (total: 75, consumed messages: 75)
+tenant1-streamingestworker-2  | 2026/03/12 18:48:45 managed worker init: tenant=tenant1 topic=bme280-measurements group=tenant1-ingest-group keyspace=mysimbdp_tenant1 brokers=kafka-tenant1:29092
+tenant1-streamingestworker-2  | 2026/03/12 18:48:45 Connected to Cassandra cluster with tier policy: tenant=tenant1 tier=gold consistency=QUORUM
+tenant1-streamingestworker-2  | 2026/03/12 18:48:45 Tenant schema selected: tenant=tenant1 tier=gold consistency=QUORUM profile=bme280 format=bme280_full table_prefix=sensor_measurements columns=13
+tenant1-streamingestworker-2  | 2026/03/12 18:48:45 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant1-streamingestworker-2  | 2026/03/12 18:48:45 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=80b5631d4118
+tenant1-streamingestworker-2  | 2026/03/12 18:48:45 Kafka consumer connected, consuming from topic: bme280-measurements
+tenant1-streamingestworker-2  | 2026/03/12 18:48:56 Detected table_suffix_field=sensor_type value=BME280, creating table with profile=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-2  | 2026/03/12 18:48:58 Created table using schema=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-2  | 2026/03/12 18:48:58 Inserted 25 records (total: 25, consumed messages: 25)
+tenant1-streamingestworker-2  | 2026/03/12 18:48:58 Inserted 25 records (total: 50, consumed messages: 50)
+tenant1-streamingestworker-2  | 2026/03/12 18:48:58 Inserted 25 records (total: 75, consumed messages: 75)
+tenant1-streamingestworker-2  | 2026/03/12 18:48:58 Inserted 25 records (total: 100, consumed messages: 100)
+tenant1-streamingestworker-4  | 2026/03/12 18:48:57 Inserted 25 records (total: 100, consumed messages: 100)
+tenant1-streamingestworker-1  | 2026/03/12 18:48:45 managed worker init: tenant=tenant1 topic=bme280-measurements group=tenant1-ingest-group keyspace=mysimbdp_tenant1 brokers=kafka-tenant1:29092
+tenant1-streamingestworker-1  | 2026/03/12 18:48:45 Connected to Cassandra cluster with tier policy: tenant=tenant1 tier=gold consistency=QUORUM
+tenant1-streamingestworker-1  | 2026/03/12 18:48:45 Tenant schema selected: tenant=tenant1 tier=gold consistency=QUORUM profile=bme280 format=bme280_full table_prefix=sensor_measurements columns=13
+tenant1-streamingestworker-1  | 2026/03/12 18:48:45 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant1-streamingestworker-1  | 2026/03/12 18:48:45 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=5b7071edd646
+tenant1-streamingestworker-1  | 2026/03/12 18:48:45 Kafka consumer connected, consuming from topic: bme280-measurements
+tenant1-streamingestworker-1  | 2026/03/12 18:48:56 Detected table_suffix_field=sensor_type value=BME280, creating table with profile=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-1  | 2026/03/12 18:48:57 Created table using schema=bme280: mysimbdp_tenant1.sensor_measurements_bme280_bronze
+tenant1-streamingestworker-1  | 2026/03/12 18:48:57 Inserted 25 records (total: 25, consumed messages: 25)
+tenant1-streamingestworker-1  | 2026/03/12 18:48:57 Inserted 25 records (total: 50, consumed messages: 50)
+tenant1-streamingestworker-1  | 2026/03/12 18:48:57 Inserted 25 records (total: 75, consumed messages: 75)
+tenant1-streamingestworker-1  | 2026/03/12 18:48:57 Inserted 25 records (total: 100, consumed messages: 100)

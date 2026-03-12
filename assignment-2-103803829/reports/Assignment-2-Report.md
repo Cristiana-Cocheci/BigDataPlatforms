@@ -456,7 +456,7 @@ pipeline_constraints:
 
 ### 2.
 
-At first I implemented a silverpipeline for [tenant2](../code/silverpipelinecmd/tenant2.go), because it has a smaller data schema. As a tenant I am doing the following steps: 
+At first I implemented a silverpipeline for [tenant2](../code/silverpipelinecmd/main.go), because it has a smaller data schema. As a tenant I am doing the following steps: 
 - reading broze data from the database (table **mysimbdp_tenant2.sensor_observations_dht22_bronze**); 
 - writing data (on local disk) into [tenant_caching_dir/tenant2/sensor_observations_dht22_[timestamp]_runId_bronze_extract.csv](code/tenant_caching_dir/tenant2)
 - clean cached data by removing rows with missing entries
@@ -663,7 +663,7 @@ day;hour;records_aggregated;temperature_avg;temperature_min;temperature_max;temp
 
 ```
 
-### Constraint Violation Demonstration
+### CONSTRAINT VIOLATION DEMONSTARTION
 
 As mentioned above, I created two intentionally bad configs. using these I demonstrate a failure of the pipeline for various reasons:
 
@@ -704,52 +704,14 @@ We can also see the failed task detailed logs in:
 - [bad_throughput_task_status.jsonl](code/logs/silverpipeline/tenant2-bad-throughput/task_status.jsonl) (contains failed task `validate_throughput_limit`)
 - [bad_runtime_task_status.jsonl](code/logs/silverpipeline/tenant2-bad-runtime/task_status.jsonl) (contains failed full-pipeline tasks due to timeout)
 
+### COMPARING CLOUD WITH LOCAL CACHE
 
-### Comparative report from run logs across different runs
+I compared a full silverpipeline run on local caching versus cloud caching for both tenants. Here are the logging files produced:
 
-I compared the JSON log records generated in:
-
-  - `code/logs/silverpipeline/tenant2/run_status.jsonl`
-  - `code/logs/silverpipeline/tenant2/task_status.jsonl`
-
-  Additional local-cache executions used for this comparison:
-
-  Run-level comparison (`run_status.jsonl`):
-
-  | run_id | backend | mode | status | duration_ms | notes |
-  |---|---|---|---|---:|---|
-  | `20260311_121057.889884000` | gcs | transform-cache | success | 17050 | baseline gcs transform run |
-  | `20260311_121538.252584000` | local | full | success | 15214 | includes extract + transform |
-  | `20260311_121810.767052000` | local | transform-cache | success | 1239 | mode-matched local transform run |
-
-  Task-level comparison for successful `transform-cache` runs (`task_status.jsonl`):
-
-  | task | gcs duration_ms (`run_id=20260311_121057...`) | local duration_ms (`run_id=20260311_121810...`) | key metrics |
-  |---|---:|---:|---|
-  | `resolve_transform_inputs` | 304 | 0 | `matched_files=1` both |
-  | `aggregate_bronze_cache` | 16188 | 1183 | `raw_rows=2078885`, `kept_rows=2078885`, `dropped_rows=0` both |
-  | `write_silver_summary` | 303 | 0 | `summary_rows=24`, `summary_size_bytes=2164` both |
-  | `ensure_silver_table` | 1 | 3 | same table: `mysimbdp_tenant2.sensor_observations_dht22_silver` |
-  | `insert_silver_aggregates` | 50 | 51 | `inserted_rows=24` both |
-  | `transform_cache_file` | 16682 | 1239 | same bronze input cardinality |
-  | `run_transform_from_cache` | 16683 | 1239 | `cache_files=1` both |
-  | `validate_storage_limit` (`pipeline-final`) | 61 | 0 | `max_silver_storage_gb=100` both |
-
- 
-  Observations from logs:
-
-  - For mode-matched successful `transform-cache` runs, local cache was much faster than gcs cache mainly in read/aggregate and summary write stages.
-  - Cassandra insert stage is nearly identical across backends (`50ms` vs `51ms`), indicating backend difference is mostly in cache I/O.
-  - Both log files preserve full traceability with `run_id`, `status`, `duration_ms`, and `error` fields, making failed runs easy to diagnose.
-
-### Aggregated metrics for tenant1 and tenant2
-
-After making the silverpipeline tenant-aware, I reran the full pipeline with the new explicit data-volume counters enabled for both tenants and for both storage backends (`local` and `gcs`). The relevant run logs are:
-
-- `code/logs/silverpipeline/tenant1-metrics-test-2/run_status.jsonl`
-- `code/logs/silverpipeline/tenant1-gcs-metrics-test/run_status.jsonl`
-- `code/logs/silverpipeline/tenant2-metrics-test/run_status.jsonl`
-- `code/logs/silverpipeline/tenant2-gcs-metrics-test/run_status.jsonl`
+- [tenant1-metrics-test/run_status.jsonl](../code/logs/silverpipeline/tenant1-metrics-test-2/run_status.jsonl)
+- [tenant1-gcs-metrics-test/run_status.jsonl](../code/logs/silverpipeline/tenant1-gcs-metrics-test/run_status.jsonl)
+- [tenant2-metrics-test/run_status.jsonl](../code/logs/silverpipeline/tenant2-metrics-test/run_status.jsonl)
+- [tenant2-gcs-metrics-test/run_status.jsonl](../code/logs/silverpipeline/tenant2-gcs-metrics-test/run_status.jsonl)
 
 Measured results per successful run:
 
@@ -766,16 +728,117 @@ Observations:
 - `tenant1` processed more bronze data than `tenant2` on the selected day: `2,911,563` rows vs `2,078,885` rows.
 - The cloud runs were slower mainly because cache I/O moved through GCS, not because Cassandra extraction or silver cardinality changed.
 
-If I count each tenant-day once, the combined daily totals are:
+This confirms that the same tenant-aware silverpipeline works for both tenants, and that switching between `local` and `gcs` storage preserves the exact data volumes while changing only runtime and cache location. It is notable that runtime decreases significantly on cloud caching, but might make the architecture more reliable and scalable.
 
-| aggregated scope | cassandra_read_rows | cassandra_read_bytes | cache_rows | cache_bytes | silver_rows | silver_bytes | cassandra_inserted_rows | cassandra_inserted_bytes |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| tenant1 + tenant2 unique daily totals | 4,990,448 | 425,691,920 | 4,990,448 | 425,691,920 | 48 | 6,091 | 48 | 6,091 |
-| all four successful measurement runs | 9,980,896 | 851,383,840 | 9,980,896 | 851,383,840 | 96 | 12,182 | 96 | 12,182 |
 
-This confirms that the same tenant-aware silverpipeline works for both tenants, and that switching between `local` and `gcs` storage preserves the exact data volumes while changing only runtime and cache location.
+### A more finegrained comparative record of previous runs on tenant 2 cloud vs local
 
-### 5.
+I also compared the JSON log records generated for tenant2 before having implememnted the logging required for the next exercise:
+
+  - [tenant2/run_status.jsonl](../code/logs/silverpipeline/tenant2/run_status.jsonl)
+  - [tenant2/task_status.jsonl](code/logs/silverpipeline/tenant2/task_status.jsonl)
+
+
+In the following table we can see first a transform step from a cloud run, then a transform step from a local run, then a full local run. The transform step consists in reading from cache, transforming and wrinting in cache.
+
+We can easily observe how accesing the cloud bucket back and forth adds a lot of latency.
+
+  | run_id | backend | mode | status | duration_ms | notes |
+  |---|---|---|---|---:|---|
+  | `20260311_121057.889884000` | gcs | transform-cache | success | 17050 | baseline gcs transform run |
+   | `20260311_121810.767052000` | local | transform-cache | success | 1239 | mode-matched local transform run |
+  | `20260311_121538.252584000` | local | full | success | 15214 | includes extract + transform |
+ 
+
+  Task-level comparison for `transform-cache` runs (`task_status.jsonl`):
+
+  | task | gcs duration_ms (`run_id=20260311_121057...`) | local duration_ms (`run_id=20260311_121810...`) | key metrics |
+  |---|---:|---:|---|
+  | `resolve_transform_inputs` | 304 | 0 | `matched_files=1` both |
+  | `aggregate_bronze_cache` | 16188 | 1183 | `raw_rows=2078885`, `kept_rows=2078885`, `dropped_rows=0` both |
+  | `write_silver_summary` | 303 | 0 | `summary_rows=24`, `summary_size_bytes=2164` both |
+  | `ensure_silver_table` | 1 | 3 | same table: `mysimbdp_tenant2.sensor_observations_dht22_silver` |
+  | `insert_silver_aggregates` | 50 | 51 | `inserted_rows=24` both |
+  | `run_transform_from_cache` | 16683 | 1239 | `cache_files=1` both |
+  | `validate_storage_limit` (`pipeline-final`) | 61 | 60 | `max_silver_storage_gb=100` both |
+
+ 
+  Observations from logs:
+
+  - For `transform-cache` runs, local cache was much faster than gcs cache mainly in read/aggregate and summary write stages.
+  - Cassandra insert stage is nearly identical across backends (`50ms` vs `51ms`), indicating backend difference is mostly in cache I/O, not in Cassandra access.
+  - Both log files preserve full traceability with `run_id`, `status`, `duration_ms`, and `error` fields, making failed runs easy to diagnose.
+
+### 5. Logging features for successful/failed silverpipeline runs and tasks
+
+I implemented observability for silverpipeline with structured JSON logs at two levels:
+
+- **run-level events** (`pipeline_run`) written in run_status.jsonl files
+- **task-level events** (`pipeline_task`) written in task_status.jsonl files
+
+The implementation is in [code/silverpipelinecmd/main.go](../code/silverpipelinecmd/main.go), where `newSilverPipelineFileLogger` initializes the logger and each stage emits **status**, **duration_ms**, and detailed metrics.
+
+#### What is logged
+
+For each run/task, the logs include:
+
+- identity and context: `tenant_id`, `run_id`, `mode`, `storage_backend`, `storage_target`, `timestamp`
+- status and timing: `status` (`started` / `success` / `failed`), `duration_ms`
+- error traceability: `error` field for failed runs/tasks
+- data-size and processing counters:
+  - `cassandra_read_rows`, `cassandra_read_bytes`
+  - `cache_rows`, `cache_bytes`
+  - `silver_rows`, `silver_bytes`
+  - `cassandra_inserted_rows`, `cassandra_inserted_bytes`
+
+This satisfies the requirement to capture success/failure, transformation time, and data size in observability logs.
+
+#### Where logging information is stored
+
+Logging is stored in separate files under [code/logs/silverpipeline/...](../code/logs/silverpipeline/).
+
+The logger path is configurable (`SILVER_PIPELINE_LOG_DIR`, `SILVER_PIPELINE_RUN_LOG_FILE`, `SILVER_PIPELINE_TASK_LOG_FILE`), so **mysimbdp** can later ingest these JSONL files into a database/monitoring system without changing pipeline logic.
+
+#### How mysimbdp can use this logging information
+
+mysimbdp can use these logs for:
+
+- **SLA enforcement** per tenant (runtime, throughput, storage constraints)
+- **failure diagnosis** by quickly locating failed task and exact error message
+- **capacity planning** by comparing duration and throughput across backends (`local` vs `gcs`)
+- **tenant-level reporting/billing** based on explicit row and byte counters
+- **platform-level reliability KPIs** (success rate, failure rate, bottleneck tasks)
+
+#### Simple statistical data extracted from logs
+
+I extracted the following from the successful metric runs for both tenants (`local` and `gcs` backends) - they are the same ones i used in the cloud vs. local comparison in question 4:
+
+| tenant | backend | duration_ms | cassandra_read_rows | cassandra_read_bytes | cache_rows | cache_bytes | silver_rows | silver_bytes | cassandra_inserted_rows | cassandra_inserted_bytes |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| tenant1 | local | 36,497 | 2,911,563 | 269,042,612 | 2,911,563 | 269,042,612 | 24 | 3,927 | 24 | 3,927 |
+| tenant1 | gcs | 96,894 | 2,911,563 | 269,042,612 | 2,911,563 | 269,042,612 | 24 | 3,927 | 24 | 3,927 |
+| tenant2 | local | 15,035 | 2,078,885 | 156,649,308 | 2,078,885 | 156,649,308 | 24 | 2,164 | 24 | 2,164 |
+| tenant2 | gcs | 50,043 | 2,078,885 | 156,649,308 | 2,078,885 | 156,649,308 | 24 | 2,164 | 24 | 2,164 |
+
+
+#### Platform-wide summary from tests
+
+Using one successful daily run per tenant (counted once):
+
+- cassandra_read_rows: **4,990,448**
+- cassandra_read_bytes: **425,691,920**
+- silver_rows: **48**
+- silver_bytes: **6,091**
+- cassandra_inserted_rows: **48**
+- cassandra_inserted_bytes: **6,091**
+
+Across selected run logs (`tenant1-metrics-test-2`, `tenant1-gcs-metrics-test`, `tenant2-metrics-test`, `tenant2-gcs-metrics-test`, `tenant2-bad-throughput`, `tenant2-bad-runtime`):
+
+- successful runs: **4**
+- failed runs: **2**
+- observed success rate: **66.7%**
+
+These results show that mysimbdp can monitor each tenant and the whole platform with concrete, machine-readable run/task metrics, while also diagnosing failures quickly from precise task-level error logs.
 
 ## Part 3
 

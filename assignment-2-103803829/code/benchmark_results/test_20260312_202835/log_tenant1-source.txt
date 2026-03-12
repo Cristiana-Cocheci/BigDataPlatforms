@@ -1,0 +1,40 @@
+tenant1-source-5  | 2026/03/12 18:31:37 Waiting for Kafka to be ready...
+tenant1-source-5  | 2026/03/12 18:31:42 Loaded tenant config: tenant=tenant1 format=bme280_full source=/data/tenant1/2025-06-01_bme280_demo.csv chunk_dir=/data/tenant1/chunks
+tenant1-source-5  | 2026/03/12 18:31:42 Kafka producer connected to kafka-tenant1:29092
+tenant1-source-5  | 2026/03/12 18:31:42 Producer identity=723411bd2d09 auto-assigned chunk 1: /data/tenant1/chunks/chunk_1.csv
+tenant1-source-5  | 2026/03/12 18:31:42 Started reading CSV file: /data/tenant1/chunks/chunk_1.csv
+tenant1-source-5  | 2026/03/12 18:31:43 Produced 122 messages (total: 122, processed lines: 123)
+tenant1-source-5  | 2026/03/12 18:31:43 Production complete! Total messages produced: 122, Total lines processed: 123
+tenant1-source-5  | 2026/03/12 18:31:43 Performance: Duration=1.02s, Throughput=119.68 msg/s
+tenant1-source-4  | 2026/03/12 18:31:38 Waiting for Kafka to be ready...
+tenant1-source-2  | 2026/03/12 18:31:38 Waiting for Kafka to be ready...
+tenant1-source-2  | 2026/03/12 18:31:43 Loaded tenant config: tenant=tenant1 format=bme280_full source=/data/tenant1/2025-06-01_bme280_demo.csv chunk_dir=/data/tenant1/chunks
+tenant1-source-2  | 2026/03/12 18:31:43 Kafka producer connected to kafka-tenant1:29092
+tenant1-source-2  | 2026/03/12 18:31:43 Producer identity=3def4f8099b5 auto-assigned chunk 3: /data/tenant1/chunks/chunk_3.csv
+tenant1-source-2  | 2026/03/12 18:31:43 Started reading CSV file: /data/tenant1/chunks/chunk_3.csv
+tenant1-source-2  | 2026/03/12 18:31:44 Produced 122 messages (total: 122, processed lines: 123)
+tenant1-source-2  | 2026/03/12 18:31:44 Production complete! Total messages produced: 122, Total lines processed: 123
+tenant1-source-2  | 2026/03/12 18:31:44 Performance: Duration=1.01s, Throughput=120.40 msg/s
+tenant1-source-4  | 2026/03/12 18:31:43 Loaded tenant config: tenant=tenant1 format=bme280_full source=/data/tenant1/2025-06-01_bme280_demo.csv chunk_dir=/data/tenant1/chunks
+tenant1-source-4  | 2026/03/12 18:31:43 Kafka producer connected to kafka-tenant1:29092
+tenant1-source-4  | 2026/03/12 18:31:43 Producer identity=cee9ce568088 auto-assigned chunk 2: /data/tenant1/chunks/chunk_2.csv
+tenant1-source-4  | 2026/03/12 18:31:43 Started reading CSV file: /data/tenant1/chunks/chunk_2.csv
+tenant1-source-4  | 2026/03/12 18:31:44 Produced 122 messages (total: 122, processed lines: 123)
+tenant1-source-4  | 2026/03/12 18:31:44 Production complete! Total messages produced: 122, Total lines processed: 123
+tenant1-source-4  | 2026/03/12 18:31:44 Performance: Duration=1.02s, Throughput=120.11 msg/s
+tenant1-source-1  | 2026/03/12 18:31:37 Waiting for Kafka to be ready...
+tenant1-source-1  | 2026/03/12 18:31:42 Loaded tenant config: tenant=tenant1 format=bme280_full source=/data/tenant1/2025-06-01_bme280_demo.csv chunk_dir=/data/tenant1/chunks
+tenant1-source-1  | 2026/03/12 18:31:42 Kafka producer connected to kafka-tenant1:29092
+tenant1-source-1  | 2026/03/12 18:31:42 Producer identity=e0ea71e97cde auto-assigned chunk 0: /data/tenant1/chunks/chunk_0.csv
+tenant1-source-1  | 2026/03/12 18:31:42 Started reading CSV file: /data/tenant1/chunks/chunk_0.csv
+tenant1-source-1  | 2026/03/12 18:31:43 Produced 122 messages (total: 122, processed lines: 123)
+tenant1-source-1  | 2026/03/12 18:31:43 Production complete! Total messages produced: 122, Total lines processed: 123
+tenant1-source-1  | 2026/03/12 18:31:43 Performance: Duration=1.07s, Throughput=114.08 msg/s
+tenant1-source-3  | 2026/03/12 18:31:38 Waiting for Kafka to be ready...
+tenant1-source-3  | 2026/03/12 18:31:43 Loaded tenant config: tenant=tenant1 format=bme280_full source=/data/tenant1/2025-06-01_bme280_demo.csv chunk_dir=/data/tenant1/chunks
+tenant1-source-3  | 2026/03/12 18:31:43 Kafka producer connected to kafka-tenant1:29092
+tenant1-source-3  | 2026/03/12 18:31:43 Producer identity=7e71828bb956 auto-assigned chunk 4: /data/tenant1/chunks/chunk_4.csv
+tenant1-source-3  | 2026/03/12 18:31:43 Started reading CSV file: /data/tenant1/chunks/chunk_4.csv
+tenant1-source-3  | 2026/03/12 18:31:44 Produced 118 messages (total: 118, processed lines: 119)
+tenant1-source-3  | 2026/03/12 18:31:44 Production complete! Total messages produced: 118, Total lines processed: 119
+tenant1-source-3  | 2026/03/12 18:31:44 Performance: Duration=1.01s, Throughput=116.59 msg/s

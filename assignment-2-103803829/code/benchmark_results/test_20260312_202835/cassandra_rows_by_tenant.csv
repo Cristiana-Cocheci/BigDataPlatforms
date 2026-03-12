@@ -1,0 +1,3 @@
+tenant,inserted_rows_cassandra_count
+tenant1,400
+tenant2,450

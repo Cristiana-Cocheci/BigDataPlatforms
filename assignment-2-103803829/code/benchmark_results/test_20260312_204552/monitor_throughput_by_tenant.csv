@@ -1,0 +1,3 @@
+tenant,reports,avg_throughput_rps,min_throughput_rps,max_throughput_rps,avg_batch_ingest_ms,avg_ingested_mb_per_report,avg_ingested_mb_per_sec,min_ingested_mb_per_sec,max_ingested_mb_per_sec,total_ingested_mb
+tenant1,5,0.00,0.00,0.00,0.00,0.0000,0.0000,0.0000,0.0000,0.0000
+tenant2,5,0.00,0.00,0.00,0.00,0.0000,0.0000,0.0000,0.0000,0.0000

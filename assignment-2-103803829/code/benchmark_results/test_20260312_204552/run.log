@@ -1,0 +1,27 @@
+[20:45:52] Benchmark output directory: benchmark_results/test_20260312_204552
+[20:45:52] Resetting compose stack (including volumes)
+[20:45:52] Rebuilding docker images
+[20:46:40] Building manager binary
+[20:46:41] Cassandra write settings: num_conns=4 batch_size=25 write_sleep_ms=0
+[20:46:41] Source chunk settings: source_replicas=5 source_num_chunks=5 auto_assign=true
+[20:46:41] Starting infrastructure and control services
+[20:46:43] Waiting for cassandra1 to be ready
+[20:47:49] Waiting for cassandra2 to be ready
+[20:48:39] Waiting for cassandra3 to be ready
+[20:48:39] Waiting for kafka-tenant1 to be ready
+[20:48:39] Waiting for kafka-tenant2 to be ready
+[20:48:39] Starting tenant=tenant1 workers=5 source_replicas=5 partitions=5 with source producer
+[20:48:47] Starting tenant=tenant2 workers=5 source_replicas=5 partitions=5 with source producer
+[20:48:55] Collecting runtime for 40s
+[20:49:35] Capturing compose status before shutdown
+[20:49:35] Drain-aware shutdown enabled: stopping sources before draining workers
+[20:49:35] Stopping source for tenant=tenant1 before drain
+[20:49:35] Stopping source for tenant=tenant2 before drain
+[20:49:35] Waiting for tenant=tenant1 lag to drain (timeout=900s)
+[20:49:36] Drain check tenant=tenant1 lag=0
+[20:49:37] Waiting for tenant=tenant2 lag to drain (timeout=900s)
+[20:49:38] Drain check tenant=tenant2 lag=0
+[20:49:39] Capturing logs and monitor summary after drain wait
+[20:49:40] Stopping tenant=tenant1 worker after drain
+[20:49:41] Stopping tenant=tenant2 worker after drain
+[20:49:42] Waiting 15s for Cassandra write pressure to settle

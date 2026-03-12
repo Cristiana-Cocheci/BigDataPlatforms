@@ -1,0 +1,61 @@
+tenant2-streamingestworker-2  | 2026/03/12 18:31:43 managed worker init: tenant=tenant2 topic=dht22-measurements group=tenant2-ingest-group keyspace=mysimbdp_tenant2 brokers=kafka-tenant2:29092
+tenant2-streamingestworker-2  | 2026/03/12 18:31:43 Connected to Cassandra cluster with tier policy: tenant=tenant2 tier=silver consistency=ONE
+tenant2-streamingestworker-2  | 2026/03/12 18:31:43 Tenant schema selected: tenant=tenant2 tier=silver consistency=ONE profile=dht22 format=dht22_compact table_prefix=sensor_observations columns=10
+tenant2-streamingestworker-2  | 2026/03/12 18:31:43 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant2-streamingestworker-2  | 2026/03/12 18:31:43 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=e420e4b37692
+tenant2-streamingestworker-2  | 2026/03/12 18:31:43 Kafka consumer connected, consuming from topic: dht22-measurements
+tenant2-streamingestworker-2  | 2026/03/12 18:31:54 Detected table_suffix_field=sensor_type value=DHT22, creating table with profile=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-2  | 2026/03/12 18:31:56 Created table using schema=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-2  | 2026/03/12 18:31:56 Inserted 25 records (total: 25, consumed messages: 25)
+tenant2-streamingestworker-2  | 2026/03/12 18:31:56 Inserted 25 records (total: 50, consumed messages: 50)
+tenant2-streamingestworker-2  | 2026/03/12 18:31:56 Inserted 25 records (total: 75, consumed messages: 75)
+tenant2-streamingestworker-2  | 2026/03/12 18:31:56 Inserted 25 records (total: 100, consumed messages: 100)
+tenant2-streamingestworker-1  | 2026/03/12 18:31:43 managed worker init: tenant=tenant2 topic=dht22-measurements group=tenant2-ingest-group keyspace=mysimbdp_tenant2 brokers=kafka-tenant2:29092
+tenant2-streamingestworker-1  | 2026/03/12 18:31:43 Connected to Cassandra cluster with tier policy: tenant=tenant2 tier=silver consistency=ONE
+tenant2-streamingestworker-1  | 2026/03/12 18:31:43 Tenant schema selected: tenant=tenant2 tier=silver consistency=ONE profile=dht22 format=dht22_compact table_prefix=sensor_observations columns=10
+tenant2-streamingestworker-1  | 2026/03/12 18:31:43 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant2-streamingestworker-1  | 2026/03/12 18:31:43 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=e653353dfa65
+tenant2-streamingestworker-1  | 2026/03/12 18:31:43 Kafka consumer connected, consuming from topic: dht22-measurements
+tenant2-streamingestworker-1  | 2026/03/12 18:31:54 Detected table_suffix_field=sensor_type value=DHT22, creating table with profile=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-1  | 2026/03/12 18:31:54 Created table using schema=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-1  | 2026/03/12 18:31:54 Transient Cassandra insert failure table=mysimbdp_tenant2.sensor_observations_dht22_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: table sensor_observations_dht22_bronze does not exist (retrying in 500ms)
+tenant2-streamingestworker-1  | 2026/03/12 18:31:55 Inserted 25 records (total: 25, consumed messages: 25)
+tenant2-streamingestworker-1  | 2026/03/12 18:31:55 Inserted 25 records (total: 50, consumed messages: 50)
+tenant2-streamingestworker-1  | 2026/03/12 18:31:55 Inserted 25 records (total: 75, consumed messages: 75)
+tenant2-streamingestworker-5  | 2026/03/12 18:31:43 managed worker init: tenant=tenant2 topic=dht22-measurements group=tenant2-ingest-group keyspace=mysimbdp_tenant2 brokers=kafka-tenant2:29092
+tenant2-streamingestworker-5  | 2026/03/12 18:31:43 Connected to Cassandra cluster with tier policy: tenant=tenant2 tier=silver consistency=ONE
+tenant2-streamingestworker-5  | 2026/03/12 18:31:43 Tenant schema selected: tenant=tenant2 tier=silver consistency=ONE profile=dht22 format=dht22_compact table_prefix=sensor_observations columns=10
+tenant2-streamingestworker-5  | 2026/03/12 18:31:43 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant2-streamingestworker-5  | 2026/03/12 18:31:43 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=1da843827218
+tenant2-streamingestworker-5  | 2026/03/12 18:31:43 Kafka consumer connected, consuming from topic: dht22-measurements
+tenant2-streamingestworker-5  | 2026/03/12 18:31:54 Detected table_suffix_field=sensor_type value=DHT22, creating table with profile=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-5  | 2026/03/12 18:31:54 Created table using schema=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-5  | 2026/03/12 18:31:54 Transient Cassandra insert failure table=mysimbdp_tenant2.sensor_observations_dht22_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: table sensor_observations_dht22_bronze does not exist (retrying in 500ms)
+tenant2-streamingestworker-5  | 2026/03/12 18:31:55 Inserted 25 records (total: 25, consumed messages: 25)
+tenant2-streamingestworker-5  | 2026/03/12 18:31:55 Inserted 25 records (total: 50, consumed messages: 50)
+tenant2-streamingestworker-5  | 2026/03/12 18:31:55 Inserted 25 records (total: 75, consumed messages: 75)
+tenant2-streamingestworker-4  | 2026/03/12 18:31:43 managed worker init: tenant=tenant2 topic=dht22-measurements group=tenant2-ingest-group keyspace=mysimbdp_tenant2 brokers=kafka-tenant2:29092
+tenant2-streamingestworker-4  | 2026/03/12 18:31:43 Connected to Cassandra cluster with tier policy: tenant=tenant2 tier=silver consistency=ONE
+tenant2-streamingestworker-4  | 2026/03/12 18:31:43 Tenant schema selected: tenant=tenant2 tier=silver consistency=ONE profile=dht22 format=dht22_compact table_prefix=sensor_observations columns=10
+tenant2-streamingestworker-4  | 2026/03/12 18:31:43 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant2-streamingestworker-4  | 2026/03/12 18:31:43 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=b1ecff035bf9
+tenant2-streamingestworker-4  | 2026/03/12 18:31:43 Kafka consumer connected, consuming from topic: dht22-measurements
+tenant2-streamingestworker-4  | 2026/03/12 18:31:54 Detected table_suffix_field=sensor_type value=DHT22, creating table with profile=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-4  | 2026/03/12 18:31:55 Created table using schema=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-4  | 2026/03/12 18:31:55 Inserted 25 records (total: 25, consumed messages: 25)
+tenant2-streamingestworker-4  | 2026/03/12 18:31:55 Inserted 25 records (total: 50, consumed messages: 50)
+tenant2-streamingestworker-4  | 2026/03/12 18:31:55 Inserted 25 records (total: 75, consumed messages: 75)
+tenant2-streamingestworker-4  | 2026/03/12 18:31:55 Inserted 25 records (total: 100, consumed messages: 100)
+tenant2-streamingestworker-3  | 2026/03/12 18:31:43 managed worker init: tenant=tenant2 topic=dht22-measurements group=tenant2-ingest-group keyspace=mysimbdp_tenant2 brokers=kafka-tenant2:29092
+tenant2-streamingestworker-3  | 2026/03/12 18:31:43 Connected to Cassandra cluster with tier policy: tenant=tenant2 tier=silver consistency=ONE
+tenant2-streamingestworker-3  | 2026/03/12 18:31:43 Tenant schema selected: tenant=tenant2 tier=silver consistency=ONE profile=dht22 format=dht22_compact table_prefix=sensor_observations columns=10
+tenant2-streamingestworker-3  | 2026/03/12 18:31:43 Cassandra write policy: batch_size=25 write_sleep=0s max_retries=60 base_backoff=500ms max_backoff=10s
+tenant2-streamingestworker-3  | 2026/03/12 18:31:43 Monitor reporting enabled: url=http://streamingestmonitor:8081/reports interval=10s worker=de2f6f1de72f
+tenant2-streamingestworker-3  | 2026/03/12 18:31:43 Kafka consumer connected, consuming from topic: dht22-measurements
+tenant2-streamingestworker-3  | 2026/03/12 18:31:54 Detected table_suffix_field=sensor_type value=DHT22, creating table with profile=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-3  | 2026/03/12 18:31:54 Created table using schema=dht22: mysimbdp_tenant2.sensor_observations_dht22_bronze
+tenant2-streamingestworker-3  | 2026/03/12 18:31:54 Transient Cassandra insert failure table=mysimbdp_tenant2.sensor_observations_dht22_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: table sensor_observations_dht22_bronze does not exist (retrying in 500ms)
+tenant2-streamingestworker-3  | 2026/03/12 18:31:55 Inserted 25 records (total: 25, consumed messages: 25)
+tenant2-streamingestworker-3  | 2026/03/12 18:31:55 Inserted 25 records (total: 50, consumed messages: 50)
+tenant2-streamingestworker-3  | 2026/03/12 18:31:55 Inserted 25 records (total: 75, consumed messages: 75)
+tenant2-streamingestworker-3  | 2026/03/12 18:31:55 Inserted 25 records (total: 100, consumed messages: 100)

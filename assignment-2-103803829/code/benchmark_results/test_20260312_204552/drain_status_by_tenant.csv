@@ -1,0 +1,3 @@
+tenant,drain_status,final_kafka_lag
+tenant1,drained,0
+tenant2,drained,0

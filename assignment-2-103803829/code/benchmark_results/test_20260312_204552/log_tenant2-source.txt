@@ -1,0 +1,40 @@
+tenant2-source-2  | 2026/03/12 18:48:54 Waiting for Kafka to be ready...
+tenant2-source-2  | 2026/03/12 18:48:59 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22_demo.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-2  | 2026/03/12 18:48:59 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-2  | 2026/03/12 18:48:59 Producer identity=cd2c0e3f51a6 auto-assigned chunk 0: /data/tenant2/chunks/chunk_0.csv
+tenant2-source-2  | 2026/03/12 18:48:59 Started reading CSV file: /data/tenant2/chunks/chunk_0.csv
+tenant2-source-2  | 2026/03/12 18:49:00 Produced 101 messages (total: 101, processed lines: 102)
+tenant2-source-2  | 2026/03/12 18:49:00 Production complete! Total messages produced: 101, Total lines processed: 102
+tenant2-source-2  | 2026/03/12 18:49:00 Performance: Duration=1.07s, Throughput=94.73 msg/s
+tenant2-source-3  | 2026/03/12 18:48:54 Waiting for Kafka to be ready...
+tenant2-source-3  | 2026/03/12 18:48:59 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22_demo.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-3  | 2026/03/12 18:48:59 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-3  | 2026/03/12 18:48:59 Producer identity=692a0d18686c auto-assigned chunk 3: /data/tenant2/chunks/chunk_3.csv
+tenant2-source-4  | 2026/03/12 18:48:54 Waiting for Kafka to be ready...
+tenant2-source-4  | 2026/03/12 18:48:59 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22_demo.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-4  | 2026/03/12 18:48:59 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-4  | 2026/03/12 18:48:59 Producer identity=c9dea04f9f41 auto-assigned chunk 4: /data/tenant2/chunks/chunk_4.csv
+tenant2-source-4  | 2026/03/12 18:48:59 Started reading CSV file: /data/tenant2/chunks/chunk_4.csv
+tenant2-source-4  | 2026/03/12 18:49:00 Produced 98 messages (total: 98, processed lines: 99)
+tenant2-source-4  | 2026/03/12 18:49:00 Production complete! Total messages produced: 98, Total lines processed: 99
+tenant2-source-1  | 2026/03/12 18:48:54 Waiting for Kafka to be ready...
+tenant2-source-1  | 2026/03/12 18:48:59 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22_demo.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-1  | 2026/03/12 18:48:59 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-1  | 2026/03/12 18:48:59 Producer identity=eee2bd644bd0 auto-assigned chunk 1: /data/tenant2/chunks/chunk_1.csv
+tenant2-source-1  | 2026/03/12 18:48:59 Started reading CSV file: /data/tenant2/chunks/chunk_1.csv
+tenant2-source-4  | 2026/03/12 18:49:00 Performance: Duration=1.02s, Throughput=96.40 msg/s
+tenant2-source-1  | 2026/03/12 18:49:00 Produced 101 messages (total: 101, processed lines: 102)
+tenant2-source-1  | 2026/03/12 18:49:00 Production complete! Total messages produced: 101, Total lines processed: 102
+tenant2-source-1  | 2026/03/12 18:49:00 Performance: Duration=1.02s, Throughput=98.96 msg/s
+tenant2-source-3  | 2026/03/12 18:48:59 Started reading CSV file: /data/tenant2/chunks/chunk_3.csv
+tenant2-source-3  | 2026/03/12 18:49:00 Produced 101 messages (total: 101, processed lines: 102)
+tenant2-source-3  | 2026/03/12 18:49:00 Production complete! Total messages produced: 101, Total lines processed: 102
+tenant2-source-3  | 2026/03/12 18:49:00 Performance: Duration=1.01s, Throughput=99.87 msg/s
+tenant2-source-5  | 2026/03/12 18:48:54 Waiting for Kafka to be ready...
+tenant2-source-5  | 2026/03/12 18:48:59 Loaded tenant config: tenant=tenant2 format=dht22_compact source=/data/tenant2/2025-06-01_dht22_demo.csv chunk_dir=/data/tenant2/chunks
+tenant2-source-5  | 2026/03/12 18:48:59 Kafka producer connected to kafka-tenant2:29092
+tenant2-source-5  | 2026/03/12 18:48:59 Producer identity=ceba9c995f9c auto-assigned chunk 2: /data/tenant2/chunks/chunk_2.csv
+tenant2-source-5  | 2026/03/12 18:48:59 Started reading CSV file: /data/tenant2/chunks/chunk_2.csv
+tenant2-source-5  | 2026/03/12 18:49:00 Produced 101 messages (total: 101, processed lines: 102)
+tenant2-source-5  | 2026/03/12 18:49:00 Production complete! Total messages produced: 101, Total lines processed: 102
+tenant2-source-5  | 2026/03/12 18:49:00 Performance: Duration=1.02s, Throughput=99.11 msg/s

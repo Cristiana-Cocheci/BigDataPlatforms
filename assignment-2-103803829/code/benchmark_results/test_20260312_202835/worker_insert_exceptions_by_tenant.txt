@@ -1,0 +1,10 @@
+=== tenant=tenant1 service=tenant1-streamingestworker ===
+11:tenant1-streamingestworker-5  | 2026/03/12 18:31:49 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: Operation timed out - received only 1 responses. (retrying in 500ms)
+24:tenant1-streamingestworker-4  | 2026/03/12 18:31:49 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: Operation timed out - received only 1 responses. (retrying in 500ms)
+63:tenant1-streamingestworker-2  | 2026/03/12 18:31:49 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: Operation timed out - received only 1 responses. (retrying in 500ms)
+
+=== tenant=tenant2 service=tenant2-streamingestworker ===
+21:tenant2-streamingestworker-1  | 2026/03/12 18:31:54 Transient Cassandra insert failure table=mysimbdp_tenant2.sensor_observations_dht22_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: table sensor_observations_dht22_bronze does not exist (retrying in 500ms)
+33:tenant2-streamingestworker-5  | 2026/03/12 18:31:54 Transient Cassandra insert failure table=mysimbdp_tenant2.sensor_observations_dht22_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: table sensor_observations_dht22_bronze does not exist (retrying in 500ms)
+57:tenant2-streamingestworker-3  | 2026/03/12 18:31:54 Transient Cassandra insert failure table=mysimbdp_tenant2.sensor_observations_dht22_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant2.sensor_observations_dht22_bronze: table sensor_observations_dht22_bronze does not exist (retrying in 500ms)
+

@@ -1,0 +1,7 @@
+
+ table_name
+-----------------------------------
+ sensor_measurements_bme280_bronze
+            tenant_schema_registry
+
+(2 rows)
