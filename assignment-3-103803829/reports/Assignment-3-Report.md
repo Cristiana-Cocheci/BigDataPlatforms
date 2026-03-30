@@ -85,6 +85,19 @@ Some key performance metrics are:
 
 
 ### 5.
+![Design](../code/figures/ass3.drawio.png)
+
+**Ingestion** is being done with Kafka. The system design is mostly the same as in assignment 2. Kafka will ingest CSV files and transform them into event messages. There will be one topic per tenant and the partitioning key will be sensor_id.
+
+Why Kafka? High throughput, fault tolerant, supports at-least-once delivery... Reasons explained in detail in previous assignment.
+
+The streaming engine chosen for **streamanalyticsapp** is Apache Flink. It will process timed events in sliding windows, aggregate results and form reports. Reports are always sent to Cassandra to the reports table. Alerts are also always sent to Cassandra to the alerts table. Alerts can also be instantly forwarded to the tenant thorugh a http message service, for example.
+
+Why Flink? It has built-in support for timed events, watermarks and sliding windows. It also provides a low-latency processing.
+
+The **mysimbdp-coredms** remains Cassandra, same system design as in previous assignments. It will store data in two tables / tenant keyspace / sensor type (dht22):
+- aggregated window results
+- alerts
 
 
 ## Part 2
