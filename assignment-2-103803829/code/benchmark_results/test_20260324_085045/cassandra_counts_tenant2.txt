@@ -1,0 +1,28 @@
+=== mysimbdp_tenant2.sensor_observations_dht22_bronze ===
+Partition counts for day=2025-06-01
+hour=0,count=85990
+hour=1,count=85655
+hour=2,count=86166
+hour=3,count=85981
+hour=4,count=39159
+hour=5,count=87537
+hour=6,count=87380
+hour=7,count=87937
+hour=8,count=88242
+hour=9,count=40137
+hour=10,count=88152
+hour=11,count=88255
+hour=12,count=88077
+hour=13,count=70430
+hour=14,count=57902
+hour=15,count=87920
+hour=16,count=87665
+hour=17,count=86801
+hour=18,count=49413
+hour=19,count=71395
+hour=20,count=87255
+hour=21,count=86686
+hour=22,count=86433
+hour=23,count=27831
+total_for_day=1838399
+

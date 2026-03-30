@@ -274,3 +274,18 @@ SILVER_PIPELINE_GCS_CREDENTIALS_FILE=./silverpipelinecmd/css-cristianacocheci-20
 SILVER_PIPELINE_INPUT_FILES=gs://caching-silverpipeline-bucket/tenant2/silverpipeline-cache/sensor_observations_dht22_bronze_20260311_114933_bronze_extract.csv \
 go run ./silverpipelinecmd
 ```
+
+
+```sh
+#TENANT 1 cloud
+
+TENANT_ID=tenant1 \
+CASSANDRA_KEYSPACE=mysimbdp_tenant1 \
+CASSANDRA_HOSTS=127.0.0.1 \
+SILVER_PIPELINE_MODE=full \
+SILVER_PIPELINE_STORAGE_BACKEND=gcs \
+SILVER_PIPELINE_GCS_BUCKET=caching-silverpipeline-bucket \
+SILVER_PIPELINE_GCS_PREFIX=tenant1/silverpipeline-cache \
+SILVER_PIPELINE_GCS_CREDENTIALS_FILE=./silverpipelinecmd/css-cristianacocheci-2025-6126fecb6879.json \
+go run ./silverpipelinecmd
+```

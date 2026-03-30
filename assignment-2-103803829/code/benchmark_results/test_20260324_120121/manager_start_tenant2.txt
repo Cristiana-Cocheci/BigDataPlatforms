@@ -1,0 +1,78 @@
+Preparing chunks: tenant=tenant2 source=../data/tenant2/2025-06-01_dht22.csv chunks=5
+Total rows: 2088110
+Number of chunks: 5
+Rows per chunk: 417622
+Creating chunks in: ../data/tenant2/chunks
+
+Created chunk_0.csv: rows 0-417621 (417622 records)
+Created chunk_1.csv: rows 417622-835243 (417622 records)
+Created chunk_2.csv: rows 835244-1252865 (417622 records)
+Created chunk_3.csv: rows 1252866-1670487 (417622 records)
+Created chunk_4.csv: rows 1670488-2088109 (417622 records)
+
+Chunking complete! Files ready in: ../data/tenant2/chunks
+ Container zookeeper-tenant2  Running
+ Container cassandra1  Running
+ Container streamingestmanager  Running
+ Container cassandra2  Running
+ Container kafka-tenant2  Running
+ Container cassandra3  Running
+ Container streamingestmonitor  Running
+Created topic dht22-measurements.
+ Container streamingestmanager  Running
+ Container zookeeper-tenant2  Running
+ Container streamingestmonitor  Running
+ Container cassandra1  Running
+ Container kafka-tenant2  Running
+ Container code-tenant2-streamingestworker-5  Creating
+ Container code-tenant2-streamingestworker-3  Creating
+ Container code-tenant2-streamingestworker-2  Creating
+ Container code-tenant2-streamingestworker-4  Creating
+ Container code-tenant2-streamingestworker-1  Creating
+ Container code-tenant2-streamingestworker-1  Created
+ Container code-tenant2-streamingestworker-4  Created
+ Container code-tenant2-streamingestworker-5  Created
+ Container code-tenant2-streamingestworker-3  Created
+ Container code-tenant2-streamingestworker-2  Created
+ Container kafka-tenant2  Waiting
+ Container cassandra1  Waiting
+ Container cassandra1  Healthy
+ Container kafka-tenant2  Healthy
+ Container code-tenant2-streamingestworker-2  Starting
+ Container code-tenant2-streamingestworker-2  Started
+ Container code-tenant2-streamingestworker-5  Starting
+ Container code-tenant2-streamingestworker-5  Started
+ Container code-tenant2-streamingestworker-4  Starting
+ Container code-tenant2-streamingestworker-4  Started
+ Container code-tenant2-streamingestworker-3  Starting
+ Container code-tenant2-streamingestworker-3  Started
+ Container code-tenant2-streamingestworker-1  Starting
+ Container code-tenant2-streamingestworker-1  Started
+ Container zookeeper-tenant2  Running
+ Container cassandra1  Running
+ Container kafka-tenant2  Running
+ Container code-tenant2-source-5  Creating
+ Container code-tenant2-source-4  Creating
+ Container code-tenant2-source-3  Creating
+ Container code-tenant2-source-2  Creating
+ Container code-tenant2-source-1  Creating
+ Container code-tenant2-source-1  Created
+ Container code-tenant2-source-4  Created
+ Container code-tenant2-source-3  Created
+ Container code-tenant2-source-5  Created
+ Container code-tenant2-source-2  Created
+ Container cassandra1  Waiting
+ Container kafka-tenant2  Waiting
+ Container kafka-tenant2  Healthy
+ Container cassandra1  Healthy
+ Container code-tenant2-source-1  Starting
+ Container code-tenant2-source-1  Started
+ Container code-tenant2-source-5  Starting
+ Container code-tenant2-source-5  Started
+ Container code-tenant2-source-2  Starting
+ Container code-tenant2-source-2  Started
+ Container code-tenant2-source-4  Starting
+ Container code-tenant2-source-4  Started
+ Container code-tenant2-source-3  Starting
+ Container code-tenant2-source-3  Started
+tenant=tenant2 started: workers=5 source_replicas=5 with-source=true prepare-chunks=true schema=dht22

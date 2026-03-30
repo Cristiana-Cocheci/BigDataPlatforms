@@ -237,7 +237,7 @@ I also designed a **cooldown system**. When an alert is sent, then there is a co
     - TotalIngestedMB
     - WindowSeconds
     - RecordsInWindow
-    - When there is a reason to alert the manager (small throughput and/or small average batch ingest), it first checks it is not in a cooldown period, in which case the alert is skipped. If it is not in a cooldown period, it sends the alert in json format via HTTP.
+    - When there is a reason to alert the manager (small throughput and/or big average batch ingest), it first checks it is not in a cooldown period, in which case the alert is skipped. If it is not in a cooldown period, it sends the alert in json format via HTTP.
 
 
 ### 5.

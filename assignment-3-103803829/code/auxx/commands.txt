@@ -1,0 +1,5 @@
+docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml down --remove-orphans
+
+docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml up -d cassandra1 cassandra2 cassandra3 zookeeper-tenant1 kafka-tenant1 zookeeper-tenant2 kafka-tenant2 && docker compose -f docker-compose.yml -f docker-compose.multitenant-brokers.yml ps
+
+go build -o streamingestmanager streamingestmanager.go && ./streamingestmanager --command start --tenant tenant1 --workers 2 --with-source --prepare-chunks

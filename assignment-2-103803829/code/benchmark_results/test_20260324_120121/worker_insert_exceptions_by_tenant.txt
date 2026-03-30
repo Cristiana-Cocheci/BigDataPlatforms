@@ -1,0 +1,9 @@
+=== tenant=tenant1 service=tenant1-streamingestworker ===
+9:tenant1-streamingestworker-5  | 2026/03/24 10:03:55 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist (retrying in 500ms)
+195:tenant1-streamingestworker-2  | 2026/03/24 10:03:55 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist (retrying in 500ms)
+225:tenant1-streamingestworker-3  | 2026/03/24 10:03:55 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist (retrying in 500ms)
+253:tenant1-streamingestworker-4  | 2026/03/24 10:03:55 Transient Cassandra insert failure table=mysimbdp_tenant1.sensor_measurements_bme280_bronze attempt=1/61: failed to insert batch into mysimbdp_tenant1.sensor_measurements_bme280_bronze: table sensor_measurements_bme280_bronze does not exist (retrying in 500ms)
+
+=== tenant=tenant2 service=tenant2-streamingestworker ===
+no insert exceptions found
+
