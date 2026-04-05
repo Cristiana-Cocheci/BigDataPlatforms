@@ -15,3 +15,5 @@ assignment-*-103803829/code/tenant_caching_dir/*/*.csv
 
 
 assignment-*-103803829/cs-e4640-2026-assignment*.pdf
+.venv
+*/*/.venv*

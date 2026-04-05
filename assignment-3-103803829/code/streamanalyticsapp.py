@@ -1,0 +1,256 @@
+import csv
+import json
+import os
+import sys
+import time
+from datetime import datetime, timezone
+from statistics import median
+from typing import Dict, Iterable, List, Tuple
+from urllib import request
+
+from pyflink.common import Duration, WatermarkStrategy
+from pyflink.common.watermark_strategy import TimestampAssigner
+from pyflink.common.typeinfo import Types
+from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.datastream.functions import KeySelector, MapFunction, ProcessWindowFunction
+from pyflink.datastream.window import SlidingEventTimeWindows
+from pyflink.common.time import Time
+
+
+# Input event tuple schema:
+# (sensor_id, sensor_type, location, lat, lon, event_ts_ms, temperature, humidity)
+EventTuple = Tuple[int, str, str, float, float, int, float, float]
+
+
+class SensorKeySelector(KeySelector):
+    def get_key(self, value: EventTuple):
+        return value[0]
+
+
+class EventTimestampAssigner(TimestampAssigner):
+    def extract_timestamp(self, value: EventTuple, record_timestamp: int) -> int:
+        return value[5]
+
+
+class AnalyticsWindowFunction(ProcessWindowFunction):
+    def __init__(self, tenant_id: str, temp_low: float, temp_high: float, hum_low: float, hum_high: float):
+        self.tenant_id = tenant_id
+        self.temp_low = temp_low
+        self.temp_high = temp_high
+        self.hum_low = hum_low
+        self.hum_high = hum_high
+
+    def process(self, key, context, elements: Iterable[EventTuple]):
+        records = list(elements)
+        if not records:
+            return
+
+        sensor_id = records[0][0]
+        sensor_type = records[0][1]
+        location = records[0][2]
+        lat = records[0][3]
+        lon = records[0][4]
+
+        temps = [r[6] for r in records]
+        hums = [r[7] for r in records]
+        minute_buckets = {r[5] // 60000 for r in records}
+
+        expected_minutes = 15
+        missing_min = max(0, expected_minutes - len(minute_buckets))
+
+        t_min = min(temps)
+        t_max = max(temps)
+        t_avg = sum(temps) / len(temps)
+        t_median = float(median(temps))
+
+        h_min = min(hums)
+        h_max = max(hums)
+        h_avg = sum(hums) / len(hums)
+        h_median = float(median(hums))
+
+        is_alert = (
+            t_min < self.temp_low
+            or t_max > self.temp_high
+            or h_min < self.hum_low
+            or h_max > self.hum_high
+            or missing_min > 0
+        )
+
+        result = {
+            "tenant_id": self.tenant_id,
+            "sensor_id": sensor_id,
+            "sensor_type": sensor_type,
+            "location": location,
+            "lat": lat,
+            "lon": lon,
+            "window_start": ms_to_iso(context.window().start),
+            "window_end": ms_to_iso(context.window().end),
+            "t_min": round(t_min, 3),
+            "t_max": round(t_max, 3),
+            "t_median": round(t_median, 3),
+            "t_avg": round(t_avg, 3),
+            "h_min": round(h_min, 3),
+            "h_max": round(h_max, 3),
+            "h_median": round(h_median, 3),
+            "h_avg": round(h_avg, 3),
+            "missing_min": missing_min,
+            "is_alert": bool(is_alert),
+            "records_in_window": len(records),
+        }
+        yield json.dumps(result, separators=(",", ":"))
+
+
+class CallbackMapFunction(MapFunction):
+    def __init__(self, callback_url: str):
+        self.callback_url = callback_url
+
+    def map(self, value):
+        payload = value if isinstance(value, str) else json.dumps(value, separators=(",", ":"))
+
+        if self.callback_url:
+            req = request.Request(
+                self.callback_url,
+                data=payload.encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                request.urlopen(req, timeout=2)
+            except Exception as exc:
+                print(f"WARN callback failed: {exc}", flush=True)
+
+        return payload
+
+
+def ms_to_iso(ts_ms: int) -> str:
+    return datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def parse_input_row(row: Dict[str, str]) -> EventTuple:
+    # Enforce strict input schema and fail fast when the row is malformed.
+    required = [
+        "sensor_id",
+        "sensor_type",
+        "location",
+        "lat",
+        "lon",
+        "timestamp",
+        "temperature",
+        "humidity",
+    ]
+    for key in required:
+        if key not in row:
+            raise ValueError(f"missing input column: {key}")
+        if row[key] is None or row[key].strip() == "":
+            raise ValueError(f"empty value for column: {key}")
+
+    sensor_id = int(row["sensor_id"].strip())
+    sensor_type = row["sensor_type"].strip()
+    location = row["location"].strip()
+    lat = float(row["lat"].strip())
+    lon = float(row["lon"].strip())
+    event_dt = datetime.strptime(row["timestamp"].strip(), "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+    event_ts_ms = int(event_dt.timestamp() * 1000)
+    temperature = float(row["temperature"].strip())
+    humidity = float(row["humidity"].strip())
+
+    return (sensor_id, sensor_type, location, lat, lon, event_ts_ms, temperature, humidity)
+
+
+def load_events(csv_path: str, emit_delay_ms: int, max_events: int) -> List[EventTuple]:
+    events: List[EventTuple] = []
+    skipped = 0
+    with open(csv_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter=";")
+        for line_no, row in enumerate(reader, start=2):
+            try:
+                events.append(parse_input_row(row))
+            except ValueError as exc:
+                skipped += 1
+                if skipped <= 5:
+                    print(f"WARN skipping malformed row at line={line_no}: {exc}", flush=True)
+                continue
+
+            if max_events > 0 and len(events) >= max_events:
+                break
+
+            if emit_delay_ms > 0:
+                time.sleep(emit_delay_ms / 1000.0)
+
+    if skipped > 0:
+        print(f"INFO skipped malformed rows: {skipped}", flush=True)
+
+    if len(events) == 0:
+        raise ValueError("no valid events loaded from source CSV")
+
+    return events
+
+
+def getenv_int(name: str, default: int) -> int:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    return int(raw)
+
+
+def getenv_float(name: str, default: float) -> float:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    return float(raw)
+
+
+def main():
+    tenant_id = os.getenv("TENANT_ID", "tenant2").strip() or "tenant2"
+    source_csv = os.getenv("SOURCE_CSV", "../data/tenant2/2025-06-01_dht22.csv").strip()
+    emit_delay_ms = max(0, getenv_int("EMIT_DELAY_MS", 0))
+    max_events = max(0, getenv_int("MAX_EVENTS", 0))
+    out_of_order_minutes = max(0, getenv_int("OUT_OF_ORDER_MINUTES", 3))
+    callback_url = os.getenv("TENANT_CALLBACK_URL", "").strip()
+
+    temp_low = getenv_float("TEMP_ALERT_LOW", 10.0)
+    temp_high = getenv_float("TEMP_ALERT_HIGH", 35.0)
+    hum_low = getenv_float("HUM_ALERT_LOW", 20.0)
+    hum_high = getenv_float("HUM_ALERT_HIGH", 90.0)
+
+    env = StreamExecutionEnvironment.get_execution_environment()
+    env.set_parallelism(1)
+    env.set_python_executable(sys.executable)
+
+    source_type = Types.TUPLE([
+        Types.INT(),
+        Types.STRING(),
+        Types.STRING(),
+        Types.FLOAT(),
+        Types.FLOAT(),
+        Types.LONG(),
+        Types.FLOAT(),
+        Types.FLOAT(),
+    ])
+
+    events = load_events(source_csv, emit_delay_ms, max_events)
+    stream = env.from_collection(events, type_info=source_type)
+
+    wm = (
+        WatermarkStrategy
+        .for_bounded_out_of_orderness(Duration.of_minutes(out_of_order_minutes))
+        .with_timestamp_assigner(EventTimestampAssigner())
+    )
+
+    analytics = (
+        stream
+        .assign_timestamps_and_watermarks(wm)
+        .key_by(SensorKeySelector(), Types.INT())
+        .window(SlidingEventTimeWindows.of(Time.minutes(15), Time.minutes(1)))
+        .process(
+            AnalyticsWindowFunction(tenant_id, temp_low, temp_high, hum_low, hum_high),
+            output_type=Types.STRING(),
+        )
+    )
+
+    analytics.map(CallbackMapFunction(callback_url), output_type=Types.STRING()).print()
+    env.execute("tenant2-streamanalyticsapp")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,74 @@
+Minimal single-tenant Flink run (tenant2, DHT22 only):
+
+1) Create a compatible Python 3.11 environment (PyFlink 1.20.x does not work on Python 3.14):
+   /opt/homebrew/bin/python3.11 -m venv .venv311
+   source .venv311/bin/activate
+
+2) Ensure Java is available for PyFlink runtime and builds:
+   export JAVA_HOME=/opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk/Contents/Home
+   export PATH="$JAVA_HOME/bin:$PATH"
+
+3) Install dependency:
+   pip install -U "setuptools<81" wheel
+   pip install --no-build-isolation -r requirements_streamanalyticsapp.txt
+
+4) Run from assignment-3/code:
+   python streamanalyticsapp.py
+
+Optional callback demo (second terminal):
+- Terminal A:
+  python auxx/local_callback_receiver.py
+- Terminal B:
+  TENANT_CALLBACK_URL=http://127.0.0.1:8080/tenant2/analytics SOURCE_CSV=../data/tenant2/2025-06-01_dht22_demo.csv OUT_OF_ORDER_MINUTES=0 python streamanalyticsapp.py
+
+Optional runtime environment variables:
+- SOURCE_CSV=../data/tenant2/2025-06-01_dht22.csv
+- TENANT_ID=tenant2
+- OUT_OF_ORDER_MINUTES=3
+- EMIT_DELAY_MS=0
+- MAX_EVENTS=0  (0 means no cap; useful for quick smoke tests)
+- TENANT_CALLBACK_URL=http://localhost:8080/tenant2/analytics
+- TEMP_ALERT_LOW=10
+- TEMP_ALERT_HIGH=35
+- HUM_ALERT_LOW=20
+- HUM_ALERT_HIGH=90
+
+Notes:
+- Malformed CSV rows (missing/empty required fields) are skipped with warning logs.
+- The job fails only if no valid events can be loaded.
+
+Result schema per output JSON line:
+{
+  "tenant_id": "tenant2",
+  "sensor_id": 36474,
+  "sensor_type": "DHT22",
+  "location": "81266",
+  "lat": 53.248,
+  "lon": -6.124,
+  "window_start": "2025-06-01T00:00:00Z",
+  "window_end": "2025-06-01T00:15:00Z",
+  "t_min": 13.0,
+  "t_max": 13.8,
+  "t_median": 13.4,
+  "t_avg": 13.41,
+  "h_min": 93.1,
+  "h_max": 99.9,
+  "h_median": 96.4,
+  "h_avg": 96.28,
+  "missing_min": 0,
+  "is_alert": true,
+  "records_in_window": 15
+}
+
+
+
+
+Quick run commands (same setup I validated):
+
+cd assignment-3-103803829/code
+source .venv311/bin/activate
+export JAVA_HOME=/opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk/Contents/Home
+export PATH="$JAVA_HOME/bin:$PATH"
+Receiver terminal: python auxx/local_callback_receiver.py
+App terminal:
+TENANT_ID=tenant2 SOURCE_CSV=../data/tenant2/2025-06-01_dht22.csv OUT_OF_ORDER_MINUTES=0 TENANT_CALLBACK_URL=http://127.0.0.1:8080/tenant2/analytics MAX_EVENTS=1000 python streamanalyticsapp.py

@@ -122,3 +122,131 @@ The **mysimbdp-coredms** remains Cassandra, same system design as in previous as
 ### 4.
 
 ### 5.
+
+
+
+
+
+
+##### HELLO
+# Assignment 3 Report
+
+**AI Usage Disclosure**:
+>I declare that I have not used AI for writing the assignment report\
+>I declare that I have used VSCode Copilot for code generation.
+
+
+## Part 1
+### 1.
+For this implementation I use a **single tenant (tenant2)** and a **single DHT22 file** only:
+
+- `data/tenant2/2025-06-01_dht22.csv`
+
+The stream analytics app is implemented in:
+
+- `code/streamanalyticsapp.py`
+
+The raw input record schema (CSV header) is:
+
+|sensor_id|sensor_type|location|lat|lon|timestamp|temperature|humidity|
+|---|---|---|---|---|---|---|---|
+|36474|DHT22|81266|53.248|-6.124|2025-06-01T00:00:00|13.00|99.90|
+
+The output analytics record schema (JSON per sliding window result) is:
+
+|tenant_id|sensor_id|sensor_type|location|lat|lon|window_start|window_end|t_min|t_max|t_median|t_avg|h_min|h_max|h_median|h_avg|missing_min|is_alert|records_in_window|
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|tenant2|36474|DHT22|81266|53.248|-6.124|2025-06-01T00:00:00Z|2025-06-01T00:15:00Z|13.0|13.8|13.4|13.41|93.1|99.9|96.4|96.28|0|false|15|
+
+Why enforce both schemas:
+
+- Input schema enforcement protects event-time processing from malformed rows (missing `timestamp`, non-numeric metrics, etc.).
+- Output schema enforcement gives a stable contract for tenant-side consumers (dashboard/alert endpoint).
+- Without strict schemas, window computations can silently mix bad values and produce unreliable alerts.
+
+### 2.
+i) Keying strategy:
+
+- The stream is keyed by `sensor_id` in Flink.
+- All calculations in a window are sensor-local, so keying avoids mixing independent sensor timelines.
+
+ii) Delivery semantics for this minimal version:
+
+- Input comes from one CSV source replayed as a stream.
+- In this minimal setup we do not implement distributed exactly-once transport; the app focuses on event-time window logic for a single tenant.
+
+### 3.
+i) Serialization/deserialization (serde):
+
+- Deserialization: `csv.DictReader` parses `;`-separated rows, then `parse_input_row` converts each field to strongly typed values.
+- Event-time parsing: `timestamp` is parsed with `%Y-%m-%dT%H:%M:%S` and converted to Unix milliseconds.
+- Serialization of results: each window result is serialized as compact JSON and emitted to stdout (and optional HTTP callback).
+
+ii) Processing logic in `streamanalyticsapp.py`:
+
+- Read one input file as a stream source (`CSVSource`).
+- Assign watermarks with bounded out-of-orderness (default 3 minutes).
+- `key_by(sensor_id)`.
+- Apply a **15-minute sliding window** with **1-minute slide**.
+- In `AnalyticsWindowFunction`, compute:
+    - `t_min`, `t_max`, `t_avg`, `t_median`
+    - `h_min`, `h_max`, `h_avg`, `h_median`
+    - `missing_min = max(0, 15 - unique_minutes_in_window)`
+    - `is_alert` based on threshold violation or missing minutes.
+
+iii) Event-time correctness:
+
+- Window boundaries use sensor event time, not processing time.
+- This keeps results correct even if data arrives late within the watermark bound.
+
+iv) Configurable thresholds:
+
+- `TEMP_ALERT_LOW`, `TEMP_ALERT_HIGH`, `HUM_ALERT_LOW`, `HUM_ALERT_HIGH` are runtime environment variables.
+
+### 4. 
+Near real-time result delivery in this implementation:
+
+- Default mode: each finished window result is printed immediately as JSON line.
+- Push mode: if `TENANT_CALLBACK_URL` is set, the same JSON payload is sent via HTTP `POST` in the sink function.
+- Results are produced near real time when:
+  - watermarks pass window end (`OUT_OF_ORDER_MINUTES` controls the lateness buffer), and
+  - the job keeps running continuously.
+
+In other words, output delay is approximately: watermark lateness + processing overhead.
+
+
+### 5.
+![Design](../code/figures/ass3.drawio.png)
+
+Implementation scope (minimal, non-generalized by design):
+
+- Single tenant only (`tenant2`).
+- Single data source only (`2025-06-01_dht22.csv`).
+- Single Flink app only (`code/streamanalyticsapp.py`).
+- Minimal run guide in `code/auxx/how_to_run_streamanalyticsapp.txt`.
+
+This keeps code volume low while still implementing event-time stream analytics with schemas, serde, windowed computation, and near-real-time output delivery.
+
+
+## Part 2
+### 1.
+
+### 2.
+
+### 3.
+
+### 4.
+
+### 5.
+
+
+## Part 3
+### 1.
+
+### 2.
+
+### 3.
+
+### 4.
+
+### 5.
