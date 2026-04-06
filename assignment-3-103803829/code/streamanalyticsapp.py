@@ -375,10 +375,10 @@ def main():
     cassandra_hosts = split_csv(cassandra_hosts_raw)
     cassandra_keyspace = os.getenv("CASSANDRA_KEYSPACE", DEFAULT_CASSANDRA_KEYSPACE).strip() or DEFAULT_CASSANDRA_KEYSPACE
 
-    temp_low = getenv_float("TEMP_ALERT_LOW", 10.0)
+    temp_low = getenv_float("TEMP_ALERT_LOW", 12.0)
     temp_high = getenv_float("TEMP_ALERT_HIGH", 35.0)
     hum_low = getenv_float("HUM_ALERT_LOW", 20.0)
-    hum_high = getenv_float("HUM_ALERT_HIGH", 90.0)
+    hum_high = getenv_float("HUM_ALERT_HIGH", 95.0)
 
     log_info(
         (

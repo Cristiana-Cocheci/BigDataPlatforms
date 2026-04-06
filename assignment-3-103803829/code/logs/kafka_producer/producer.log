@@ -1,13 +1,10 @@
-2026-04-05T15:19:32Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22_demo.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
-2026-04-05T15:30:15Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
-2026-04-05T15:30:15Z WARN skipping malformed csv row line=506: missing or empty column: humidity
-2026-04-05T15:30:15Z WARN skipping malformed csv row line=4074: missing or empty column: humidity
-2026-04-05T15:30:15Z WARN skipping malformed csv row line=4118: missing or empty column: humidity
-2026-04-05T15:30:15Z WARN skipping malformed csv row line=4133: missing or empty column: humidity
-2026-04-05T15:30:15Z WARN skipping malformed csv row line=5040: missing or empty column: humidity
-2026-04-05T15:38:18Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
-2026-04-05T15:38:18Z INFO producer done produced=400 skipped=0
-2026-04-05T16:13:01Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
-2026-04-05T16:13:01Z INFO producer done produced=120 skipped=0
-2026-04-05T16:13:33Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
-2026-04-05T16:13:34Z INFO producer done produced=120 skipped=0
+2026-04-06T19:06:23Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements max_events=600 emit_delay_ms=1000
+2026-04-06T19:06:23Z INFO detected csv delimiter=';'
+2026-04-06T19:08:02Z PROGRESS produced=100 elapsed_sec=99.34 rate_events_sec=1.01 actual_emit_lag_ms=99339
+2026-04-06T19:09:43Z PROGRESS produced=200 elapsed_sec=199.67 rate_events_sec=1.00 actual_emit_lag_ms=199665
+2026-04-06T19:11:23Z PROGRESS produced=300 elapsed_sec=300.05 rate_events_sec=1.00 actual_emit_lag_ms=300048
+2026-04-06T19:13:03Z PROGRESS produced=400 elapsed_sec=400.39 rate_events_sec=1.00 actual_emit_lag_ms=400387
+2026-04-06T19:14:44Z PROGRESS produced=500 elapsed_sec=500.78 rate_events_sec=1.00 actual_emit_lag_ms=500771
+2026-04-06T19:14:49Z WARN row 504 skipped: missing or empty column: humidity
+2026-04-06T19:16:24Z SUMMARY produced=599 skipped=1 elapsed_sec=601.16 rate_events_sec=1.00 actual_emit_lag_total_ms=600150 avg_emit_delay_ms=1001.92
+2026-04-06T19:16:24Z INFO producer exit

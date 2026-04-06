@@ -1,0 +1,14 @@
+INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements max_events=1000 emit_delay_ms=50
+INFO detected csv delimiter=';'
+PROGRESS produced=100 elapsed_sec=5.59 rate_events_sec=17.89 actual_emit_lag_ms=5587
+PROGRESS produced=200 elapsed_sec=11.26 rate_events_sec=17.77 actual_emit_lag_ms=11254
+PROGRESS produced=300 elapsed_sec=16.94 rate_events_sec=17.71 actual_emit_lag_ms=16933
+PROGRESS produced=400 elapsed_sec=22.66 rate_events_sec=17.65 actual_emit_lag_ms=22658
+PROGRESS produced=500 elapsed_sec=28.33 rate_events_sec=17.65 actual_emit_lag_ms=28327
+WARN row 504 skipped: missing or empty column: humidity
+PROGRESS produced=600 elapsed_sec=34.01 rate_events_sec=17.64 actual_emit_lag_ms=34006
+PROGRESS produced=700 elapsed_sec=39.68 rate_events_sec=17.64 actual_emit_lag_ms=39673
+PROGRESS produced=800 elapsed_sec=45.33 rate_events_sec=17.65 actual_emit_lag_ms=45330
+PROGRESS produced=900 elapsed_sec=51.01 rate_events_sec=17.64 actual_emit_lag_ms=51008
+SUMMARY produced=999 skipped=1 elapsed_sec=56.63 rate_events_sec=17.64 actual_emit_lag_total_ms=56574 avg_emit_delay_ms=56.63
+INFO producer exit

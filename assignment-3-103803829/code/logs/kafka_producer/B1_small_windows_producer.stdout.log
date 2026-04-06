@@ -1,0 +1,16 @@
+[1;33m[SETUP][0m timeout command not found; running without timeout safeguard.
+[1;33m[SETUP][0m Install GNU coreutils for timeout: brew install coreutils
+INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements max_events=1000 emit_delay_ms=50
+INFO detected csv delimiter=';'
+PROGRESS produced=100 elapsed_sec=5.32 rate_events_sec=18.79 actual_emit_lag_ms=5317
+PROGRESS produced=200 elapsed_sec=10.68 rate_events_sec=18.72 actual_emit_lag_ms=10679
+PROGRESS produced=300 elapsed_sec=16.03 rate_events_sec=18.71 actual_emit_lag_ms=16031
+PROGRESS produced=400 elapsed_sec=21.43 rate_events_sec=18.67 actual_emit_lag_ms=21426
+PROGRESS produced=500 elapsed_sec=26.82 rate_events_sec=18.64 actual_emit_lag_ms=26817
+WARN row 504 skipped: missing or empty column: humidity
+PROGRESS produced=600 elapsed_sec=32.16 rate_events_sec=18.66 actual_emit_lag_ms=32156
+PROGRESS produced=700 elapsed_sec=37.51 rate_events_sec=18.66 actual_emit_lag_ms=37504
+PROGRESS produced=800 elapsed_sec=42.86 rate_events_sec=18.66 actual_emit_lag_ms=42861
+PROGRESS produced=900 elapsed_sec=48.24 rate_events_sec=18.66 actual_emit_lag_ms=48232
+SUMMARY produced=999 skipped=1 elapsed_sec=53.60 rate_events_sec=18.64 actual_emit_lag_total_ms=53542 avg_emit_delay_ms=53.60
+INFO producer exit

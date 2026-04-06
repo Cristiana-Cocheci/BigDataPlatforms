@@ -1,0 +1,52 @@
+
+================================================================================
+PERFORMANCE TEST REPORT: B4_high_frequency
+Generated: 2026-04-06T21:42:27.925868
+================================================================================
+
+1. PRODUCER METRICS
+--------------------------------------------------------------------------------
+  Produced:              999 events
+  Skipped:               1 events
+  Production Time:       56.63 seconds
+  Production Rate:       17.64 events/sec
+  Total Emit Lag:        56574 ms
+  Avg Emit Delay:        56.63 ms
+
+2. KAFKA CONSUMER METRICS (Flink)
+--------------------------------------------------------------------------------
+  Events Consumed:       1000 events
+  Consumption Time:      3.21 seconds
+  Consumption Rate:      312.01 events/sec
+  Errors:                0
+
+3. WINDOW PROCESSING METRICS
+--------------------------------------------------------------------------------
+  Windows Emitted:       87795 windows
+  Avg Window Size:       0.0 records/window
+  Amplification Factor:  87.80x
+
+4. CASSANDRA SINK METRICS
+--------------------------------------------------------------------------------
+  Write Attempts:        87500 successful
+  Write Failures:        0 failed
+  Avg Write Latency:     3.48 ms
+  Max Write Latency:     183.92 ms
+  Actual DB Row Count:   87795 rows
+  Analytics Output Lines:87795 lines
+
+5. END-TO-END METRICS
+--------------------------------------------------------------------------------
+  Total Pipeline Time:   477.39 seconds
+  Input Events:          999
+  Output Rows (Cassandra): 87795
+  Throughput (in/sec):   2.09
+  Throughput (out/sec):  183.91
+
+6. DATA LOSS CHECK
+--------------------------------------------------------------------------------
+    Produced → Consumed:   999 → 1000
+  Loss:                  -1 events
+  Loss %:                -0.10%
+
+================================================================================

@@ -1,0 +1,52 @@
+
+================================================================================
+PERFORMANCE TEST REPORT: B2_baseline_windows
+Generated: 2026-04-06T21:31:43.271890
+================================================================================
+
+1. PRODUCER METRICS
+--------------------------------------------------------------------------------
+  Produced:              999 events
+  Skipped:               1 events
+  Production Time:       53.67 seconds
+  Production Rate:       18.61 events/sec
+  Total Emit Lag:        53613 ms
+  Avg Emit Delay:        53.67 ms
+
+2. KAFKA CONSUMER METRICS (Flink)
+--------------------------------------------------------------------------------
+  Events Consumed:       999 events
+  Consumption Time:      30.37 seconds
+  Consumption Rate:      32.90 events/sec
+  Errors:                0
+
+3. WINDOW PROCESSING METRICS
+--------------------------------------------------------------------------------
+  Windows Emitted:       14625 windows
+  Avg Window Size:       0.0 records/window
+  Amplification Factor:  14.64x
+
+4. CASSANDRA SINK METRICS
+--------------------------------------------------------------------------------
+  Write Attempts:        14500 successful
+  Write Failures:        0 failed
+  Avg Write Latency:     3.45 ms
+  Max Write Latency:     1409.82 ms
+  Actual DB Row Count:   14625 rows
+  Analytics Output Lines:14625 lines
+
+5. END-TO-END METRICS
+--------------------------------------------------------------------------------
+  Total Pipeline Time:   113.38 seconds
+  Input Events:          999
+  Output Rows (Cassandra): 14625
+  Throughput (in/sec):   8.81
+  Throughput (out/sec):  128.99
+
+6. DATA LOSS CHECK
+--------------------------------------------------------------------------------
+    Produced → Consumed:   999 → 999
+  Loss:                  0 events
+  Loss %:                0.00%
+
+================================================================================

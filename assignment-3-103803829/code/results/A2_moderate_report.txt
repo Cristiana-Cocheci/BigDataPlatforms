@@ -1,0 +1,52 @@
+
+================================================================================
+PERFORMANCE TEST REPORT: A2_moderate
+Generated: 2026-04-06T22:06:20.632195
+================================================================================
+
+1. PRODUCER METRICS
+--------------------------------------------------------------------------------
+  Produced:              999 events
+  Skipped:               1 events
+  Production Time:       103.60 seconds
+  Production Rate:       9.64 events/sec
+  Total Emit Lag:        103496 ms
+  Avg Emit Delay:        103.60 ms
+
+2. KAFKA CONSUMER METRICS (Flink)
+--------------------------------------------------------------------------------
+  Events Consumed:       1000 events
+  Consumption Time:      3.21 seconds
+  Consumption Rate:      311.40 events/sec
+  Errors:                975
+
+3. WINDOW PROCESSING METRICS
+--------------------------------------------------------------------------------
+  Windows Emitted:       14625 windows
+  Avg Window Size:       0.0 records/window
+  Amplification Factor:  14.62x
+
+4. CASSANDRA SINK METRICS
+--------------------------------------------------------------------------------
+  Write Attempts:        13500 successful
+  Write Failures:        975 failed
+  Avg Write Latency:     2.69 ms
+  Max Write Latency:     5062.21 ms
+  Actual DB Row Count:   13650 rows
+  Analytics Output Lines:14625 lines
+
+5. END-TO-END METRICS
+--------------------------------------------------------------------------------
+  Total Pipeline Time:   73.18 seconds
+  Input Events:          999
+  Output Rows (Cassandra): 13650
+  Throughput (in/sec):   13.65
+  Throughput (out/sec):  186.53
+
+6. DATA LOSS CHECK
+--------------------------------------------------------------------------------
+    Produced → Consumed:   999 → 1000
+  Loss:                  -1 events
+  Loss %:                -0.10%
+
+================================================================================

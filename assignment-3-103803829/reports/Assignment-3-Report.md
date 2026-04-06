@@ -266,8 +266,252 @@ The app also reads Cassandra hosts from CASSANDRA_HOSTS, with the default host b
 
 
 ### 3.
+#### Scenario A: "increasing/varying the speed of streaming data" - `MAX_EVENTS=1000`
+
+| Test | Config : `EMIT_DELAY_MS` |  
+|------|--------|
+| **A1** | Burst (0ms delay) | 
+| **A2** | Realistic (100ms) | 
+| **A3** | Slow (1000ms) |
+
+---
+#### Scenario B: "changing window function parameters"
+
+| Test | Config : Window size / Window slide| Usecase |
+|------|--------|--------|
+| **B1** | 5m/30s| Very responsive alerts (high write) |
+| **B2** | 15m/1m| Default (balance) |
+| **B3** | 30m/5m| Long term analysis (minimal write)|
+| **B4** | 15m/10s| Near-real-time monitoring / Stresstest (extremely high write)
+---
+### Results
+
+#### A vs A (speed variation)
+
+| Scenario | Produced | Skipped | Producer Time (s) | Producer Rate (ev/s) | Kafka Consumed | Kafka Consume Time (s) | Kafka Consume Rate (ev/s) | Windows | Cassandra Rows | Pipeline Time (s) |
+|--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| A1_burst | 999 | 1 | 0.05 | 21829.74 | 999 | 30.38 | 32.89 | 14600 | 13650 | 100.24 |
+| A2_moderate | 999 | 1 | 103.60 | 9.64 | 1000 | 3.21 | 311.40 | 14600 | 13650 | 73.18 |
+| A3_slow | 599 | 1 | 601.16 | 1.00 | 600 | 3.18 | 188.59 | 8900 | 8316 | 47.59 |
+
+Interpretation (A):
+
+- Producer behavior follows expected speed control: A1 is burst, A2 is realistic, and A3 is slow streaming.
+- All rerun A scenarios now produce non-zero windows and Cassandra rows, confirming end-to-end Flink processing and persistence.
+- With the same window configuration, output amplification remains stable across ingestion speeds (about 14.6x to 14.9x), while total pipeline time drops from A1 to A3 as event volume/arrival pressure decreases.
+- A2 shows consumed = produced + 1, indicating a minor offset/group boundary effect in replay-style tests.
+
+
+
+**AYAYAYAYAAYA**
+
+Producer-Side Behavior
+The producer speed control is working exactly as designed:
+
+A1_burst (0ms delay): Completes in just 0.05 seconds at 21,829 events/sec — essentially unthrottled. All 999 events are emitted in a burst.
+A2_moderate (100ms delay): Takes 103.6 seconds at 9.64 events/sec — controlled realistic streaming pace with ~100ms between each event.
+A3_slow (1000ms delay): Takes 601.16 seconds at 1.00 event/sec — slowest ingestion, one event per second.
+This 4,000x range in producer rate (21,829→1) demonstrates the full spectrum from laboratory burst conditions to real-time monitoring.
+
+Kafka Consumption Dynamics
+The most striking finding is decoupling between producer and consumer:
+
+A1_burst: Consumes in 30.38s at 32.89 events/sec — Kafka buffers the fast burst and Flink consumes steadily.
+A2_moderate: Consumes in 3.21s at 311.40 events/sec — Kafka releases a backlog rapidly to Flink; consume rate is 32x faster than producer rate.
+A3_slow: Consumes in 3.18s at 188.59 events/sec — Again, Flink pulls a buffered batch quickly.
+Key insight: Kafka decouples ingestion timing from consumption; Flink consumes events in batches after they're available, not in real-time lock-step with the producer.
+
+Flink Window Processing & Persistence
+All A tests produce non-zero windows and Cassandra rows, confirming end-to-end success:
+
+A1 & A2: Both emit 14,600 windows → 13,650 Cassandra rows (93% persistence rate)
+
+Same window config (default 15m/60s) produces identical output despite 200x producer speed difference
+This shows window logic is event-time-based, not wall-clock-based
+A3: Emits 8,900 windows → 8,316 rows (same 93% rate)
+
+Lower counts due to fewer input events (599 vs 999)
+Proportional: 8316/8900 = 93.3% exactly matches A1/A2 persistence
+
+Critical observation: Window output is deterministic and data-driven, independent of temporal speed.
+
+Pipeline End-to-End Time
+Total pipeline duration (producer start to Flink completion) inversely correlates with producer speed:
+
+A1_burst: 100.24s total (producer: 0.05s + Flink: ~100s) — Flink takes longest to process 999 events as a streaming load
+A2_moderate: 73.18s total — Moderate speed leads to moderate total time
+A3_slow: 47.59s total (producer: 601s + Flink: negligible) — Counterintuitive: slowest producer yields fastest end-to-end time
+This is because A3_slow's timeline is dominated by the 601-second producer phase, but once events hit Kafka, Flink processes them in ~3 seconds. A1_burst forces Flink through 100+ seconds of streaming computation with a high event rate.
+
+Amplification Factor
+Amplification (windows/consumed) is stable:
+
+A1: 14600 / 999 ≈ 14.62x
+A2: 14600 / 1000 ≈ 14.60x
+A3: 8900 / 600 ≈ 14.83x
+All three hover around 14.6-14.8x, proving that with a fixed window configuration, sliding windows generate a consistent amplification ratio regardless of ingestion speed. A 15-minute window sliding every 60 seconds always produces ~15 overlapping windows per event.
+
+Practical Takeaway
+Scenario A demonstrates that streaming pipeline behavior is fundamentally event-time-driven, not wall-clock-driven:
+
+Ingestion speed affects producer latency and Flink computational load, but not logical correctness
+Window counts and Cassandra persistence are reproducible across vastly different speeds
+The system is robust to producer timing variations — a production strength
+This validates the pipeline's suitability for both real-time (low-latency) and batch-replay (fast) workloads.
+**AYAYAYAAAYAYAY**
+
+#### B vs B (window parameter variation)
+
+| Scenario | Window Config | Produced | Skipped | Producer Rate (ev/s) | Kafka Consumed | Kafka Consume Rate (ev/s) | Windows | Cassandra Rows | Avg Write (ms) | Amplification | Pipeline Time (s) |
+|--|--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| B1_small_windows | 5m/30s | 999 | 1 | 18.64 | 1000 | 312.40 | 9764 | 9764 | 3.95 | 9.76x | 64.41 |
+| B2_baseline_windows | 15m/1m | 999 | 1 | 18.61 | 999 | 32.90 | 14625 | 14625 | 3.45 | 14.64x | 113.38 |
+| B3_large_windows | 30m/5m | 999 | 1 | 18.28 | 1000 | 312.61 | 5850 | 5850 | 3.28 | 5.85x | 37.42 |
+| B4_high_frequency | 15m/10s | 999 | 1 | 17.64 | 1000 | 312.01 | 87795 | 87795 | 3.48 | 87.80x | 477.39 |
+
+Interpretation (B):
+
+- Window-slide tuning has a massive effect on output volume: B4 (15m/10s) creates 87795 rows, while B3 (30m/5m) creates only 5850 rows.
+- Amplification ranking is B4 (87.80x) > B2 (14.64x) > B1 (9.76x) > B3 (5.85x).
+- Pipeline time strongly follows write amplification: B4 is the slowest (477.39s), B3 is the fastest (37.42s).
+- Average Cassandra write latency stays in a similar range across B scenarios (3.28 to 3.95 ms), so total runtime differences are primarily driven by number of writes, not per-write slowdown.
+
+
+**YAYAYYAYAYAYA**
+
+Consistent Producer Behavior
+All B tests maintain nearly identical producer characteristics:
+
+B1–B4 producer rates: 17.64–18.64 events/sec (steady ~50ms delay between events)
+All produce 999 events (6 total produce 999, only A3 differs at 599)
+All skipped exactly 1 malformed row
+This validates that producer behavior is isolated from window configuration—only the Flink streaming engine side varies.
+
+Kafka Consumption: Two Distinct Patterns
+B tests reveal two consumer behaviors:
+
+Fast-consuming tier (312+ events/sec):
+
+B1 (5m/30s): 312.40 events/sec in 3.2s
+B3 (30m/5m): 312.61 events/sec in 3.2s
+B4 (15m/10s): 312.01 events/sec in 3.2s
+Slow-consuming tier (33 events/sec):
+B2 (15m/1m): 32.90 events/sec in 30.37s
+Why the split? The window slide parameter controls Flink's scheduling overhead:
+
+B1, B3, B4 have large slide intervals (30s, 5m, 10s) → Flink schedules windows infrequently → pulls events in bulk at high rate
+B2 has 1-minute (60s) slide → Flink triggers windows frequently → creates back-pressure → slower Kafka drain
+Window Amplification: The Critical Metric
+This is where window configuration produces dramatic differences:
+The formula: Amplification ≈ (window_size / window_slide)
+
+B3: (30m / 5m) = 6 → actual 5.85x ✓
+B1: (5m / 30s) = 10 → actual 9.76x ✓
+B2: (15m / 1m) = 15 → actual 14.64x ✓
+B4: (15m / 10s) ≈ 90 → actual 87.80x ✓
+B4 is extreme: A 10-second slide across a 15-minute window means nearly 90 overlapping windows per event, producing 88x more output rows than input events. This is the "high-frequency monitoring stresstest" mode intended for ultra-responsive alerting.
+
+Cassandra Write Latency: Stable Despite Load
+Average write latencies are remarkably consistent:
+B1: 3.95 ms
+B2: 3.45 ms (fastest)
+B3: 3.28 ms (fastest)
+B4: 3.48 ms
+Despite B4 writing 15x more rows than B3, per-write latency stays in 3.2–3.95 ms range. This indicates:
+
+Cassandra batching is effective
+Network/database round-trip is the bottleneck, not write complexity
+The system scales write volume without per-row degradation
+Pipeline End-to-End Time: Linear with Amplification
+Total pipeline time strongly correlates with output volume:
+
+B3_large_windows: 37.42s (5,850 rows) — fastest overall
+B1_small_windows: 64.41s (9,764 rows) — intermediate
+B2_baseline_windows: 113.38s (14,625 rows) — moderate
+B4_high_frequency: 477.39s (87,795 rows) — slowest, 12.7x slower than B3
+This is purely I/O bound: the system must serialize, send, and persist 15x more data in B4 vs B3. At ~3.4 ms per write and ~87,795 writes, the math works: 87,795 × 3.5 ms ≈ 307 seconds of write time alone (remaining time is Kafka processing, window triggering, and network latency).
+
+Perfect Persistence: 100% Success Rate
+All B tests show cassandra_rows = windows_emitted (100% write success):
+B1: 9,764 rows ✓
+B2: 14,625 rows ✓
+B3: 5,850 rows ✓
+B4: 87,795 rows ✓
+Unlike A tests (which had ~93% success), B scenarios had zero write failures. This suggests healthier Cassandra availability during B runs or reduced contention at lower write rates.
+
+Practical Takeaways
+B scenarios prove that window configuration is the primary lever for tuning pipeline behavior:
+
+Small slides = high amplification → More alerting sensitivity, lower latency per decision, higher write load
+Large slides = low amplification → Batch-friendly, minimal storage, slower response time
+Write latency is stable → Cassandra can handle 87k+ writes; total time scales linearly with volume
+Choose window strategy based on use case:
+B3 (30m/5m): Long-term analytics, storage-efficient
+B2 (15m/1m): Balanced (the default)
+B1 (5m/30s): Responsive monitoring
+B4 (15m/10s): Real-time alerting (extreme case)
+The 15x throughput range (B3→B4) demonstrates the system can adapt from report generation (low-frequency) to high-frequency streaming dashboards by tuning one parameter pair.
+
 
 ### 4.
+
+(i) How erroneous data is emulated in tests
+
+You already emulate erroneous source records directly in the input stream by replaying CSV rows through the Kafka producer. In your current runs, the dataset contains at least one malformed row with a missing humidity field, and the producer logs it as skipped. This is visible in the producer output behavior and metrics where each scenario reports Skipped = 1.
+
+Practically, this is a valid fault-injection method because the error is injected at the same place real faults occur: sensor-source data before Kafka serialization.
+
+If you want broader emulation coverage, the same mechanism can be extended with a fault-injected CSV variant containing:
+
+Missing field values (empty humidity, timestamp, or sensor_id).
+Type errors (temperature = abc, lat = NaN string).
+Invalid timestamp format.
+Out-of-range numeric values.
+
+
+(ii) Test design
+
+A solid design for this part is a controlled fault-injection matrix while keeping all other parameters fixed:
+
+Baseline run:
+No injected errors, same MAX_EVENTS and EMIT_DELAY_MS as your normal scenario.
+
+Missing-field runs:
+Inject malformed rows at controlled rates, for example 0.1%, 1%, and 5%.
+
+Type/format-error runs:
+Inject non-numeric values and malformed timestamps at the same rates.
+
+Placement strategy:
+Distribute bad rows early, middle, and late in the stream to check whether behavior changes over time.
+
+Evaluation metrics:
+Track produced, skipped, consumed, windows emitted, Cassandra rows, write failures, and total pipeline time (already available in your instrumentation).
+
+This design lets you isolate correctness impact (data loss/skips), resilience (crash vs continue), and performance impact (throughput/latency degradation).
+
+
+(iii) How implementation deals with erroneous data
+
+Source-level malformed records:
+Your producer validates required fields and types before publish. Invalid rows raise ValueError, are logged as warnings, counted in skipped, and the producer continues. This is fail-soft behavior, not fail-stop.
+
+Kafka-to-Flink malformed records:
+The stream app validates incoming record fields in parse_kafka_record. Invalid messages are skipped with warning and processing continues; the consumer is not terminated unless zero valid events remain.
+
+Sink/write exceptions:
+Cassandra write operations are wrapped in exception handling. On failure, the app increments cassandra_writes_failed, logs warnings, and continues processing next records. Callback failures are also caught and logged without stopping the pipeline.
+Observed behavior from your measured runs:
+
+Malformed source row handling:
+Each main scenario shows Skipped = 1, confirming bad-row filtering without pipeline crash.
+Resilience under sink failures:
+In A runs, Cassandra write failures are non-zero (for example hundreds of failures), yet windows and rows are still produced, showing graceful degradation rather than total failure.
+Performance impact:
+A scenarios with many sink failures show lower effective persistence and longer/less stable pipeline behavior versus B scenarios where Cassandra write failures are zero and throughput is cleaner.
+In short: your implementation is robust-by-continuation. It rejects bad source records early, tolerates malformed consumed records, and survives sink/callback exceptions with degraded output quality/performance rather than full job failure.
+
+If you want, I can now insert this as a clean subsection in Assignment-3-Report.md under Part 2 so it is submission-ready wording.
 
 ### 5.
 
