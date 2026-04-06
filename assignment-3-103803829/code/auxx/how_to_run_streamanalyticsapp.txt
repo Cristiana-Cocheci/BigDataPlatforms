@@ -1,4 +1,6 @@
-Minimal single-tenant Flink run (tenant2, DHT22 only):
+Minimal single-tenant architecture (tenant2):
+
+CSV -> Kafka producer -> Kafka (topic dht22-measurements) -> Flink streamanalyticsapp (Kafka consumer) -> Cassandra
 
 1) Create a compatible Python 3.11 environment (PyFlink 1.20.x does not work on Python 3.14):
    /opt/homebrew/bin/python3.11 -m venv .venv311
@@ -12,8 +14,14 @@ Minimal single-tenant Flink run (tenant2, DHT22 only):
    pip install -U "setuptools<81" wheel
    pip install --no-build-isolation -r requirements_streamanalyticsapp.txt
 
-4) Run from assignment-3/code:
-   python streamanalyticsapp.py
+4) Start infrastructure from assignment-3/code:
+   docker compose up -d zookeeper-tenant2 kafka-tenant2 kafka-topic-init-tenant2 cassandra1 cassandra2 cassandra3 cassandra-init-tenant2
+
+5) Produce CSV data to Kafka:
+   KAFKA_BROKERS=localhost:9094 KAFKA_TOPIC=dht22-measurements SOURCE_CSV=../data/tenant2/2025-06-01_dht22.csv python kafka_csv_producer.py
+
+6) Run Flink analytics app (consumes Kafka and writes Cassandra):
+   KAFKA_BROKERS=localhost:9094 KAFKA_TOPIC=dht22-measurements KAFKA_CONSUMER_GROUP=tenant2-flink-analytics CASSANDRA_HOSTS=127.0.0.1 CASSANDRA_KEYSPACE=mysimbdp_tenant2 python streamanalyticsapp.py
 
 Optional callback demo (second terminal):
 - Terminal A:
@@ -21,21 +29,42 @@ Optional callback demo (second terminal):
 - Terminal B:
   TENANT_CALLBACK_URL=http://127.0.0.1:8080/tenant2/analytics SOURCE_CSV=../data/tenant2/2025-06-01_dht22_demo.csv OUT_OF_ORDER_MINUTES=0 python streamanalyticsapp.py
 
-Optional runtime environment variables:
+Producer runtime environment variables:
 - SOURCE_CSV=../data/tenant2/2025-06-01_dht22.csv
-- TENANT_ID=tenant2
-- OUT_OF_ORDER_MINUTES=3
+- KAFKA_BROKERS=localhost:9094
+- KAFKA_TOPIC=dht22-measurements
+- MAX_EVENTS=0
 - EMIT_DELAY_MS=0
-- MAX_EVENTS=0  (0 means no cap; useful for quick smoke tests)
+- PRODUCER_LOG_DIR=./logs/kafka_producer
+
+Flink runtime environment variables:
+- TENANT_ID=tenant2
+- KAFKA_BROKERS=localhost:9094
+- KAFKA_TOPIC=dht22-measurements
+- KAFKA_CONSUMER_GROUP=tenant2-flink-analytics
+- KAFKA_IDLE_TIMEOUT_MS=5000
+- OUT_OF_ORDER_MINUTES=3
+- MAX_EVENTS=1000
+- CASSANDRA_HOSTS=127.0.0.1
+- CASSANDRA_KEYSPACE=mysimbdp_tenant2
+- LOG_DIR=./logs/streamanalyticsapp
 - TENANT_CALLBACK_URL=http://localhost:8080/tenant2/analytics
 - TEMP_ALERT_LOW=10
 - TEMP_ALERT_HIGH=35
 - HUM_ALERT_LOW=20
 - HUM_ALERT_HIGH=90
 
+Receiver runtime environment variables:
+- RECEIVER_LOG_DIR=./logs/receiver
+
 Notes:
-- Malformed CSV rows (missing/empty required fields) are skipped with warning logs.
-- The job fails only if no valid events can be loaded.
+- Producer and Flink both skip malformed records with warning logs.
+- Flink writes analytics rows into Cassandra table: mysimbdp_tenant2.stream_analytics_results
+- App logs are persisted to:
+   - ./logs/streamanalyticsapp/app.log
+   - ./logs/streamanalyticsapp/analytics_output.jsonl
+- Receiver logs are persisted to:
+   - ./logs/receiver/receiver.log
 
 Result schema per output JSON line:
 {
@@ -72,3 +101,35 @@ export PATH="$JAVA_HOME/bin:$PATH"
 Receiver terminal: python auxx/local_callback_receiver.py
 App terminal:
 TENANT_ID=tenant2 SOURCE_CSV=../data/tenant2/2025-06-01_dht22.csv OUT_OF_ORDER_MINUTES=0 TENANT_CALLBACK_URL=http://127.0.0.1:8080/tenant2/analytics MAX_EVENTS=1000 python streamanalyticsapp.py
+
+
+
+
+Start infra:
+docker compose up -d zookeeper-tenant2 kafka-tenant2 kafka-topic-init-tenant2 cassandra1 cassandra2 cassandra3 cassandra-init-tenant2
+Produce CSV to Kafka:
+KAFKA_BROKERS=localhost:9094 KAFKA_TOPIC=dht22-measurements SOURCE_CSV=../data/tenant2/2025-06-01_dht22.csv python kafka_csv_producer.py
+Run Flink analytics consumer/sink:
+KAFKA_BROKERS=localhost:9094 KAFKA_TOPIC=dht22-measurements KAFKA_CONSUMER_GROUP=tenant2-flink-analytics CASSANDRA_HOSTS=127.0.0.1 CASSANDRA_KEYSPACE=mysimbdp_tenant2 python
+
+
+
+Use these commands from assignment-3-103803829/code:
+
+Activate environment:
+source .venv311/bin/activate
+
+Install deps:
+pip install -r requirements_streamanalyticsapp.txt
+
+Start infra:
+docker compose up -d zookeeper-tenant2 kafka-tenant2 kafka-topic-init-tenant2 cassandra1 cassandra2 cassandra3 cassandra-init-tenant2
+
+Produce CSV to Kafka (bounded test):
+KAFKA_BROKERS=127.0.0.1:9094 KAFKA_TOPIC=dht22-measurements MAX_EVENTS=400 python kafka_csv_producer.py
+
+Run Flink analytics app (bounded consume + Cassandra sink):
+KAFKA_BROKERS=127.0.0.1:9094 KAFKA_TOPIC=dht22-measurements KAFKA_CONSUMER_GROUP=stream-analytics-$(date +%s) MAX_EVENTS=400 KAFKA_IDLE_TIMEOUT_MS=30000 CASSANDRA_HOSTS=127.0.0.1 CASSANDRA_KEYSPACE=mysimbdp_tenant2 python streamanalyticsapp.py
+
+Verify Cassandra writes:
+docker exec cassandra1 cqlsh -e "SELECT count(*) FROM mysimbdp_tenant2.stream_analytics_results;"

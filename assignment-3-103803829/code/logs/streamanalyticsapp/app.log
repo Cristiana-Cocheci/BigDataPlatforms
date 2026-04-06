@@ -1,0 +1,11 @@
+2026-04-05T14:41:33Z INFO streamanalyticsapp start tenant_id=tenant2 source_csv=../data/tenant2/2025-06-01_dht22_demo.csv max_events=40 out_of_order_minutes=0 callback_enabled=False
+2026-04-05T14:41:33Z INFO logs: app=./logs/streamanalyticsapp/app.log analytics=./logs/streamanalyticsapp/analytics_output.jsonl
+2026-04-05T15:18:41Z INFO streamanalyticsapp start tenant_id=tenant2 kafka_brokers=localhost:9094 kafka_topic=dht22-measurements max_events=200 out_of_order_minutes=3 callback_enabled=False cassandra_keyspace=mysimbdp_tenant2
+2026-04-05T15:18:41Z INFO logs: app=./logs/streamanalyticsapp/app.log analytics=./logs/streamanalyticsapp/analytics_output.jsonl
+2026-04-05T15:22:45Z INFO streamanalyticsapp start tenant_id=tenant2 kafka_brokers=127.0.0.1:9094 kafka_topic=dht22-measurements max_events=50 out_of_order_minutes=3 callback_enabled=False cassandra_keyspace=mysimbdp_tenant2
+2026-04-05T15:22:45Z INFO logs: app=./logs/streamanalyticsapp/app.log analytics=./logs/streamanalyticsapp/analytics_output.jsonl
+2026-04-05T15:24:33Z INFO streamanalyticsapp start tenant_id=tenant2 kafka_brokers=127.0.0.1:9094 kafka_topic=dht22-measurements max_events=50 out_of_order_minutes=3 callback_enabled=False cassandra_keyspace=mysimbdp_tenant2
+2026-04-05T15:24:33Z INFO logs: app=./logs/streamanalyticsapp/app.log analytics=./logs/streamanalyticsapp/analytics_output.jsonl
+2026-04-05T15:38:20Z INFO streamanalyticsapp start tenant_id=tenant2 kafka_brokers=127.0.0.1:9094 kafka_topic=dht22-measurements max_events=400 out_of_order_minutes=3 callback_enabled=False cassandra_keyspace=mysimbdp_tenant2
+2026-04-05T15:38:20Z INFO logs: app=./logs/streamanalyticsapp/app.log analytics=./logs/streamanalyticsapp/analytics_output.jsonl
+2026-04-05T15:38:26Z INFO consumed 400 events from kafka topic=dht22-measurements

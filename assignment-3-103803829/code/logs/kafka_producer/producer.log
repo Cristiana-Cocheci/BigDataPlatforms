@@ -1,0 +1,13 @@
+2026-04-05T15:19:32Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22_demo.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
+2026-04-05T15:30:15Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
+2026-04-05T15:30:15Z WARN skipping malformed csv row line=506: missing or empty column: humidity
+2026-04-05T15:30:15Z WARN skipping malformed csv row line=4074: missing or empty column: humidity
+2026-04-05T15:30:15Z WARN skipping malformed csv row line=4118: missing or empty column: humidity
+2026-04-05T15:30:15Z WARN skipping malformed csv row line=4133: missing or empty column: humidity
+2026-04-05T15:30:15Z WARN skipping malformed csv row line=5040: missing or empty column: humidity
+2026-04-05T15:38:18Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
+2026-04-05T15:38:18Z INFO producer done produced=400 skipped=0
+2026-04-05T16:13:01Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
+2026-04-05T16:13:01Z INFO producer done produced=120 skipped=0
+2026-04-05T16:13:33Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements
+2026-04-05T16:13:34Z INFO producer done produced=120 skipped=0
