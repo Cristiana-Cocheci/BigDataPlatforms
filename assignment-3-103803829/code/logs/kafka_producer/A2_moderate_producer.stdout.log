@@ -1,14 +1,16 @@
+[1;33m[SETUP][0m timeout command not found; running without timeout safeguard.
+[1;33m[SETUP][0m Install GNU coreutils for timeout: brew install coreutils
 INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements max_events=1000 emit_delay_ms=100
 INFO detected csv delimiter=';'
-PROGRESS produced=100 elapsed_sec=10.28 rate_events_sec=9.73 actual_emit_lag_ms=10275
-PROGRESS produced=200 elapsed_sec=20.62 rate_events_sec=9.70 actual_emit_lag_ms=20620
-PROGRESS produced=300 elapsed_sec=30.99 rate_events_sec=9.68 actual_emit_lag_ms=30989
-PROGRESS produced=400 elapsed_sec=41.37 rate_events_sec=9.67 actual_emit_lag_ms=41369
-PROGRESS produced=500 elapsed_sec=51.73 rate_events_sec=9.67 actual_emit_lag_ms=51725
+PROGRESS produced=100 elapsed_sec=10.27 rate_events_sec=9.73 actual_emit_lag_ms=10270
+PROGRESS produced=200 elapsed_sec=20.65 rate_events_sec=9.68 actual_emit_lag_ms=20651
+PROGRESS produced=300 elapsed_sec=31.02 rate_events_sec=9.67 actual_emit_lag_ms=31021
+PROGRESS produced=400 elapsed_sec=41.39 rate_events_sec=9.66 actual_emit_lag_ms=41387
+PROGRESS produced=500 elapsed_sec=51.78 rate_events_sec=9.66 actual_emit_lag_ms=51781
 WARN row 504 skipped: missing or empty column: humidity
-PROGRESS produced=600 elapsed_sec=62.10 rate_events_sec=9.66 actual_emit_lag_ms=62101
-PROGRESS produced=700 elapsed_sec=72.51 rate_events_sec=9.65 actual_emit_lag_ms=72503
-PROGRESS produced=800 elapsed_sec=82.87 rate_events_sec=9.65 actual_emit_lag_ms=82867
-PROGRESS produced=900 elapsed_sec=93.23 rate_events_sec=9.65 actual_emit_lag_ms=93225
-SUMMARY produced=999 skipped=1 elapsed_sec=103.60 rate_events_sec=9.64 actual_emit_lag_total_ms=103496 avg_emit_delay_ms=103.60
+PROGRESS produced=600 elapsed_sec=62.17 rate_events_sec=9.65 actual_emit_lag_ms=62164
+PROGRESS produced=700 elapsed_sec=72.54 rate_events_sec=9.65 actual_emit_lag_ms=72536
+PROGRESS produced=800 elapsed_sec=82.93 rate_events_sec=9.65 actual_emit_lag_ms=82928
+PROGRESS produced=900 elapsed_sec=93.31 rate_events_sec=9.64 actual_emit_lag_ms=93311
+SUMMARY produced=999 skipped=1 elapsed_sec=103.71 rate_events_sec=9.63 actual_emit_lag_total_ms=103603 avg_emit_delay_ms=103.71
 INFO producer exit

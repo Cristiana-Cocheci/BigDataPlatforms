@@ -457,6 +457,7 @@ def main():
     out_of_order_minutes = max(0, getenv_int("OUT_OF_ORDER_MINUTES", 3))
     window_size_minutes = max(1, getenv_int("WINDOW_SIZE_MINUTES", 15))
     window_slide_seconds = max(1, getenv_int("WINDOW_SLIDE_SECONDS", 60))
+    parallelism = max(1, getenv_int("PARALLELISM", 1))
     callback_url = os.getenv("TENANT_CALLBACK_URL", "").strip()
 
     cassandra_hosts_raw = os.getenv("CASSANDRA_HOSTS", DEFAULT_CASSANDRA_HOSTS).strip() or DEFAULT_CASSANDRA_HOSTS
@@ -474,13 +475,14 @@ def main():
             f"tenant_id={tenant_id} kafka_brokers={kafka_brokers} kafka_topic={kafka_topic} "
             f"max_events={max_events} out_of_order_minutes={out_of_order_minutes} "
             f"window_size_minutes={window_size_minutes} window_slide_seconds={window_slide_seconds} "
+            f"parallelism={parallelism} "
             f"callback_enabled={bool(callback_url)} cassandra_keyspace={cassandra_keyspace}"
         )
     )
     log_info(f"INFO logs: app={APP_LOG_PATH} analytics={ANALYTICS_LOG_PATH} metrics={METRICS_LOG_PATH}")
 
     env = StreamExecutionEnvironment.get_execution_environment()
-    env.set_parallelism(1)
+    env.set_parallelism(parallelism)
     env.set_python_executable(sys.executable)
 
     source_type = Types.TUPLE([

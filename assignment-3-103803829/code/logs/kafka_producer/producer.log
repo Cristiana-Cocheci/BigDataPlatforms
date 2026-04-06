@@ -1,10 +1,14 @@
-2026-04-06T19:06:23Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements max_events=600 emit_delay_ms=1000
-2026-04-06T19:06:23Z INFO detected csv delimiter=';'
-2026-04-06T19:08:02Z PROGRESS produced=100 elapsed_sec=99.34 rate_events_sec=1.01 actual_emit_lag_ms=99339
-2026-04-06T19:09:43Z PROGRESS produced=200 elapsed_sec=199.67 rate_events_sec=1.00 actual_emit_lag_ms=199665
-2026-04-06T19:11:23Z PROGRESS produced=300 elapsed_sec=300.05 rate_events_sec=1.00 actual_emit_lag_ms=300048
-2026-04-06T19:13:03Z PROGRESS produced=400 elapsed_sec=400.39 rate_events_sec=1.00 actual_emit_lag_ms=400387
-2026-04-06T19:14:44Z PROGRESS produced=500 elapsed_sec=500.78 rate_events_sec=1.00 actual_emit_lag_ms=500771
-2026-04-06T19:14:49Z WARN row 504 skipped: missing or empty column: humidity
-2026-04-06T19:16:24Z SUMMARY produced=599 skipped=1 elapsed_sec=601.16 rate_events_sec=1.00 actual_emit_lag_total_ms=600150 avg_emit_delay_ms=1001.92
-2026-04-06T19:16:24Z INFO producer exit
+2026-04-06T20:37:13Z INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements max_events=1000 emit_delay_ms=100
+2026-04-06T20:37:13Z INFO detected csv delimiter=';'
+2026-04-06T20:37:23Z PROGRESS produced=100 elapsed_sec=10.27 rate_events_sec=9.73 actual_emit_lag_ms=10270
+2026-04-06T20:37:34Z PROGRESS produced=200 elapsed_sec=20.65 rate_events_sec=9.68 actual_emit_lag_ms=20651
+2026-04-06T20:37:44Z PROGRESS produced=300 elapsed_sec=31.02 rate_events_sec=9.67 actual_emit_lag_ms=31021
+2026-04-06T20:37:55Z PROGRESS produced=400 elapsed_sec=41.39 rate_events_sec=9.66 actual_emit_lag_ms=41387
+2026-04-06T20:38:05Z PROGRESS produced=500 elapsed_sec=51.78 rate_events_sec=9.66 actual_emit_lag_ms=51781
+2026-04-06T20:38:06Z WARN row 504 skipped: missing or empty column: humidity
+2026-04-06T20:38:15Z PROGRESS produced=600 elapsed_sec=62.17 rate_events_sec=9.65 actual_emit_lag_ms=62164
+2026-04-06T20:38:26Z PROGRESS produced=700 elapsed_sec=72.54 rate_events_sec=9.65 actual_emit_lag_ms=72536
+2026-04-06T20:38:36Z PROGRESS produced=800 elapsed_sec=82.93 rate_events_sec=9.65 actual_emit_lag_ms=82928
+2026-04-06T20:38:47Z PROGRESS produced=900 elapsed_sec=93.31 rate_events_sec=9.64 actual_emit_lag_ms=93311
+2026-04-06T20:38:57Z SUMMARY produced=999 skipped=1 elapsed_sec=103.71 rate_events_sec=9.63 actual_emit_lag_total_ms=103603 avg_emit_delay_ms=103.71
+2026-04-06T20:38:57Z INFO producer exit

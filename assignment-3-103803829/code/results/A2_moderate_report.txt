@@ -1,24 +1,24 @@
 
 ================================================================================
 PERFORMANCE TEST REPORT: A2_moderate
-Generated: 2026-04-06T22:06:20.632195
+Generated: 2026-04-06T23:39:31.359782
 ================================================================================
 
 1. PRODUCER METRICS
 --------------------------------------------------------------------------------
   Produced:              999 events
   Skipped:               1 events
-  Production Time:       103.60 seconds
-  Production Rate:       9.64 events/sec
-  Total Emit Lag:        103496 ms
-  Avg Emit Delay:        103.60 ms
+  Production Time:       103.71 seconds
+  Production Rate:       9.63 events/sec
+  Total Emit Lag:        103603 ms
+  Avg Emit Delay:        103.71 ms
 
 2. KAFKA CONSUMER METRICS (Flink)
 --------------------------------------------------------------------------------
   Events Consumed:       1000 events
   Consumption Time:      3.21 seconds
-  Consumption Rate:      311.40 events/sec
-  Errors:                975
+  Consumption Rate:      311.28 events/sec
+  Errors:                13650
 
 3. WINDOW PROCESSING METRICS
 --------------------------------------------------------------------------------
@@ -28,20 +28,20 @@ Generated: 2026-04-06T22:06:20.632195
 
 4. CASSANDRA SINK METRICS
 --------------------------------------------------------------------------------
-  Write Attempts:        13500 successful
-  Write Failures:        975 failed
-  Avg Write Latency:     2.69 ms
-  Max Write Latency:     5062.21 ms
-  Actual DB Row Count:   13650 rows
+  Write Attempts:        975 successful
+  Write Failures:        13650 failed
+  Avg Write Latency:     0.00 ms
+  Max Write Latency:     0.00 ms
+  Actual DB Row Count:   975 rows
   Analytics Output Lines:14625 lines
 
 5. END-TO-END METRICS
 --------------------------------------------------------------------------------
-  Total Pipeline Time:   73.18 seconds
+  Total Pipeline Time:   26.39 seconds
   Input Events:          999
-  Output Rows (Cassandra): 13650
-  Throughput (in/sec):   13.65
-  Throughput (out/sec):  186.53
+  Output Rows (Cassandra): 975
+  Throughput (in/sec):   37.86
+  Throughput (out/sec):  36.95
 
 6. DATA LOSS CHECK
 --------------------------------------------------------------------------------

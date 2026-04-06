@@ -1,13 +1,13 @@
 {
   "test_name": "A2_moderate",
-  "timestamp": "2026-04-06T23:39:31.361107",
+  "timestamp": "2026-04-06T23:37:10.059498",
   "producer": {
     "produced": 999,
     "skipped": 1,
-    "elapsed_sec": 103.71,
-    "rate_events_sec": 9.63,
-    "actual_emit_lag_total_ms": 103603.0,
-    "avg_emit_delay_ms": 103.71,
+    "elapsed_sec": 103.56,
+    "rate_events_sec": 9.65,
+    "actual_emit_lag_total_ms": 103451.0,
+    "avg_emit_delay_ms": 103.55,
     "log_file": "logs/kafka_producer/producer.log"
   },
   "flink_app": {
@@ -17,8 +17,8 @@
   },
   "flink": {
     "kafka_consumed": 1000,
-    "kafka_elapsed_sec": 3.21,
-    "kafka_rate_events_sec": 311.28,
+    "kafka_elapsed_sec": 3.18,
+    "kafka_rate_events_sec": 314.63,
     "windows_emitted": 14625,
     "windows_processed": 14600,
     "avg_window_size": 0.0,
@@ -28,7 +28,7 @@
     "cassandra_max_write_ms": 0,
     "cassandra_min_write_ms": 0,
     "amplification_factor": 14.625,
-    "total_pipeline_time_sec": 26.39,
+    "total_pipeline_time_sec": 30.48,
     "errors": [],
     "log_file": "logs/streamanalyticsapp/metrics.log"
   },
