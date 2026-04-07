@@ -536,18 +536,60 @@ Observations:
 
 ## Part 3
 ### 1.
+To integrate an external RESTful microservice I would extend streamanalyticsapp with an additional processing stage.
 
+I would introduce an asynchronous step:
+- Flink Async I/O calls the REST service
+- sends a batch of aggregated records
+- receive ML predictions
+- add ML results to record before writing it to Cassandra
+
+Flink Async I/O allows the Flink application to interact with the microservice asynchronously, overcoming the latency bottleneck of waiting for a response. It is a native tool that fits the task and the current pipeline architecture.
+
+**The tenant** must provide the ML microservice and define input/output schema. It must give an authentication API key.
 
 ### 2.
-
+The solution for this scenario is a Dead Letter Queue (DLQ). In my current design there is a table of alerts inside Cassandra database that holds the erroneous records. However, some records are skipped already by Kafka, if they are malformed (have missing fields). There should also be added a table of invalid records. 
 
 ### 3.
 
+![Design](../code/figures/ass3.2.drawio.png)
+
+To achieve this I would use a system such as Apache Airflow to manage execution, dependencies and fault tolerance.
+
+The process has the following steps:
+- tenant recieves streaming results (eg. HTTP callback from the streamanalyticsapp)
+- tenant evaluates results
+- when it detects a critical condition, tenant triggers Airflow DAG via a REST API call
+
+The workflow has the following steps:
+- task extracts historical data from Cassandra (eg. all analytics results of sensor over last 30 days)
+- task performs batch analytics (eg with Spark/ Flink). It can perform trend detection, anommaly clustering, predictive modelling ...
+- results are stored in cloud storage system (eg. gcloud bucket)
+- once the workflow is complete, tenant receives email noification that results are ready to be accessed
+
+Using a workflow engine provides several important benefits:
+- `fault tolerance` - via retries and task-level error handling
+- `observability` - via logs and execution tracking
+- `scalability` - by allowing independent scaling of batch jobs. - `task dependencies` - ensures that, for example, notifications are only sent after successful completion of the batch analysis
 
 ### 4.
+In the current design, running streamanalyticsapp with a new schema may fail at runtime or produce erroneous results. To prevent this, I could employ a **Confluent Schema Registry** integrated with Kafka. 
+
+Instead of sending raw JSON, producers would serialize messages unsing schema-aware formats such as JSON Schema, registering each schema in the version registry.
+The registry enforces compatibility rules (e.g., backward or forward compatibility), ensuring that schema changes do not break existing consumers.
+
+On the consumer side, the streamanalyticsapp should validate the schema version of incoming messages against an expected version (or range of compatible versions) before processing them. If an unknown or incompatible schema is detected, the application can reject the message (e.g., redirect it to a dead-letter queue).
+
+Additionally, the developer/owner of the streamanalyticsapp can detect schema changes proactively through CI/CD integration with the schema registry, where any new schema registration triggers validation checks and alerts. This ensures that schema updates are reviewed and the streaming application is updated accordingly before deployment.
+
+
 
 ### 5.
-
+The current design supports fully end-to-end exactly once, because:
+- Kafka supports exactly-once (idempotent producers + transactions)
+- Flink supports exactly-once processing (through checkpoints)
+- Cassandra does not support exactly-once writes **BUT** the primary key ((day, hour), sensor_id, window_start) is deterministic, and any duplicated records would be overwritten, not duplicated.
 
 
 
