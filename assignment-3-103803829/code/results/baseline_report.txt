@@ -1,24 +1,24 @@
 
 ================================================================================
 PERFORMANCE TEST REPORT: baseline
-Generated: 2026-04-09T15:57:05.766164
+Generated: 2026-04-09T18:40:01.737099
 ================================================================================
 
 1. PRODUCER METRICS
 --------------------------------------------------------------------------------
   Produced:              502 events
   Skipped:               0 events
-  Production Time:       1.05 seconds
-  Production Rate:       478.11 events/sec
-  Total Emit Lag:        7 ms
-  Avg Emit Delay:        0.01 ms
+  Production Time:       0.04 seconds
+  Production Rate:       11548.73 events/sec
+  Total Emit Lag:        8 ms
+  Avg Emit Delay:        0.02 ms
 
 2. KAFKA CONSUMER METRICS (Flink)
 --------------------------------------------------------------------------------
   Events Consumed:       502 events
-  Consumption Time:      30.38 seconds
-  Consumption Rate:      16.53 events/sec
-  Errors:                6972
+  Consumption Time:      30.36 seconds
+  Consumption Rate:      16.54 events/sec
+  Errors:                0
 
 3. WINDOW PROCESSING METRICS
 --------------------------------------------------------------------------------
@@ -28,20 +28,20 @@ Generated: 2026-04-09T15:57:05.766164
 
 4. CASSANDRA SINK METRICS
 --------------------------------------------------------------------------------
-  Write Attempts:        498 successful
-  Write Failures:        6972 failed
-  Avg Write Latency:     0.00 ms
-  Max Write Latency:     0.00 ms
-  Actual DB Row Count:   498 rows
+  Write Attempts:        7000 successful
+  Write Failures:        0 failed
+  Avg Write Latency:     3.02 ms
+  Max Write Latency:     5576.37 ms
+  Actual DB Row Count:   7470 rows
   Analytics Output Lines:7470 lines
 
 5. END-TO-END METRICS
 --------------------------------------------------------------------------------
-  Total Pipeline Time:   64.62 seconds
+  Total Pipeline Time:   70.03 seconds
   Input Events:          502
-  Output Rows (Cassandra): 498
-  Throughput (in/sec):   7.77
-  Throughput (out/sec):  7.71
+  Output Rows (Cassandra): 7470
+  Throughput (in/sec):   7.17
+  Throughput (out/sec):  106.67
 
 6. DATA LOSS CHECK
 --------------------------------------------------------------------------------

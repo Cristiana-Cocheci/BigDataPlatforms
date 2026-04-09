@@ -1,88 +1,102 @@
-2026-04-09T12:56:31Z KAFKA_METRICS consumed=502 elapsed_sec=30.38 rate_events_sec=16.53
-2026-04-09T12:56:42Z window_size_avg=1.0 windows_processed=100
-2026-04-09T12:56:42Z window_size_avg=1.0 windows_processed=200
-2026-04-09T12:56:42Z window_size_avg=1.0 windows_processed=300
-2026-04-09T12:56:42Z window_size_avg=1.0 windows_processed=400
-2026-04-09T12:56:42Z window_size_avg=1.0 windows_processed=500
-2026-04-09T12:56:43Z window_size_avg=1.0 windows_processed=600
-2026-04-09T12:56:43Z window_size_avg=1.0 windows_processed=700
-2026-04-09T12:56:43Z window_size_avg=1.0 windows_processed=800
-2026-04-09T12:56:43Z window_size_avg=1.0 windows_processed=900
-2026-04-09T12:56:44Z window_size_avg=1.0 windows_processed=1000
-2026-04-09T12:56:44Z window_size_avg=1.0 windows_processed=1100
-2026-04-09T12:56:44Z window_size_avg=1.0 windows_processed=1200
-2026-04-09T12:56:45Z window_size_avg=1.0 windows_processed=1300
-2026-04-09T12:56:45Z window_size_avg=1.0 windows_processed=1400
-2026-04-09T12:56:45Z window_size_avg=1.0 windows_processed=1500
-2026-04-09T12:56:45Z window_size_avg=1.0 windows_processed=1600
-2026-04-09T12:56:46Z window_size_avg=1.0 windows_processed=1700
-2026-04-09T12:56:46Z window_size_avg=1.0 windows_processed=1800
-2026-04-09T12:56:46Z window_size_avg=1.0 windows_processed=1900
-2026-04-09T12:56:46Z window_size_avg=1.0 windows_processed=2000
-2026-04-09T12:56:47Z window_size_avg=1.0 windows_processed=2100
-2026-04-09T12:56:47Z window_size_avg=1.0 windows_processed=2200
-2026-04-09T12:56:47Z window_size_avg=1.0 windows_processed=2300
-2026-04-09T12:56:48Z window_size_avg=1.0 windows_processed=2400
-2026-04-09T12:56:48Z window_size_avg=1.0 windows_processed=2500
-2026-04-09T12:56:48Z window_size_avg=1.0 windows_processed=2600
-2026-04-09T12:56:48Z window_size_avg=1.0 windows_processed=2700
-2026-04-09T12:56:49Z window_size_avg=1.0 windows_processed=2800
-2026-04-09T12:56:49Z window_size_avg=1.0 windows_processed=2900
-2026-04-09T12:56:49Z window_size_avg=1.0 windows_processed=3000
-2026-04-09T12:56:50Z window_size_avg=1.0 windows_processed=3100
-2026-04-09T12:56:50Z window_size_avg=1.0 windows_processed=3200
-2026-04-09T12:56:50Z window_size_avg=1.0 windows_processed=3300
-2026-04-09T12:56:50Z window_size_avg=1.0 windows_processed=3400
-2026-04-09T12:56:51Z window_size_avg=1.0 windows_processed=3500
-2026-04-09T12:56:51Z window_size_avg=1.0 windows_processed=3600
-2026-04-09T12:56:51Z window_size_avg=1.0 windows_processed=3700
-2026-04-09T12:56:52Z window_size_avg=1.0 windows_processed=3800
-2026-04-09T12:56:52Z window_size_avg=1.0 windows_processed=3900
-2026-04-09T12:56:52Z window_size_avg=1.0 windows_processed=4000
-2026-04-09T12:56:53Z window_size_avg=1.0 windows_processed=4100
-2026-04-09T12:56:53Z window_size_avg=1.0 windows_processed=4200
-2026-04-09T12:56:53Z window_size_avg=1.0 windows_processed=4300
-2026-04-09T12:56:53Z window_size_avg=1.0 windows_processed=4400
-2026-04-09T12:56:54Z window_size_avg=1.0 windows_processed=4500
-2026-04-09T12:56:54Z window_size_avg=1.0 windows_processed=4600
-2026-04-09T12:56:54Z window_size_avg=1.0 windows_processed=4700
-2026-04-09T12:56:54Z window_size_avg=1.0 windows_processed=4800
-2026-04-09T12:56:55Z window_size_avg=1.0 windows_processed=4900
-2026-04-09T12:56:55Z window_size_avg=1.0 windows_processed=5000
-2026-04-09T12:56:55Z window_size_avg=1.0 windows_processed=5100
-2026-04-09T12:56:56Z window_size_avg=1.0 windows_processed=5200
-2026-04-09T12:56:56Z window_size_avg=1.0 windows_processed=5300
-2026-04-09T12:56:56Z window_size_avg=1.0 windows_processed=5400
-2026-04-09T12:56:56Z window_size_avg=1.0 windows_processed=5500
-2026-04-09T12:56:57Z window_size_avg=1.0 windows_processed=5600
-2026-04-09T12:56:57Z window_size_avg=1.0 windows_processed=5700
-2026-04-09T12:56:57Z window_size_avg=1.0 windows_processed=5800
-2026-04-09T12:56:57Z window_size_avg=1.0 windows_processed=5900
-2026-04-09T12:56:58Z window_size_avg=1.0 windows_processed=6000
-2026-04-09T12:56:58Z window_size_avg=1.0 windows_processed=6100
-2026-04-09T12:56:58Z window_size_avg=1.0 windows_processed=6200
-2026-04-09T12:56:59Z window_size_avg=1.0 windows_processed=6300
-2026-04-09T12:56:59Z window_size_avg=1.0 windows_processed=6400
-2026-04-09T12:56:59Z window_size_avg=1.0 windows_processed=6500
-2026-04-09T12:56:59Z window_size_avg=1.0 windows_processed=6600
-2026-04-09T12:57:00Z window_size_avg=1.0 windows_processed=6700
-2026-04-09T12:57:00Z window_size_avg=1.0 windows_processed=6800
-2026-04-09T12:57:00Z window_size_avg=1.0 windows_processed=6900
-2026-04-09T12:57:00Z window_size_avg=1.0 windows_processed=7000
-2026-04-09T12:57:01Z window_size_avg=1.0 windows_processed=7100
-2026-04-09T12:57:01Z window_size_avg=1.0 windows_processed=7200
-2026-04-09T12:57:02Z window_size_avg=1.0 windows_processed=7300
-2026-04-09T12:57:03Z window_size_avg=1.0 windows_processed=7400
-2026-04-09T12:57:03Z ================================================================================
-2026-04-09T12:57:03Z FINAL PERFORMANCE SUMMARY
-2026-04-09T12:57:03Z ================================================================================
-2026-04-09T12:57:03Z kafka_events_consumed=502
-2026-04-09T12:57:03Z kafka_consumption_elapsed_sec=30.38
-2026-04-09T12:57:03Z kafka_consumption_rate_events_sec=16.53
-2026-04-09T12:57:03Z windows_emitted=0
-2026-04-09T12:57:03Z avg_window_size=0.0
-2026-04-09T12:57:03Z cassandra_writes_successful=0
-2026-04-09T12:57:03Z cassandra_writes_failed=0
-2026-04-09T12:57:03Z amplification_factor=0.00
-2026-04-09T12:57:03Z total_pipeline_time_sec=64.62
-2026-04-09T12:57:03Z ================================================================================
+2026-04-09T15:39:21Z KAFKA_METRICS consumed=502 elapsed_sec=30.36 rate_events_sec=16.54
+2026-04-09T15:39:32Z window_size_avg=1.0 windows_processed=100
+2026-04-09T15:39:32Z window_size_avg=1.0 windows_processed=200
+2026-04-09T15:39:33Z window_size_avg=1.0 windows_processed=300
+2026-04-09T15:39:33Z window_size_avg=1.0 windows_processed=400
+2026-04-09T15:39:33Z window_size_avg=1.0 windows_processed=500
+2026-04-09T15:39:33Z cassandra_writes=500 avg_write_ms=13.51 max_write_ms=5576.37
+2026-04-09T15:39:34Z window_size_avg=1.0 windows_processed=600
+2026-04-09T15:39:34Z window_size_avg=1.0 windows_processed=700
+2026-04-09T15:39:34Z window_size_avg=1.0 windows_processed=800
+2026-04-09T15:39:35Z window_size_avg=1.0 windows_processed=900
+2026-04-09T15:39:35Z window_size_avg=1.0 windows_processed=1000
+2026-04-09T15:39:35Z cassandra_writes=1000 avg_write_ms=7.77 max_write_ms=5576.37
+2026-04-09T15:39:36Z window_size_avg=1.0 windows_processed=1100
+2026-04-09T15:39:36Z window_size_avg=1.0 windows_processed=1200
+2026-04-09T15:39:36Z window_size_avg=1.0 windows_processed=1300
+2026-04-09T15:39:37Z window_size_avg=1.0 windows_processed=1400
+2026-04-09T15:39:37Z window_size_avg=1.0 windows_processed=1500
+2026-04-09T15:39:37Z cassandra_writes=1500 avg_write_ms=5.88 max_write_ms=5576.37
+2026-04-09T15:39:37Z window_size_avg=1.0 windows_processed=1600
+2026-04-09T15:39:38Z window_size_avg=1.0 windows_processed=1700
+2026-04-09T15:39:38Z window_size_avg=1.0 windows_processed=1800
+2026-04-09T15:39:38Z window_size_avg=1.0 windows_processed=1900
+2026-04-09T15:39:39Z window_size_avg=1.0 windows_processed=2000
+2026-04-09T15:39:39Z cassandra_writes=2000 avg_write_ms=4.99 max_write_ms=5576.37
+2026-04-09T15:39:39Z window_size_avg=1.0 windows_processed=2100
+2026-04-09T15:39:40Z window_size_avg=1.0 windows_processed=2200
+2026-04-09T15:39:40Z window_size_avg=1.0 windows_processed=2300
+2026-04-09T15:39:40Z window_size_avg=1.0 windows_processed=2400
+2026-04-09T15:39:41Z window_size_avg=1.0 windows_processed=2500
+2026-04-09T15:39:41Z cassandra_writes=2500 avg_write_ms=4.45 max_write_ms=5576.37
+2026-04-09T15:39:41Z window_size_avg=1.0 windows_processed=2600
+2026-04-09T15:39:41Z window_size_avg=1.0 windows_processed=2700
+2026-04-09T15:39:42Z window_size_avg=1.0 windows_processed=2800
+2026-04-09T15:39:42Z window_size_avg=1.0 windows_processed=2900
+2026-04-09T15:39:42Z window_size_avg=1.0 windows_processed=3000
+2026-04-09T15:39:42Z cassandra_writes=3000 avg_write_ms=4.10 max_write_ms=5576.37
+2026-04-09T15:39:43Z window_size_avg=1.0 windows_processed=3100
+2026-04-09T15:39:43Z window_size_avg=1.0 windows_processed=3200
+2026-04-09T15:39:44Z window_size_avg=1.0 windows_processed=3300
+2026-04-09T15:39:44Z window_size_avg=1.0 windows_processed=3400
+2026-04-09T15:39:44Z window_size_avg=1.0 windows_processed=3500
+2026-04-09T15:39:44Z cassandra_writes=3500 avg_write_ms=3.86 max_write_ms=5576.37
+2026-04-09T15:39:45Z window_size_avg=1.0 windows_processed=3600
+2026-04-09T15:39:45Z window_size_avg=1.0 windows_processed=3700
+2026-04-09T15:39:45Z window_size_avg=1.0 windows_processed=3800
+2026-04-09T15:39:46Z window_size_avg=1.0 windows_processed=3900
+2026-04-09T15:39:46Z window_size_avg=1.0 windows_processed=4000
+2026-04-09T15:39:46Z cassandra_writes=4000 avg_write_ms=3.67 max_write_ms=5576.37
+2026-04-09T15:39:47Z window_size_avg=1.0 windows_processed=4100
+2026-04-09T15:39:47Z window_size_avg=1.0 windows_processed=4200
+2026-04-09T15:39:47Z window_size_avg=1.0 windows_processed=4300
+2026-04-09T15:39:48Z window_size_avg=1.0 windows_processed=4400
+2026-04-09T15:39:48Z window_size_avg=1.0 windows_processed=4500
+2026-04-09T15:39:48Z cassandra_writes=4500 avg_write_ms=3.50 max_write_ms=5576.37
+2026-04-09T15:39:48Z window_size_avg=1.0 windows_processed=4600
+2026-04-09T15:39:49Z window_size_avg=1.0 windows_processed=4700
+2026-04-09T15:39:49Z window_size_avg=1.0 windows_processed=4800
+2026-04-09T15:39:49Z window_size_avg=1.0 windows_processed=4900
+2026-04-09T15:39:50Z window_size_avg=1.0 windows_processed=5000
+2026-04-09T15:39:50Z cassandra_writes=5000 avg_write_ms=3.37 max_write_ms=5576.37
+2026-04-09T15:39:50Z window_size_avg=1.0 windows_processed=5100
+2026-04-09T15:39:51Z window_size_avg=1.0 windows_processed=5200
+2026-04-09T15:39:51Z window_size_avg=1.0 windows_processed=5300
+2026-04-09T15:39:51Z window_size_avg=1.0 windows_processed=5400
+2026-04-09T15:39:52Z window_size_avg=1.0 windows_processed=5500
+2026-04-09T15:39:52Z cassandra_writes=5500 avg_write_ms=3.26 max_write_ms=5576.37
+2026-04-09T15:39:52Z window_size_avg=1.0 windows_processed=5600
+2026-04-09T15:39:52Z window_size_avg=1.0 windows_processed=5700
+2026-04-09T15:39:53Z window_size_avg=1.0 windows_processed=5800
+2026-04-09T15:39:53Z window_size_avg=1.0 windows_processed=5900
+2026-04-09T15:39:53Z window_size_avg=1.0 windows_processed=6000
+2026-04-09T15:39:53Z cassandra_writes=6000 avg_write_ms=3.16 max_write_ms=5576.37
+2026-04-09T15:39:54Z window_size_avg=1.0 windows_processed=6100
+2026-04-09T15:39:54Z window_size_avg=1.0 windows_processed=6200
+2026-04-09T15:39:54Z window_size_avg=1.0 windows_processed=6300
+2026-04-09T15:39:55Z window_size_avg=1.0 windows_processed=6400
+2026-04-09T15:39:55Z window_size_avg=1.0 windows_processed=6500
+2026-04-09T15:39:55Z cassandra_writes=6500 avg_write_ms=3.07 max_write_ms=5576.37
+2026-04-09T15:39:56Z window_size_avg=1.0 windows_processed=6600
+2026-04-09T15:39:56Z window_size_avg=1.0 windows_processed=6700
+2026-04-09T15:39:56Z window_size_avg=1.0 windows_processed=6800
+2026-04-09T15:39:57Z window_size_avg=1.0 windows_processed=6900
+2026-04-09T15:39:57Z window_size_avg=1.0 windows_processed=7000
+2026-04-09T15:39:57Z cassandra_writes=7000 avg_write_ms=3.02 max_write_ms=5576.37
+2026-04-09T15:39:58Z window_size_avg=1.0 windows_processed=7100
+2026-04-09T15:39:58Z window_size_avg=1.0 windows_processed=7200
+2026-04-09T15:39:58Z window_size_avg=1.0 windows_processed=7300
+2026-04-09T15:39:59Z window_size_avg=1.0 windows_processed=7400
+2026-04-09T15:39:59Z ================================================================================
+2026-04-09T15:39:59Z FINAL PERFORMANCE SUMMARY
+2026-04-09T15:39:59Z ================================================================================
+2026-04-09T15:39:59Z kafka_events_consumed=502
+2026-04-09T15:39:59Z kafka_consumption_elapsed_sec=30.36
+2026-04-09T15:39:59Z kafka_consumption_rate_events_sec=16.54
+2026-04-09T15:39:59Z windows_emitted=0
+2026-04-09T15:39:59Z avg_window_size=0.0
+2026-04-09T15:39:59Z cassandra_writes_successful=0
+2026-04-09T15:39:59Z cassandra_writes_failed=0
+2026-04-09T15:39:59Z amplification_factor=0.00
+2026-04-09T15:39:59Z total_pipeline_time_sec=70.03
+2026-04-09T15:39:59Z ================================================================================

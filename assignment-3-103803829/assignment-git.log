@@ -1,1 +1,70 @@
-...
+commit 2d7ed3806755da29c4f6b31fbd9e5e916d7a74e6 (HEAD -> main, origin/main)
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Apr 9 18:35:13 2026 +0300
+
+    report work
+
+commit 05ecabdc61aa0424d5eb8168750de02734ca6e64
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Apr 9 15:58:40 2026 +0300
+
+    added demo csv path
+
+commit 0a30882e134eda2a320a2efb4c276df740ae3aa4
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Thu Apr 9 13:23:54 2026 +0300
+
+    finalizing
+
+commit 493d54ab9f061b048166245ee1a649b9d866c211
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Apr 7 14:36:23 2026 +0300
+
+    working on part 3 report
+
+commit 305d85fdf42b32ea1610de0b00d31b19e01c9080
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Tue Apr 7 12:03:29 2026 +0300
+    working on report part 2
+
+commit e379d5d8bc1668e3b308e69446c1565fdb2005e5
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Mon Apr 6 23:46:39 2026 +0300
+
+    parallelism tests
+
+commit ccb18a0c9c61a6cf49586e9613ae57931bdc4bd2
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Mon Apr 6 23:25:57 2026 +0300
+
+    testing for streamanalyticsapp
+
+commit 3ecff1d257462f602fd60c18d1016cef6fe530a4
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Mon Apr 6 13:41:23 2026 +0300
+
+    working on report for part 2
+
+commit 78f0d3c715372ec37bb86e0c4a985d4c5f44f5fb
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Sun Apr 5 17:36:56 2026 +0300
+
+    working on streamanalyticsapp
+
+commit e2a0eec2e9371910afde16804a8462047873a346
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Mon Mar 30 17:46:40 2026 +0300
+
+    part 1 diagram added
+
+commit 26c07c6c38cb39a723e58ca344e194794bc161a2
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Mon Mar 30 17:33:07 2026 +0300
+
+    added work on part 1
+
+commit ca4bbe12e071432e631e574d5ac315b5cce6d4f0
+Author: Cristiana-Cocheci <116966198+Cristiana-Cocheci@users.noreply.github.com>
+Date:   Mon Mar 30 17:31:47 2026 +0300
+
+    starting assignment 3
