@@ -1,23 +1,23 @@
 
 ================================================================================
 PERFORMANCE TEST REPORT: A1_burst
-Generated: 2026-04-06T22:03:15.770912
+Generated: 2026-04-09T13:18:28.938951
 ================================================================================
 
 1. PRODUCER METRICS
 --------------------------------------------------------------------------------
   Produced:              999 events
   Skipped:               1 events
-  Production Time:       0.05 seconds
-  Production Rate:       21829.74 events/sec
+  Production Time:       1.03 seconds
+  Production Rate:       966.99 events/sec
   Total Emit Lag:        14 ms
   Avg Emit Delay:        0.01 ms
 
 2. KAFKA CONSUMER METRICS (Flink)
 --------------------------------------------------------------------------------
   Events Consumed:       999 events
-  Consumption Time:      30.38 seconds
-  Consumption Rate:      32.89 events/sec
+  Consumption Time:      30.34 seconds
+  Consumption Rate:      32.93 events/sec
   Errors:                975
 
 3. WINDOW PROCESSING METRICS
@@ -30,18 +30,18 @@ Generated: 2026-04-06T22:03:15.770912
 --------------------------------------------------------------------------------
   Write Attempts:        13500 successful
   Write Failures:        975 failed
-  Avg Write Latency:     2.74 ms
-  Max Write Latency:     6019.85 ms
+  Avg Write Latency:     2.68 ms
+  Max Write Latency:     6378.38 ms
   Actual DB Row Count:   13650 rows
   Analytics Output Lines:14625 lines
 
 5. END-TO-END METRICS
 --------------------------------------------------------------------------------
-  Total Pipeline Time:   100.24 seconds
+  Total Pipeline Time:   95.83 seconds
   Input Events:          999
   Output Rows (Cassandra): 13650
-  Throughput (in/sec):   9.97
-  Throughput (out/sec):  136.17
+  Throughput (in/sec):   10.42
+  Throughput (out/sec):  142.44
 
 6. DATA LOSS CHECK
 --------------------------------------------------------------------------------
