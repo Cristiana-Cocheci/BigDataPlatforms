@@ -14,7 +14,7 @@ As the **raw dataset** I select the weather sensor data. The dataset is time-ord
 |---|---|---|---|---|---|---|---|
 |36474|DHT22|81266|53.248|-6.124|2025-06-01T00:00:00|13.00|99.90|
 
-The **analytics scenario** is the following: The sensor data comes from an indoor facility - the goal is to detect sudden temperature or humidity anolmalies that may indicate hazardz for the facility, or a sensor defect. Streaming is crutial in this scenario, because analysis is useful only on limited time windows, not after batch processing at the end of the day. To mitigate a risk as soon as possible, the data needs to be processed onine.
+The **analytics scenario** is the following: The sensor data comes from an indoor facility - the goal is to detect sudden temperature or humidity anolmalies that may indicate hazards for the facility, or a sensor defect. Streaming is crutial in this scenario, because analysis is useful only on limited time windows, not after batch processing at the end of the day. To mitigate a risk as soon as possible, the data needs to be processed onine.
 
 The data is suitable for this task because it provides the continuous timestamp observations and temperature and humidity that can be used in real time. Moreover, the data can be partitioned by sensor and time for scalable ingestion and processing.
 
@@ -35,7 +35,7 @@ The reports will be stored in a database in Cassandra, corresponding to the tena
 
 
 
-I will be using as testing data a single day of the dht22 sensor data. It can be found in (2025-06-01_dht22.csv)[] **TO DO: ADD PATH HERE**.
+I will be using as testing data a single day of the dht22 sensor data. The demo csv file (an extract of 500 lines) can be found in [2025-06-01_dht22.csv](assignment-3-103803829/data/tenant2/2025-06-01_dht22_demo.csv) 
 
 ### 2.
 
@@ -107,9 +107,9 @@ The **mysimbdp-coredms** remains Cassandra, same system design as in previous as
 
 #### 1. 
 
-The same Kafka messaging system as in the previous assignments is used. The dedicated producer script, kafka_csv_producer.py:7 **TODO ADD REF**, reads the CSV row by row, validates the input schema, converts each row to JSON, and publishes it to Kafka.
+The same Kafka messaging system as in the previous assignments is used. The dedicated producer script, *kafka_csv_producer.py*, reads the CSV row by row, validates the input schema, converts each row to JSON, and publishes it to Kafka.
 
-i) Raw sensor data comes from the DHT22 CSV file 2025-06-01_dht22.csv. **TODO ADD REFERENCE**
+i) Raw sensor data comes from the DHT22 CSV file 2025-06-01_dht22.csv.
 
 **INPUT DATA EXAMPLE:**
 |sensor_id|sensor_type|location|lat|lon|start_timestamp|end_timestamp|t_min|t_max|t_median|t_avg|h_min|h_max|h_median|h_avg|missing_min|is_alert|
@@ -452,8 +452,19 @@ This is a valid fault-injection method because the error is injected at the same
 
 (ii) Test design
 
+I tracked:
 
+- producer metrics (`produced`, `skipped`) and warning logs for malformed rows,
+- stream metrics (`consumed`, rates, windows emitted),
+- sink metrics (`cassandra_rows`, `cassandra_writes_failed`),
+- total pipeline runtime.
 
+Robustness criteria were:
+
+- malformed records are rejected and counted,
+- the job continues running (no full pipeline crash),
+- valid records still flow to output tables,
+- failures are visible in logs and metrics for diagnosis.
 
 (iii) How implementation deals with erroneous data
 
