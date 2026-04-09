@@ -46,7 +46,9 @@ i) In **streamanalyticsapp**, the data streams should be keyed because:
 The key would be **sensor_id**. Each tenant would have a different kafka topic, so the data would be implicitly separated by tenant.
 
 ii) The data is sensitive to a single datapoint -> we do not want to lose messages.
-However, having duplicates does not necessarily damage the analysis, if it is treated correctly (checking for timestamp duplicates). Since I am using Kafka, the message delivery should satisfy **at-least-once**.
+However, having duplicates does not necessarily damage the analysis, if it is treated correctly (checking for timestamp duplicates). Since I am using Kafka, the message delivery should satisfy **at-least-once**. 
+
+Inserting the same datarecord multiple times in Cassandra will not duplicate it, but only overwrite it, so the timestamp duplicate check is done natively by the key.
 
 ### 3.
 i) The actual event time (the moment the sensor produced the measurement) should be associated with stream data for analitics. This makes sure we detect the anomaly in the right timeframe, no matter the delay on the pipeline (for example inside Kafka messaging or Flink processig). The data already has these timestamps associated with it.
@@ -481,8 +483,6 @@ The stream app validates incoming record fields in *parse_kafka_record*. Invalid
 Cassandra write operations are wrapped in exception handling. When a failure is encountered, the app increments cassandra_writes_failed, logs warnings, and continues processing next records. Callback failures are also caught and logged without stopping the pipeline.
 
 
-`Observed behavior from your measured runs:`
-
 **Malformed source row handling:**
 
 Each main scenario shows Skipped = 1, confirming bad-row filtering without pipeline crash.
@@ -547,20 +547,61 @@ Observations:
 
 ## Part 3
 ### 1.
-To integrate an external RESTful microservice I would extend streamanalyticsapp with an additional processing stage.
+To integrate an external RESTful ML inference service into the current platform, I would extend **streamanalyticsapp** by adding an additional post-processing stage after window aggregation and before writing to Cassandra.
 
-I would introduce an asynchronous step:
-- Flink Async I/O calls the REST service
-- sends a batch of aggregated records
-- receive ML predictions
-- add ML results to record before writing it to Cassandra
+After Flink computes the aggregated window results, the pipeline would be extended as follows:
 
-Flink Async I/O allows the Flink application to interact with the microservice asynchronously, overcoming the latency bottleneck of waiting for a response. It is a native tool that fits the task and the current pipeline architecture.
+- Aggregated records (window outputs) are passed to an Async I/O operator
+- The operator:
+    - batches multiple records (to match the REST service contract)
+    - sends them to the external ML service via HTTP
+    - receives ML inference results (anomaly score, classification)
+- The results are then:
+    - enriched into the original record (new schema should be built, taking into account ml_inference_results)
+    - forwarded to sinks (Cassandra + alerts)
+
+`Why Flink Async I/O:`
+REST calls introduce network latency, and synchronous calls would block the pipeline.
+
+Async I/O allows:
+- concurrent requests
+- high throughput
+- better resource utilization
+
+`Robustness concerns:`
+If the ML service fails, I should have some fallback options, like marking the ml_status as *failed*, adding it to the record and inserting it into Cassandra. This ensures that the ML dependency does not break the pipeline.
+Additionally, timeouts and retries can be configured.
+
 
 **The tenant** must provide the ML microservice and define input/output schema. It must give an authentication API key.
 
 ### 2.
 The solution for this scenario is a Dead Letter Queue (DLQ). In my current design there is a table of alerts inside Cassandra database that holds the erroneous records. However, some records are skipped already by Kafka, if they are malformed (have missing fields). There should also be added a table of invalid records. 
+
+A dedicated Kafka topic (e.g., tenant2-invalid-records) should be introduced as a DLQ. When streamanalyticsapp encounters a record that cannot be parsed or validated, it sends the original raw message + error metadata to the DLQ
+
+Example DLQ message:
+
+```json
+{
+  "original_payload": {...},
+  "error_type": "MISSING_FIELD",
+  "error_message": "humidity field missing",
+  "timestamp": "...",
+  "source_topic": "tenant2-sensor-data"
+}
+```
+
+Why Kafka DLQ?
+
+- it keeps the pipeline non-blocking
+- ensures no data loss
+- allows independent reprocessing pipelines
+
+
+Inside the processing pipeline, every parsing and validation logic should be wrapped in try/catch blocks, so that on failure they emit a record to Kafka DLQ, insert record into invalid_sensor_records table and then continue parsing the rest of the stream. This results in a fault tolerant behaviour, and bad data is not ignored.
+
+After all this, a separate application can consume the messages from the DLQ and perform data correction and analysis.
 
 ### 3.
 
@@ -597,10 +638,19 @@ Additionally, the developer/owner of the streamanalyticsapp can detect schema ch
 
 
 ### 5.
-The current design supports fully end-to-end exactly once, because:
+
+The current design of streamanalyticsapp does not fully guarantee end-to-end exactly-once delivery, although several components in the pipeline provide partial support for it.
+
 - Kafka supports exactly-once (idempotent producers + transactions)
-- Flink supports exactly-once processing (through checkpoints)
-- Cassandra does not support exactly-once writes **BUT** the primary key ((day, hour), sensor_id, window_start) is deterministic, and any duplicated records would be overwritten, not duplicated.
+- Flink supports exactly-once processing (through checkpoints, state consistency)
+- Cassandra does not support exactly-once writes 
+    - **BUT** the primary key ((day, hour), sensor_id, window_start) is deterministic, and any duplicated records would be overwritten, not duplicated.
+    - however, Cassandra does not provide true exactly-once behaviour
+
+To achieve strict end-to-end exactly-once, an option would be teh following:
+- Transactional Sink
+    - The sink must support transactions coordinated with Flink checkpoints
+    - For example, two-phase commit sinks (Flink’s TwoPhaseCommitSinkFunction), or some databases with transactional guarantees 
 
 
 
