@@ -1,51 +1,51 @@
 
 ================================================================================
 PERFORMANCE TEST REPORT: A1_burst
-Generated: 2026-04-09T13:18:28.938951
+Generated: 2026-04-09T15:57:05.304739
 ================================================================================
 
 1. PRODUCER METRICS
 --------------------------------------------------------------------------------
-  Produced:              999 events
-  Skipped:               1 events
-  Production Time:       1.03 seconds
-  Production Rate:       966.99 events/sec
-  Total Emit Lag:        14 ms
+  Produced:              502 events
+  Skipped:               0 events
+  Production Time:       1.05 seconds
+  Production Rate:       478.11 events/sec
+  Total Emit Lag:        7 ms
   Avg Emit Delay:        0.01 ms
 
 2. KAFKA CONSUMER METRICS (Flink)
 --------------------------------------------------------------------------------
-  Events Consumed:       999 events
-  Consumption Time:      30.34 seconds
-  Consumption Rate:      32.93 events/sec
-  Errors:                975
+  Events Consumed:       502 events
+  Consumption Time:      30.38 seconds
+  Consumption Rate:      16.53 events/sec
+  Errors:                6972
 
 3. WINDOW PROCESSING METRICS
 --------------------------------------------------------------------------------
-  Windows Emitted:       14625 windows
+  Windows Emitted:       7470 windows
   Avg Window Size:       0.0 records/window
-  Amplification Factor:  14.64x
+  Amplification Factor:  14.88x
 
 4. CASSANDRA SINK METRICS
 --------------------------------------------------------------------------------
-  Write Attempts:        13500 successful
-  Write Failures:        975 failed
-  Avg Write Latency:     2.68 ms
-  Max Write Latency:     6378.38 ms
-  Actual DB Row Count:   13650 rows
-  Analytics Output Lines:14625 lines
+  Write Attempts:        498 successful
+  Write Failures:        6972 failed
+  Avg Write Latency:     0.00 ms
+  Max Write Latency:     0.00 ms
+  Actual DB Row Count:   498 rows
+  Analytics Output Lines:7470 lines
 
 5. END-TO-END METRICS
 --------------------------------------------------------------------------------
-  Total Pipeline Time:   95.83 seconds
-  Input Events:          999
-  Output Rows (Cassandra): 13650
-  Throughput (in/sec):   10.42
-  Throughput (out/sec):  142.44
+  Total Pipeline Time:   64.62 seconds
+  Input Events:          502
+  Output Rows (Cassandra): 498
+  Throughput (in/sec):   7.77
+  Throughput (out/sec):  7.71
 
 6. DATA LOSS CHECK
 --------------------------------------------------------------------------------
-    Produced → Consumed:   999 → 999
+    Produced → Consumed:   502 → 502
   Loss:                  0 events
   Loss %:                0.00%
 

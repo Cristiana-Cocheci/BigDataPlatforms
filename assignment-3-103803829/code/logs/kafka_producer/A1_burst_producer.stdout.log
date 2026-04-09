@@ -1,16 +1,11 @@
 [1;33m[SETUP][0m timeout command not found; running without timeout safeguard.
 [1;33m[SETUP][0m Install GNU coreutils for timeout: brew install coreutils
-INFO producer start source_csv=../data/tenant2/2025-06-01_dht22.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements max_events=1000 emit_delay_ms=0
+INFO producer start source_csv=../data/tenant2/2025-06-01_dht22_demo.csv kafka_brokers=127.0.0.1:9094 topic=dht22-measurements max_events=1000 emit_delay_ms=0
 INFO detected csv delimiter=';'
-PROGRESS produced=100 elapsed_sec=0.01 rate_events_sec=18632.24 actual_emit_lag_ms=1
-PROGRESS produced=200 elapsed_sec=0.01 rate_events_sec=29489.59 actual_emit_lag_ms=3
-PROGRESS produced=300 elapsed_sec=0.01 rate_events_sec=35777.40 actual_emit_lag_ms=4
-PROGRESS produced=400 elapsed_sec=0.01 rate_events_sec=41059.24 actual_emit_lag_ms=6
-PROGRESS produced=500 elapsed_sec=0.01 rate_events_sec=44774.58 actual_emit_lag_ms=7
-WARN row 504 skipped: missing or empty column: humidity
-PROGRESS produced=600 elapsed_sec=0.01 rate_events_sec=47569.75 actual_emit_lag_ms=9
-PROGRESS produced=700 elapsed_sec=0.01 rate_events_sec=50078.68 actual_emit_lag_ms=10
-PROGRESS produced=800 elapsed_sec=0.02 rate_events_sec=52267.10 actual_emit_lag_ms=11
-PROGRESS produced=900 elapsed_sec=0.02 rate_events_sec=54089.81 actual_emit_lag_ms=13
-SUMMARY produced=999 skipped=1 elapsed_sec=1.03 rate_events_sec=966.99 actual_emit_lag_total_ms=14 avg_emit_delay_ms=0.01
+PROGRESS produced=100 elapsed_sec=0.01 rate_events_sec=13600.21 actual_emit_lag_ms=1
+PROGRESS produced=200 elapsed_sec=0.01 rate_events_sec=22925.33 actual_emit_lag_ms=3
+PROGRESS produced=300 elapsed_sec=0.01 rate_events_sec=29055.82 actual_emit_lag_ms=4
+PROGRESS produced=400 elapsed_sec=0.01 rate_events_sec=34252.50 actual_emit_lag_ms=6
+PROGRESS produced=500 elapsed_sec=0.01 rate_events_sec=38444.58 actual_emit_lag_ms=7
+SUMMARY produced=502 skipped=0 elapsed_sec=1.05 rate_events_sec=478.11 actual_emit_lag_total_ms=7 avg_emit_delay_ms=0.01
 INFO producer exit

@@ -1,37 +1,37 @@
 {
   "test_name": "baseline",
-  "timestamp": "2026-04-09T13:18:29.565618",
+  "timestamp": "2026-04-09T15:57:05.766966",
   "producer": {
-    "produced": 999,
-    "skipped": 1,
-    "elapsed_sec": 1.03,
-    "rate_events_sec": 966.99,
-    "actual_emit_lag_total_ms": 14.0,
+    "produced": 502,
+    "skipped": 0,
+    "elapsed_sec": 1.05,
+    "rate_events_sec": 478.11,
+    "actual_emit_lag_total_ms": 7.0,
     "avg_emit_delay_ms": 0.01,
     "log_file": "logs/kafka_producer/producer.log"
   },
   "flink_app": {
-    "cassandra_write_errors": 975,
+    "cassandra_write_errors": 6972,
     "callback_errors": 0,
-    "consumed_total": 999
+    "consumed_total": 502
   },
   "flink": {
-    "kafka_consumed": 999,
-    "kafka_elapsed_sec": 30.34,
-    "kafka_rate_events_sec": 32.93,
-    "windows_emitted": 14625,
-    "windows_processed": 14600,
+    "kafka_consumed": 502,
+    "kafka_elapsed_sec": 30.38,
+    "kafka_rate_events_sec": 16.53,
+    "windows_emitted": 7470,
+    "windows_processed": 7400,
     "avg_window_size": 0.0,
-    "cassandra_writes_successful": 13500,
-    "cassandra_writes_failed": 975,
-    "cassandra_avg_write_ms": 2.68,
-    "cassandra_max_write_ms": 6378.38,
+    "cassandra_writes_successful": 498,
+    "cassandra_writes_failed": 6972,
+    "cassandra_avg_write_ms": 0,
+    "cassandra_max_write_ms": 0,
     "cassandra_min_write_ms": 0,
-    "amplification_factor": 14.63963963963964,
-    "total_pipeline_time_sec": 95.83,
+    "amplification_factor": 14.880478087649402,
+    "total_pipeline_time_sec": 64.62,
     "errors": [],
     "log_file": "logs/streamanalyticsapp/metrics.log"
   },
-  "cassandra_row_count": 13650,
-  "analytics_output_lines": 14625
+  "cassandra_row_count": 498,
+  "analytics_output_lines": 7470
 }

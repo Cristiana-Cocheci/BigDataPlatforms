@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 
 from confluent_kafka import Producer
 
-DEFAULT_SOURCE_CSV = "../data/tenant2/2025-06-01_dht22.csv"
+# MODIFY FOR DEFAULT CSV FILE IF NEEDED
+DEFAULT_SOURCE_CSV = "../data/tenant2/2025-06-01_dht22_demo.csv"
 DEFAULT_KAFKA_BROKERS = "localhost:9094"
 DEFAULT_KAFKA_TOPIC = "dht22-measurements"
 DEFAULT_LOG_DIR = "./logs/kafka_producer"
